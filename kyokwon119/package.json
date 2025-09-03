@@ -1,0 +1,45 @@
+{
+  "name": "kyokwon119",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "docker:build": "docker build -t kyokwon119:latest .",
+    "docker:run": "docker run -d --name kyokwon119-app -p 3001:3001 kyokwon119:latest",
+    "docker:stop": "docker stop kyokwon119-app",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker logs -f kyokwon119-app"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "@tanstack/react-query": "^5.51.0",
+    "clsx": "^2.1.1",
+    "dayjs": "^1.11.0",
+    "lucide-react": "^0.446.0",
+    "next": "15.5.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.52.0",
+    "react-hot-toast": "^2.4.0",
+    "react-markdown": "^9.0.0",
+    "zod": "^3.23.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.2",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  }
+}

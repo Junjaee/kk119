@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="교권119 - 교사의 교육활동을 보호하고 지원하는 전문 서비스">
+    <title>교권119 - 교권보호 전문서비스</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 접근성을 위한 스킵 네비게이션 -->
+    <a href="#main-content" class="skip-nav">메인 콘텐츠로 바로가기</a>
+    
+    <!-- 헤더 -->
+    <header class="header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>
+                        <span class="logo-text">교권</span>
+                        <span class="logo-number">119</span>
+                    </h1>
+                    <span class="logo-subtitle">교권보호 전문서비스</span>
+                </div>
+                
+                <!-- 응급 신고 버튼 -->
+                <div class="emergency-section">
+                    <button class="emergency-btn" aria-label="응급상황 신고하기">
+                        <span class="emergency-icon">🚨</span>
+                        <span class="emergency-text">응급신고</span>
+                    </button>
+                    <span class="emergency-number">1588-7119</span>
+                </div>
+                
+                <!-- 모바일 메뉴 버튼 -->
+                <button class="mobile-menu-btn" aria-label="메뉴 열기" aria-expanded="false">
+                    <span class="hamburger"></span>
+                    <span class="hamburger"></span>
+                    <span class="hamburger"></span>
+                </button>
+            </div>
+            
+            <!-- 네비게이션 -->
+            <nav class="navigation" role="navigation" aria-label="주요 메뉴">
+                <ul class="nav-list">
+                    <li><a href="#services" class="nav-link">서비스 안내</a></li>
+                    <li><a href="#report" class="nav-link">신고하기</a></li>
+                    <li><a href="#support" class="nav-link">지원센터</a></li>
+                    <li><a href="#resources" class="nav-link">자료실</a></li>
+                    <li><a href="#contact" class="nav-link">문의하기</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main id="main-content" class="main" role="main">
+        <!-- 히어로 섹션 -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h2 class="hero-title">
+                        교사의 교육활동을 보호하고<br>
+                        <span class="highlight">안전한 교육환경</span>을 만듭니다
+                    </h2>
+                    <p class="hero-description">
+                        교권침해 상황에서 신속하고 전문적인 대응으로<br>
+                        교사들의 교육권을 보호하는 전문 서비스입니다.
+                    </p>
+                    <div class="hero-actions">
+                        <button class="btn btn-primary">즉시 신고하기</button>
+                        <button class="btn btn-secondary">서비스 알아보기</button>
+                    </div>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">24시간</div>
+                        <div class="stat-label">상시 대응</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">1588-7119</div>
+                        <div class="stat-label">신고 전화</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">전문가</div>
+                        <div class="stat-label">상담 지원</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 서비스 섹션 -->
+        <section id="services" class="services">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">주요 서비스</h2>
+                    <p class="section-description">교권침해 상황별 맞춤형 지원 서비스를 제공합니다</p>
+                </div>
+                
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-icon">⚡</div>
+                        <h3 class="service-title">응급 신고</h3>
+                        <p class="service-description">교권침해 발생 시 즉시 신고하여 신속한 대응을 받을 수 있습니다.</p>
+                        <button class="service-btn">신고하기</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">💬</div>
+                        <h3 class="service-title">전문 상담</h3>
+                        <p class="service-description">교권 전문가와의 1:1 상담을 통해 적절한 해결방안을 제시합니다.</p>
+                        <button class="service-btn">상담신청</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">⚖️</div>
+                        <h3 class="service-title">법률 지원</h3>
+                        <p class="service-description">교권침해 관련 법률 자문 및 소송 지원 서비스를 제공합니다.</p>
+                        <button class="service-btn">법률상담</button>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-icon">🛡️</div>
+                        <h3 class="service-title">예방 교육</h3>
+                        <p class="service-description">교권침해 예방을 위한 교육 프로그램과 자료를 제공합니다.</p>
+                        <button class="service-btn">교육신청</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 신고 절차 섹션 -->
+        <section id="report" class="report-process">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">신고 절차</h2>
+                    <p class="section-description">간단한 4단계로 신고를 완료할 수 있습니다</p>
+                </div>
+                
+                <div class="process-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3 class="step-title">상황 접수</h3>
+                            <p class="step-description">전화 또는 온라인으로 상황을 접수합니다</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3 class="step-title">전문가 배정</h3>
+                            <p class="step-description">상황에 맞는 전문가를 즉시 배정합니다</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3 class="step-title">맞춤 대응</h3>
+                            <p class="step-description">사안별 맞춤형 해결방안을 제시합니다</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3 class="step-title">사후 관리</h3>
+                            <p class="step-description">해결 후에도 지속적인 관리를 제공합니다</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 연락처 섹션 -->
+        <section id="contact" class="contact">
+            <div class="container">
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <h2 class="section-title">언제든 연락하세요</h2>
+                        <p class="section-description">24시간 상시 대기하여 신속한 도움을 제공합니다</p>
+                        
+                        <div class="contact-methods">
+                            <div class="contact-method">
+                                <div class="contact-icon">📞</div>
+                                <div class="contact-details">
+                                    <h3>전화 신고</h3>
+                                    <p class="contact-number">1588-7119</p>
+                                    <p class="contact-desc">24시간 상시 운영</p>
+                                </div>
+                            </div>
+                            
+                            <div class="contact-method">
+                                <div class="contact-icon">💻</div>
+                                <div class="contact-details">
+                                    <h3>온라인 신고</h3>
+                                    <p class="contact-number">www.교권119.kr</p>
+                                    <p class="contact-desc">언제든지 신고 가능</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="emergency-contact">
+                        <div class="emergency-card">
+                            <h3>응급상황 시</h3>
+                            <div class="emergency-number-large">1588-7119</div>
+                            <p>즉시 전화하여 신고해주세요</p>
+                            <button class="btn btn-emergency">지금 신고하기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>교권119</h3>
+                    <p>교사의 교육활동 보호를 위한<br>전문 지원 서비스</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>서비스</h4>
+                    <ul class="footer-links">
+                        <li><a href="#services">응급신고</a></li>
+                        <li><a href="#services">전문상담</a></li>
+                        <li><a href="#services">법률지원</a></li>
+                        <li><a href="#services">예방교육</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>지원</h4>
+                    <ul class="footer-links">
+                        <li><a href="#support">이용안내</a></li>
+                        <li><a href="#resources">자료실</a></li>
+                        <li><a href="#contact">문의하기</a></li>
+                        <li><a href="#faq">자주묻는질문</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>연락처</h4>
+                    <p class="footer-contact">신고전화: 1588-7119</p>
+                    <p class="footer-contact">운영시간: 24시간 상시</p>
+                    <div class="footer-social">
+                        <a href="#" aria-label="페이스북">📘</a>
+                        <a href="#" aria-label="트위터">🐦</a>
+                        <a href="#" aria-label="인스타그램">📷</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 교권119. 모든 권리 보유.</p>
+                <div class="footer-legal">
+                    <a href="#privacy">개인정보처리방침</a>
+                    <a href="#terms">이용약관</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

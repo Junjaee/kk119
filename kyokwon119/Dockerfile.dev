@@ -1,0 +1,28 @@
+# Development Dockerfile for Kyokwon119
+# 교권119 개발 환경
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for better development experience
+RUN apk add --no-cache libc6-compat git
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy application files
+COPY . .
+
+# Expose port 3000 for development
+EXPOSE 3000
+
+# Set environment to development
+ENV NODE_ENV development
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# Start development server with hot reload
+CMD ["npm", "run", "dev"]

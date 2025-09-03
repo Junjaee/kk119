@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  kyokwon119:
+    container_name: kyokwon119-app
+    image: kyokwon119:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - NEXT_PUBLIC_APP_NAME=교권119
+      - NEXT_PUBLIC_APP_VERSION=2.0.0
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://your-project.supabase.co}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-your-anon-key}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-your-service-key}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:5000}
+      - TZ=Asia/Seoul
+    restart: unless-stopped
+    networks:
+      - kyokwon119-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - kyokwon119-uploads:/app/public/uploads
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  kyokwon119-uploads:
+    driver: local
+
+networks:
+  kyokwon119-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

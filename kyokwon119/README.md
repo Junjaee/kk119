@@ -1,172 +1,197 @@
-# 교권119 - 교사의 권리를 지키는 플랫폼
+# 교권119 🏫⚖️
 
-교권 보호를 위한 신고 및 법률 상담 시스템
+> 교사의 권익을 보호하고 교권 침해 사건에 대한 체계적 대응을 지원하는 플랫폼
 
-## 🚀 주요 기능
+![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black?style=flat-square&logo=next.js)
+![React](https://img.shields.io/badge/React-19.1.0-blue?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.17-38B2AC?style=flat-square&logo=tailwind-css)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat-square&logo=sqlite)
 
-### 교사를 위한 기능
-- **교권 침해 신고**: 익명으로 안전하게 교권 침해 사건 신고
-- **법률 상담**: 전문 변호사의 법률 자문 제공
-- **커뮤니티**: 교사들 간 경험 공유 및 상호 지원
-- **진행 상황 추적**: 신고 건의 처리 상태 실시간 확인
+## 📋 프로젝트 개요
 
-### 변호사를 위한 기능
-- **사건 관리**: 담당 사건 선택 및 관리
-- **법률 자문**: 체계적인 답변 시스템
-- **통계 확인**: 상담 실적 및 만족도 확인
+교권119는 교사들이 직면하는 교권 침해 문제에 대해 체계적이고 전문적인 대응을 지원하는 종합 플랫폼입니다. 익명성을 보장하면서도 전문적인 법적 조언과 동료 교사들과의 경험 공유를 통해 교권 보호에 기여합니다.
 
-### 관리자를 위한 기능
-- **시스템 모니터링**: 전체 시스템 현황 대시보드
-- **사용자 관리**: 교사, 변호사 계정 관리
-- **통계 분석**: 상세한 통계 및 보고서
+## ✨ 주요 기능
+
+### 🔐 사용자 인증 시스템
+- SQLite 기반 로컬 데이터베이스 인증
+- 비밀번호 암호화 및 JWT 토큰 기반 세션 관리
+- 교사, 변호사, 관리자 역할 기반 접근 제어
+
+### 📢 교권 침해 신고 시스템
+- 다단계 신고 접수 프로세스
+- 사건 유형별 분류 및 증거 자료 첨부
+- 실시간 처리 상태 추적
+- 익명성 보장
+
+### 💬 커뮤니티 기능
+- 경험 공유 및 조언 게시판
+- 실시간 댓글 및 좋아요 기능
+- 전문 변호사 답변 시스템
+- 카테고리별 게시물 분류
+
+### ⚖️ 법적 지원
+- 교육법 전문 변호사 상담
+- 사건별 맞춤 법적 조언
+- 판례 및 대응 사례 데이터베이스
 
 ## 🛠 기술 스택
 
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Mock Auth (임시)
-- **Deployment**: Vercel
+### Frontend
+- **Next.js 15.5.2** - React 기반 풀스택 프레임워크
+- **React 19.1.0** - 사용자 인터페이스 라이브러리
+- **TypeScript** - 정적 타입 시스템
+- **Tailwind CSS** - 유틸리티 우선 CSS 프레임워크
+- **Radix UI** - 접근성 우선 컴포넌트 라이브러리
 
-## 📦 설치 방법
+### Backend
+- **Next.js API Routes** - 서버사이드 API
+- **SQLite** - 경량 관계형 데이터베이스
+- **better-sqlite3** - 고성능 SQLite 드라이버
+- **bcryptjs** - 비밀번호 암호화
+- **jsonwebtoken** - JWT 토큰 인증
 
-### 🐳 Docker로 실행 (권장)
+### 개발 도구
+- **ESLint** - 코드 린팅
+- **Turbopack** - 고속 번들러
+- **Hot Toast** - 사용자 알림
 
-#### Docker Compose 사용 (가장 간단)
+## 🚀 시작하기
+
+### 요구사항
+- Node.js 18.0 이상
+- npm 또는 yarn
+
+### 설치 및 실행
+
 ```bash
-# 프로젝트 클론
-git clone https://github.com/your-repo/kyokwon119.git
-cd kyokwon119
+# 저장소 클론
+git clone https://github.com/Junjaee/kk119.git
+cd kk119/kyokwon119
 
-# Docker Compose로 실행
-docker-compose up -d
-
-# 브라우저에서 http://localhost:5000 접속
-```
-
-#### Docker 명령어 사용
-```bash
-# Windows
-scripts\docker-build.bat
-scripts\docker-run.bat
-
-# Mac/Linux
-./scripts/docker-build.sh
-./scripts/docker-run.sh
-
-# 브라우저에서 http://localhost:5000 접속
-```
-
-#### Docker 컨테이너 관리
-```bash
-# 로그 확인
-docker logs -f kyokwon119-app
-
-# 컨테이너 중지
-docker stop kyokwon119-app
-
-# 컨테이너 시작
-docker start kyokwon119-app
-
-# 컨테이너 제거
-docker rm kyokwon119-app
-```
-
-### 💻 로컬 개발 환경
-
-1. 저장소 클론
-```bash
-git clone https://github.com/your-repo/kyokwon119.git
-cd kyokwon119
-```
-
-2. 패키지 설치
-```bash
+# 의존성 설치
 npm install
-```
 
-3. 환경 변수 설정
-`.env.local` 파일을 생성하고 다음 내용을 추가:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-key
-```
+# 테스트 계정 생성 (선택사항)
+node scripts/create-test-accounts.js
 
-4. 개발 서버 실행
-```bash
+# 개발 서버 실행
 npm run dev
 ```
 
-5. 브라우저에서 [http://localhost:3000](http://localhost:3000) 접속
+서버가 시작되면 [http://localhost:3000](http://localhost:3000)에서 애플리케이션에 접근할 수 있습니다.
 
-## 🎯 사용 방법
+### 🐳 Docker로 실행
 
-### 테스트 계정
-인증 시스템을 제외한 구현이므로, 자동으로 다음 계정 중 하나로 로그인됩니다:
+```bash
+# Docker 컨테이너 빌드 및 실행
+npm run docker:build
+npm run docker:run
 
-- **교사**: 익명교사1234 (기본값)
-- **변호사**: 교육법전문변호사
-- **관리자**: 시스템관리자
+# 또는 Docker Compose 사용
+npm run docker:up
 
-### 주요 페이지
+# 브라우저에서 http://localhost:3001 접속
+```
+
+## 🧪 테스트 계정
+
+개발 및 테스트 목적으로 다음 계정들을 사용할 수 있습니다:
+
+| 역할 | 이메일 | 비밀번호 | 설명 |
+|------|--------|----------|------|
+| 교사 | teacher@test.com | Teacher123! | 일반 교사 계정 |
+| 변호사 | lawyer@test.com | Lawyer123! | 법적 자문 제공자 |
+| 관리자 | admin@test.com | Admin123! | 시스템 관리자 |
+| 교장 | principal@test.com | Principal123! | 학교 관리자 |
+
+## 🌟 주요 페이지
+
 - `/` - 메인 대시보드
-- `/reports/new` - 신고 작성
-- `/reports` - 신고 목록
-- `/community` - 커뮤니티
+- `/login` - 로그인 페이지
+- `/signup` - 회원가입 페이지
+- `/reports/new` - 교권 침해 신고 작성
+- `/reports` - 신고 목록 및 관리
+- `/community` - 커뮤니티 게시판
+- `/community/new` - 커뮤니티 글 작성
 - `/consult` - 변호사 상담
 - `/lawyer` - 변호사 대시보드
 - `/admin` - 관리자 대시보드
-
-## 🌟 특징
-
-- **완전 익명 시스템**: 교사의 신원 보호
-- **반응형 디자인**: 모바일, 태블릿, 데스크톱 지원
-- **다크 모드**: 시스템 설정 연동
-- **PWA 지원**: 앱처럼 설치 가능
 
 ## 📁 프로젝트 구조
 
 ```
 kyokwon119/
-├── app/                  # Next.js 앱 라우터
-│   ├── admin/           # 관리자 페이지
-│   ├── community/       # 커뮤니티
-│   ├── consult/         # 상담 페이지
-│   ├── lawyer/          # 변호사 페이지
-│   └── reports/         # 신고 관련 페이지
-├── components/          # React 컴포넌트
-│   ├── layout/          # 레이아웃 컴포넌트
-│   └── ui/              # UI 컴포넌트
-├── lib/                 # 유틸리티 및 설정
+├── app/                    # Next.js 13+ App Router
+│   ├── api/               # API 라우트
+│   │   ├── auth/         # 인증 API
+│   │   └── community/    # 커뮤니티 API
+│   ├── community/        # 커뮤니티 페이지
+│   ├── reports/          # 신고 페이지
+│   ├── login/            # 로그인 페이지
+│   └── signup/           # 회원가입 페이지
+├── components/            # 재사용 컴포넌트
+│   ├── ui/               # UI 컴포넌트
+│   ├── layout/           # 레이아웃 컴포넌트
+│   └── editor/           # 에디터 컴포넌트
+├── lib/                  # 유틸리티 및 설정
 │   ├── auth/            # 인증 관련
-│   ├── data/            # Mock 데이터
-│   ├── store/           # Zustand 스토어
-│   ├── supabase/        # Supabase 클라이언트
-│   ├── types/           # TypeScript 타입
-│   └── utils/           # 유틸리티 함수
-└── public/              # 정적 파일
+│   ├── db/              # 데이터베이스
+│   ├── services/        # 비즈니스 로직
+│   └── utils/           # 공통 유틸리티
+├── data/                # SQLite 데이터베이스 파일
+└── scripts/             # 개발 스크립트
 ```
+
+## 🔧 주요 스크립트
+
+```bash
+# 개발 서버 실행
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+
+# 프로덕션 서버 실행
+npm start
+
+# 코드 린팅
+npm run lint
+
+# 테스트 계정 생성
+node scripts/create-test-accounts.js
+
+# Docker 관련
+npm run docker:build
+npm run docker:run
+npm run docker:up
+npm run docker:down
+```
+
+## 🤝 기여하기
+
+1. 이 저장소를 포크합니다
+2. 새로운 기능 브랜치를 생성합니다 (`git checkout -b feature/amazing-feature`)
+3. 변경사항을 커밋합니다 (`git commit -m 'Add some amazing feature'`)
+4. 브랜치에 푸시합니다 (`git push origin feature/amazing-feature`)
+5. Pull Request를 생성합니다
 
 ## 🔐 보안 고려사항
 
-- 실제 운영 시 적절한 인증 시스템 구현 필요
-- Supabase RLS (Row Level Security) 설정 필요
-- 민감한 데이터 암호화 처리 필요
+- JWT 토큰 기반 인증 시스템 구현
+- 비밀번호 bcrypt 암호화 적용
+- SQL Injection 방지를 위한 Prepared Statement 사용
+- 익명성 보장을 위한 개인정보 최소화
 
-## 📝 라이센스
+## 📄 라이선스
 
-이 프로젝트는 교육 및 시연 목적으로 제작되었습니다.
-
-## 🤝 기여
-
-버그 리포트 및 기능 제안은 이슈를 통해 제출해주세요.
+이 프로젝트는 교육 목적으로 개발되었습니다.
 
 ## 📞 문의
 
-프로젝트에 대한 문의사항이 있으시면 연락주세요.
+프로젝트에 대한 문의나 제안사항이 있으시면 이슈를 생성해 주세요.
 
 ---
 
-Made with ❤️ for protecting teachers' rights
+**교권119** - 교사의 권익 보호를 위한 종합 플랫폼 🏫⚖️

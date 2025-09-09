@@ -241,8 +241,10 @@ export function Sidebar() {
           <nav className="flex-1 px-4 py-6 space-y-2 scrollbar-modern overflow-y-auto">
             {items.map((item) => {
               const Icon = item.icon;
+              // More precise active state check to prevent false positives
               const isActive = pathname === item.href ||
-                (item.href !== '/' && pathname.startsWith(item.href));
+                (item.href !== '/' && item.href !== '/reports' && pathname.startsWith(item.href)) ||
+                (item.href === '/reports' && pathname === '/reports');
               
               return (
                 <div key={item.href} className="relative">

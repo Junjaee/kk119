@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Notification } from '@/lib/types';
-import { getCurrentUser } from '@/lib/auth/mock-auth';
 
 interface AppStore {
   // User State
   user: User | null;
   setUser: (user: User | null) => void;
+  logout: () => void;
   
   // UI State
   theme: 'light' | 'dark';
@@ -30,6 +30,10 @@ export const useStore = create<AppStore>()(
       // User State
       user: null,
       setUser: (user) => set({ user }),
+      logout: () => {
+        localStorage.removeItem('token');
+        set({ user: null });
+      },
       
       // UI State
       theme: 'light',
@@ -51,9 +55,22 @@ export const useStore = create<AppStore>()(
       })),
       clearNotifications: () => set({ notifications: [] }),
       
-      // Initialize with mock user
-      initialize: () => {
-        set({ user: getCurrentUser() });
+      // Initialize - check for existing session
+      initialize: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (token) {
+            const response = await fetch('/api/auth/me');
+            if (response.ok) {
+              const data = await response.json();
+              set({ user: data.user });
+            } else {
+              localStorage.removeItem('token');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to initialize user:', error);
+        }
       }
     }),
     {

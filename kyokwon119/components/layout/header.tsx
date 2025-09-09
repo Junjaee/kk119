@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,8 @@ import {
 import Link from 'next/link';
 
 export function Header() {
-  const { user, theme, toggleTheme, setSidebarOpen, sidebarOpen, notifications } = useStore();
+  const router = useRouter();
+  const { user, theme, toggleTheme, setSidebarOpen, sidebarOpen, notifications, logout } = useStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -150,25 +152,26 @@ export function Header() {
           </Button>
 
           {/* Enhanced User Menu */}
-          <div className="relative">
-            <Button
-              variant="ghost"
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 px-3 py-2 hover:bg-accent/50 rounded-xl"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                <User className="h-4 w-4 text-white" />
-              </div>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium">
-                  {user?.nickname || '사용자'}
-                </p>
-                <div className={`badge-${getRoleBadgeVariant(user?.role || 'teacher')} text-xs`}>
-                  {getRoleLabel(user?.role || 'teacher')}
+          {user ? (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center space-x-2 px-3 py-2 hover:bg-accent/50 rounded-xl"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                  <User className="h-4 w-4 text-white" />
                 </div>
-              </div>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium">
+                    {user?.name || user?.nickname || '사용자'}
+                  </p>
+                  <div className={`text-xs text-muted-foreground`}>
+                    {user?.school || '교사'}
+                  </div>
+                </div>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
             
             {/* Enhanced Dropdown Menu */}
             {showUserMenu && (
@@ -204,14 +207,36 @@ export function Header() {
                 </div>
 
                 <div className="p-2 border-t">
-                  <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg"
+                    onClick={async () => {
+                      await fetch('/api/auth/logout', { method: 'POST' });
+                      logout();
+                      router.push('/');
+                    }}
+                  >
                     <LogOut className="h-4 w-4 mr-3" />
                     로그아웃
                   </Button>
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  로그인
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm">
+                  회원가입
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>

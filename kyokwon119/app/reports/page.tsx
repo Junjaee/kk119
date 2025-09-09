@@ -1,95 +1,114 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   FileText, 
   Plus, 
   Search,
-  Filter,
   Calendar,
   ChevronRight,
   FileWarning,
-  MessageSquare
+  MessageSquare,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  XCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate, formatRelativeTime } from '@/lib/utils/date';
-
-// Mock data
-const mockReports = [
-  {
-    id: '1',
-    title: '학부모 민원 관련 건',
-    type: 'parent',
-    status: 'consulting',
-    content: '학부모가 수업 방식에 대해 과도한 민원을 제기하며 협박성 발언을 했습니다...',
-    incident_date: '2025-08-25',
-    created_at: '2025-08-27T10:00:00Z',
-    has_consult: true,
-    consult_count: 2
-  },
-  {
-    id: '2',
-    title: '학생 폭언 사건',
-    type: 'student',
-    status: 'completed',
-    content: '수업 중 학생이 교사에게 욕설과 함께 위협적인 행동을 보였습니다...',
-    incident_date: '2025-08-24',
-    created_at: '2025-08-26T14:30:00Z',
-    has_consult: true,
-    consult_count: 3
-  },
-  {
-    id: '3',
-    title: '온라인 명예훼손',
-    type: 'defamation',
-    status: 'reviewing',
-    content: 'SNS에서 허위 사실을 유포하며 명예를 훼손당했습니다...',
-    incident_date: '2025-08-23',
-    created_at: '2025-08-25T09:15:00Z',
-    has_consult: false,
-    consult_count: 0
-  },
-  {
-    id: '4',
-    title: '학교 행정 압박',
-    type: 'other',
-    status: 'received',
-    content: '부당한 업무 지시와 함께 인사상 불이익을 암시받았습니다...',
-    incident_date: '2025-08-22',
-    created_at: '2025-08-24T16:45:00Z',
-    has_consult: false,
-    consult_count: 0
-  }
-];
+import { localDB, Report } from '@/lib/services/localDB';
 
 export default function ReportsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const getStatusBadge = (status: string) => {
+  // Load reports from local DB
+  useEffect(() => {
+    const loadReports = () => {
+      try {
+        const allReports = localDB.getAllReports();
+        // Sort by createdAt descending (newest first)
+        const sortedReports = allReports.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setReports(sortedReports);
+      } catch (error) {
+        console.error('Error loading reports:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReports();
+    
+    // Initialize with sample data if no reports exist
+    if (localDB.getAllReports().length === 0) {
+      localDB.initWithSampleData();
+      loadReports();
+    }
+  }, []);
+
+  const getStatusBadge = (status: Report['status']) => {
     const config = {
-      received: { variant: 'default' as const, label: '접수' },
-      reviewing: { variant: 'warning' as const, label: '검토중' },
-      consulting: { variant: 'warning' as const, label: '상담중' },
-      completed: { variant: 'success' as const, label: '완료' },
+      pending: { 
+        variant: 'default' as const, 
+        label: '접수 대기', 
+        icon: <Clock className="h-3 w-3" /> 
+      },
+      processing: { 
+        variant: 'warning' as const, 
+        label: '처리중', 
+        icon: <AlertCircle className="h-3 w-3" /> 
+      },
+      resolved: { 
+        variant: 'success' as const, 
+        label: '해결 완료', 
+        icon: <CheckCircle className="h-3 w-3" /> 
+      },
+      rejected: { 
+        variant: 'error' as const, 
+        label: '반려', 
+        icon: <XCircle className="h-3 w-3" /> 
+      },
     };
     
-    const { variant, label } = config[status as keyof typeof config] || { variant: 'default' as const, label: status };
-    return <Badge variant={variant}>{label}</Badge>;
+    const { variant, label, icon } = config[status] || { 
+      variant: 'default' as const, 
+      label: status, 
+      icon: null 
+    };
+    
+    return (
+      <Badge variant={variant} className="flex items-center gap-1">
+        {icon}
+        {label}
+      </Badge>
+    );
   };
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       parent: '학부모 민원',
       student: '학생 폭력',
+      verbal: '욕설 및 폭언',
       defamation: '명예훼손',
+      harassment: '성희롱',
+      threat: '협박',
       other: '기타'
     };
     return labels[type] || type;
@@ -109,7 +128,7 @@ export default function ReportsPage() {
   };
 
   // Filter reports
-  const filteredReports = mockReports.filter(report => {
+  const filteredReports = reports.filter(report => {
     const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          report.content.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || report.status === filterStatus;
@@ -117,6 +136,16 @@ export default function ReportsPage() {
     
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -126,7 +155,7 @@ export default function ReportsPage() {
           <div>
             <h1 className="text-3xl font-bold">내 신고 내역</h1>
             <p className="text-muted-foreground mt-2">
-              총 {mockReports.length}건의 신고가 있습니다
+              총 {reports.length}건의 신고가 있습니다
             </p>
           </div>
           <Link href="/reports/new">
@@ -156,24 +185,37 @@ export default function ReportsPage() {
               
               <Select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onValueChange={setFilterStatus}
               >
-                <option value="all">모든 상태</option>
-                <option value="received">접수</option>
-                <option value="reviewing">검토중</option>
-                <option value="consulting">상담중</option>
-                <option value="completed">완료</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="모든 상태" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">모든 상태</SelectItem>
+                  <SelectItem value="pending">접수 대기</SelectItem>
+                  <SelectItem value="processing">처리중</SelectItem>
+                  <SelectItem value="resolved">해결 완료</SelectItem>
+                  <SelectItem value="rejected">반려</SelectItem>
+                </SelectContent>
               </Select>
               
               <Select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
+                onValueChange={setFilterType}
               >
-                <option value="all">모든 유형</option>
-                <option value="parent">학부모 민원</option>
-                <option value="student">학생 폭력</option>
-                <option value="defamation">명예훼손</option>
-                <option value="other">기타</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="모든 유형" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">모든 유형</SelectItem>
+                  <SelectItem value="parent">학부모 민원</SelectItem>
+                  <SelectItem value="student">학생 폭력</SelectItem>
+                  <SelectItem value="verbal">욕설 및 폭언</SelectItem>
+                  <SelectItem value="defamation">명예훼손</SelectItem>
+                  <SelectItem value="harassment">성희롱</SelectItem>
+                  <SelectItem value="threat">협박</SelectItem>
+                  <SelectItem value="other">기타</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </CardContent>
@@ -204,16 +246,16 @@ export default function ReportsPage() {
                     <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />
-                        <span>발생일: {formatDate(report.incident_date)}</span>
+                        <span>발생일: {formatDate(report.incident_date)} {report.incident_time}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <FileText className="h-3 w-3" />
-                        <span>접수일: {formatRelativeTime(report.created_at)}</span>
+                        <span>접수일: {formatRelativeTime(report.createdAt)}</span>
                       </div>
-                      {report.has_consult && (
+                      {report.fileNames && report.fileNames.length > 0 && (
                         <div className="flex items-center space-x-1">
                           <MessageSquare className="h-3 w-3" />
-                          <span>답변 {report.consult_count}개</span>
+                          <span>첨부파일 {report.fileNames.length}개</span>
                         </div>
                       )}
                       <Badge variant="outline">{getTypeLabel(report.type)}</Badge>

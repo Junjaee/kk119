@@ -13,9 +13,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { sidebarOpen } = useStore();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
       <Header />
-      <div className="flex h-[calc(100vh-4.5rem)]">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main 
           className="flex-1 overflow-y-auto scrollbar-modern transition-all duration-300"

@@ -2,13 +2,20 @@
 export type UserRole = 'teacher' | 'lawyer' | 'admin';
 
 export interface User {
-  id: string;
+  id: string | number;
   email: string;
-  nickname: string;
-  role: UserRole;
-  school_verified: boolean;
-  created_at: string;
-  updated_at: string;
+  name?: string;
+  nickname?: string;
+  role?: UserRole;
+  school?: string;
+  position?: string;
+  phone?: string;
+  school_verified?: boolean;
+  isAdmin?: boolean;
+  isVerified?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  last_login?: string;
 }
 
 // Report Types

@@ -100,13 +100,48 @@ export default function CommunityPage() {
     const updatedPost = localDB.togglePostLike(postId, userId);
     if (updatedPost) {
       // Update the posts state
-      setPosts(prevPosts => 
-        prevPosts.map(post => 
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
           post.id === postId ? updatedPost : post
         )
       );
     }
   };
+
+  // Function to refresh posts list
+  const refreshPosts = () => {
+    try {
+      const allPosts = localDB.getAllPosts();
+      const sortedPosts = allPosts.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setPosts(sortedPosts);
+    } catch (error) {
+      console.error('Error refreshing posts:', error);
+    }
+  };
+
+  // Add event listener for post changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      refreshPosts();
+    };
+
+    // Refresh posts when returning to this page
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshPosts();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   if (loading) {
     return (

@@ -125,17 +125,17 @@ export default function NewPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!category) {
       alert("카테고리를 선택해주세요.");
       return;
     }
-    
+
     if (!title.trim()) {
       alert("제목을 입력해주세요.");
       return;
     }
-    
+
     if (!content.trim() || content === "<p></p>") {
       alert("내용을 입력해주세요.");
       return;
@@ -144,30 +144,40 @@ export default function NewPostPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/community/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          content,
-          category,
-          attachments: files,
-          ...options,
-        }),
+      // Import necessary dependencies
+      const { localDB } = await import('@/lib/services/localDB');
+      const { useStore } = await import('@/lib/store');
+
+      // Get user info - for now using placeholder
+      const user = { id: 'teacher_001', name: '익명 교사' };
+
+      // Map category to localDB compatible format
+      const categoryMapping: Record<string, 'general' | 'experience' | 'advice' | 'legal' | 'support'> = {
+        'notice': 'general',
+        'teaching': 'experience',
+        'activity': 'experience',
+        'management': 'experience',
+        'question': 'advice',
+        'info': 'general',
+        'experience': 'experience',
+        'daily': 'general'
+      };
+
+      const mappedCategory = categoryMapping[category] || 'general';
+
+      // Create post using localDB
+      const newPost = localDB.createPost({
+        title: title.trim(),
+        content,
+        category: mappedCategory,
+        author: options.is_anonymous ? '익명' : (user?.name || '익명'),
+        authorId: user?.id || 'anonymous_user'
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create post");
-      }
-
-      const data = await response.json();
-      
       // Clear draft after successful submission
       localStorage.removeItem("community_draft");
-      
-      router.push(`/community/${data.id}`);
+
+      router.push(`/community/${newPost.id}`);
     } catch (error) {
       console.error("Error creating post:", error);
       alert("글 작성에 실패했습니다. 다시 시도해주세요.");

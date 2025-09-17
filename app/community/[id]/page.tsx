@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { 
+import {
   ArrowLeft,
   Heart,
   MessageSquare,
@@ -15,13 +15,32 @@ import {
   User,
   MessageCircle,
   ThumbsUp,
-  Trash2
+  Trash2,
+  Edit3,
+  MoreVertical
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { formatRelativeTime } from '@/lib/utils/date';
 import { localDB, CommunityPost, Comment } from '@/lib/services/localDB';
 import { useStore } from '@/lib/store';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -34,6 +53,7 @@ export default function PostDetailPage() {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const currentUser = {
     id: user?.id || 'anonymous_user',
@@ -123,8 +143,31 @@ export default function PostDetailPage() {
       const success = localDB.deleteComment(commentId);
       if (success) {
         setComments(prev => prev.filter(comment => comment.id !== commentId));
+        toast.success('댓글이 삭제되었습니다.');
+      } else {
+        toast.error('댓글 삭제에 실패했습니다.');
       }
     }
+  };
+
+  const handleDeletePost = async () => {
+    try {
+      const success = localDB.deletePost(postId);
+      if (success) {
+        toast.success('게시글이 삭제되었습니다.');
+        router.push('/community');
+      } else {
+        toast.error('게시글 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast.error('게시글 삭제 중 오류가 발생했습니다.');
+    }
+    setDeleteDialogOpen(false);
+  };
+
+  const handleEditPost = () => {
+    router.push(`/community/${postId}/edit`);
   };
 
   const getCategoryInfo = (category: string) => {
@@ -171,13 +214,39 @@ export default function PostDetailPage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Back Button */}
-        <Link href="/community">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            커뮤니티로 돌아가기
-          </Button>
-        </Link>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <Link href="/community">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              커뮤니티로 돌아가기
+            </Button>
+          </Link>
+
+          {/* Post Actions - Only show for author */}
+          {post && currentUser.id === post.authorId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleEditPost}>
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  수정하기
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="text-red-600"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  삭제하기
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         {/* Post Content */}
         <Card>
@@ -328,6 +397,27 @@ export default function PostDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>게시글 삭제</AlertDialogTitle>
+              <AlertDialogDescription>
+                이 게시글을 정말 삭제하시겠습니까? 삭제된 게시글과 모든 댓글은 복구할 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeletePost}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );

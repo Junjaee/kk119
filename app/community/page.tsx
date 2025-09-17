@@ -196,15 +196,15 @@ export default function CommunityPage() {
         </Card>
 
         {/* Posts List */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredPosts.map((post) => {
             const commentCount = localDB.getCommentsByPostId(post.id).length;
             const isPopular = post.likes > 10 || commentCount > 5;
-            
+
             return (
               <Card key={post.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="space-y-3">
+                <CardContent className="p-8">
+                  <div className="space-y-4">
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
@@ -272,7 +272,7 @@ export default function CommunityPage() {
 
           {filteredPosts.length === 0 && (
             <Card>
-              <CardContent className="text-center py-12">
+              <CardContent className="text-center py-16">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">게시글이 없습니다</h3>
                 <p className="text-muted-foreground mb-4">

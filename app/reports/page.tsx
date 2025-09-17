@@ -222,12 +222,12 @@ export default function ReportsPage() {
         </Card>
 
         {/* Reports List */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredReports.map((report) => (
             <Card key={report.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-4">
                     {/* Title and Status */}
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-2">
@@ -276,7 +276,7 @@ export default function ReportsPage() {
 
           {filteredReports.length === 0 && (
             <Card>
-              <CardContent className="text-center py-12">
+              <CardContent className="text-center py-16">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">신고 내역이 없습니다</h3>
                 <p className="text-muted-foreground mb-4">

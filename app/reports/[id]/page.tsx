@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { 
+import {
   ArrowLeft,
   Calendar,
   Clock,
@@ -25,159 +25,135 @@ import {
   Shield,
   AlertTriangle,
   Eye,
-  Edit3
+  Edit3,
+  Trash2,
+  FileDown,
+  ExternalLink,
+  Star,
+  User
 } from 'lucide-react';
 import { formatDate, formatRelativeTime } from '@/lib/utils/date';
 import { localDB, Report } from '@/lib/services/localDB';
 import { cn } from '@/lib/utils/cn';
+import toast from 'react-hot-toast';
 
-// Progress timeline component
-const ProgressTimeline = ({ status, createdAt, updatedAt }: { 
-  status: Report['status']; 
-  createdAt: string; 
-  updatedAt: string; 
+// Progress timeline component - Home Dashboard Style
+const ProgressTimeline = ({ status, createdAt, updatedAt }: {
+  status: Report['status'];
+  createdAt: string;
+  updatedAt: string;
 }) => {
-  const steps = [
-    {
-      key: 'pending',
-      title: '신고 접수',
-      description: '신고가 접수되었습니다',
-      icon: <FileText className="h-5 w-5" />,
-      date: createdAt
-    },
-    {
-      key: 'processing',
-      title: '검토 진행',
-      description: '전문가가 검토하고 있습니다',
-      icon: <Eye className="h-5 w-5" />,
-      date: status === 'processing' || status === 'resolved' || status === 'rejected' ? updatedAt : null
-    },
-    {
-      key: 'resolved',
-      title: '해결 완료',
-      description: '사건이 해결되었습니다',
-      icon: <CheckCircle2 className="h-5 w-5" />,
-      date: status === 'resolved' ? updatedAt : null
-    }
-  ];
-
-  const getCurrentStepIndex = () => {
-    switch (status) {
-      case 'pending': return 0;
-      case 'processing': return 1;
-      case 'resolved': return 2;
-      case 'rejected': return 1; // Show as stopped at processing
-      default: return 0;
+  // Map report status to home dashboard status
+  const getProgressStatus = (reportStatus: string) => {
+    switch (reportStatus) {
+      case 'pending': return 'received';
+      case 'processing': return 'reviewing';
+      case 'resolved': return 'completed';
+      case 'rejected': return 'received'; // Show as first step for rejected
+      default: return 'received';
     }
   };
 
-  const currentStepIndex = getCurrentStepIndex();
+  const progressStatus = getProgressStatus(status);
 
   return (
     <div className="space-y-6">
-      <h3 className="font-semibold text-lg mb-4">처리 진행 상황</h3>
-      
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-semibold text-xl">처리 진행 상황</span>
+        <span className="text-muted-foreground">
+          {progressStatus === 'received' && '1/4 단계'}
+          {progressStatus === 'reviewing' && '2/4 단계'}
+          {progressStatus === 'consulting' && '3/4 단계'}
+          {progressStatus === 'completed' && '4/4 단계 완료'}
+        </span>
+      </div>
+
+      {/* Progress Steps - Same as Home Dashboard */}
+      <div className="relative">
+        <div className="flex items-center justify-between">
+          {/* Step 1: Received */}
+          <div className="flex flex-col items-center space-y-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              ['received', 'reviewing', 'consulting', 'completed'].includes(progressStatus)
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+            }`}>
+              1
+            </div>
+            <span className="text-xs text-center font-medium">접수완료</span>
+          </div>
+
+          {/* Step 2: Reviewing */}
+          <div className="flex flex-col items-center space-y-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              ['reviewing', 'consulting', 'completed'].includes(progressStatus)
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+            }`}>
+              2
+            </div>
+            <span className="text-xs text-center font-medium">검토중</span>
+          </div>
+
+          {/* Step 3: Consulting */}
+          <div className="flex flex-col items-center space-y-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              ['consulting', 'completed'].includes(progressStatus)
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+            }`}>
+              3
+            </div>
+            <span className="text-xs text-center font-medium">상담진행</span>
+          </div>
+
+          {/* Step 4: Completed */}
+          <div className="flex flex-col items-center space-y-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+              progressStatus === 'completed'
+                ? 'bg-trust-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+            }`}>
+              {progressStatus === 'completed' ? '✓' : '4'}
+            </div>
+            <span className="text-xs text-center font-medium">해결완료</span>
+          </div>
+        </div>
+
+        {/* Progress Line */}
+        <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-200 dark:bg-gray-700 -z-10">
+          <div
+            className="h-full bg-primary-600 transition-all duration-500"
+            style={{
+              width:
+                progressStatus === 'received' ? '0%' :
+                progressStatus === 'reviewing' ? '33.33%' :
+                progressStatus === 'consulting' ? '66.66%' :
+                progressStatus === 'completed' ? '100%' : '0%'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Current Status Description - Same as Home Dashboard */}
+      <div className="p-3 rounded-lg bg-accent/20 border border-accent/40">
+        <p className="text-sm">
+          {status === 'pending' && '📋 신고가 접수되었습니다. 담당자가 검토를 시작합니다.'}
+          {status === 'processing' && '🔍 담당자가 신고 내용을 검토하고 있습니다.'}
+          {status === 'resolved' && '✅ 신고 처리가 완료되었습니다.'}
+          {status === 'rejected' && '❌ 신고가 반려되었습니다. 추가 정보가 필요하거나 재검토가 필요할 수 있습니다.'}
+        </p>
+      </div>
+
+      {/* Additional info for rejected status */}
       {status === 'rejected' && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-4 mb-4">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-4">
           <div className="flex items-center space-x-2">
             <XCircle className="h-5 w-5 text-red-500" />
             <span className="font-medium text-red-700 dark:text-red-400">신고가 반려되었습니다</span>
           </div>
           <p className="text-sm text-red-600 dark:text-red-300 mt-2">
             추가 정보나 증거가 필요하거나, 신고 내용을 재검토해야 할 수 있습니다.
-          </p>
-        </div>
-      )}
-
-      <div className="relative">
-        {steps.map((step, index) => {
-          const isActive = index <= currentStepIndex && status !== 'rejected';
-          const isCompleted = index < currentStepIndex && status !== 'rejected';
-          const isRejected = status === 'rejected' && index === 1;
-          
-          return (
-            <div key={step.key} className="relative flex items-start pb-8 last:pb-0">
-              {/* Connector line */}
-              {index < steps.length - 1 && (
-                <div 
-                  className={cn(
-                    "absolute left-6 top-12 w-0.5 h-16 transition-colors",
-                    isCompleted ? "bg-green-500" : 
-                    isRejected ? "bg-red-500" : 
-                    "bg-gray-200 dark:bg-gray-700"
-                  )}
-                />
-              )}
-              
-              {/* Step icon */}
-              <div 
-                className={cn(
-                  "flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all",
-                  isCompleted ? "bg-green-500 border-green-500 text-white" :
-                  isRejected ? "bg-red-500 border-red-500 text-white" :
-                  isActive ? "bg-primary border-primary text-white animate-pulse" :
-                  "bg-gray-100 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700"
-                )}
-              >
-                {isRejected ? <XCircle className="h-5 w-5" /> : step.icon}
-              </div>
-              
-              {/* Step content */}
-              <div className="flex-1 ml-4">
-                <div className="flex items-center justify-between">
-                  <h4 className={cn(
-                    "font-medium",
-                    isActive || isCompleted ? "text-foreground" : "text-muted-foreground"
-                  )}>
-                    {step.title}
-                    {isRejected && step.key === 'processing' && ' (반려)'}
-                  </h4>
-                  {step.date && (
-                    <span className="text-xs text-muted-foreground">
-                      {formatRelativeTime(step.date)}
-                    </span>
-                  )}
-                </div>
-                <p className={cn(
-                  "text-sm mt-1",
-                  isActive || isCompleted ? "text-muted-foreground" : "text-muted-foreground/60"
-                )}>
-                  {isRejected && step.key === 'processing' 
-                    ? '신고 내용 검토 후 반려 처리되었습니다'
-                    : step.description
-                  }
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Estimated time */}
-      {status === 'pending' && (
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-blue-500" />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              예상 처리 시간: 1-3 영업일
-            </span>
-          </div>
-          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-            전문가가 신고 내용을 검토한 후 빠르게 연락드리겠습니다.
-          </p>
-        </div>
-      )}
-
-      {status === 'processing' && (
-        <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-            <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
-              현재 전문가가 검토 중입니다
-            </span>
-          </div>
-          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-            곧 처리 결과를 안내해드리겠습니다.
           </p>
         </div>
       )}
@@ -191,6 +167,8 @@ export default function ReportDetailPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -202,35 +180,52 @@ export default function ReportDetailPage() {
 
   const getStatusBadge = (status: Report['status']) => {
     const config = {
-      pending: { 
-        variant: 'default' as const, 
-        label: '접수 대기', 
-        icon: <Clock className="h-3 w-3" /> 
+      pending: {
+        variant: 'warning' as const,
+        label: '접수 대기',
+        icon: <Clock className="h-4 w-4" />,
+        bgColor: 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-950/30 dark:to-yellow-950/30',
+        textColor: 'text-amber-800 dark:text-amber-200',
+        borderColor: 'border-amber-300 dark:border-amber-700'
       },
-      processing: { 
-        variant: 'warning' as const, 
-        label: '처리중', 
-        icon: <AlertCircle className="h-3 w-3" /> 
+      processing: {
+        variant: 'protection' as const,
+        label: '처리 중',
+        icon: <AlertCircle className="h-4 w-4" />,
+        bgColor: 'bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-950/30 dark:to-indigo-950/30',
+        textColor: 'text-blue-800 dark:text-blue-200',
+        borderColor: 'border-blue-300 dark:border-blue-700'
       },
-      resolved: { 
-        variant: 'success' as const, 
-        label: '해결 완료', 
-        icon: <CheckCircle2 className="h-3 w-3" /> 
+      resolved: {
+        variant: 'success' as const,
+        label: '해결 완료',
+        icon: <CheckCircle2 className="h-4 w-4" />,
+        bgColor: 'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-950/30 dark:to-emerald-950/30',
+        textColor: 'text-green-800 dark:text-green-200',
+        borderColor: 'border-green-300 dark:border-green-700'
       },
-      rejected: { 
-        variant: 'error' as const, 
-        label: '반려', 
-        icon: <XCircle className="h-3 w-3" /> 
+      rejected: {
+        variant: 'error' as const,
+        label: '반려',
+        icon: <XCircle className="h-4 w-4" />,
+        bgColor: 'bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-950/30 dark:to-pink-950/30',
+        textColor: 'text-red-800 dark:text-red-200',
+        borderColor: 'border-red-300 dark:border-red-700'
       },
     };
-    
-    const { variant, label, icon } = config[status];
-    
+
+    const { variant, label, icon, bgColor, textColor, borderColor } = config[status];
+
     return (
-      <Badge variant={variant} className="flex items-center gap-1">
+      <div className={cn(
+        'inline-flex items-center space-x-2 px-4 py-2 rounded-full border-2 font-semibold text-sm shadow-sm',
+        bgColor,
+        textColor,
+        borderColor
+      )}>
         {icon}
-        {label}
-      </Badge>
+        <span>{label}</span>
+      </div>
     );
   };
 
@@ -245,6 +240,33 @@ export default function ReportDetailPage() {
       other: '기타'
     };
     return labels[type] || type;
+  };
+
+  const handleDelete = async () => {
+    if (!report) return;
+
+    setIsDeleting(true);
+
+    try {
+      // Delete from local database
+      const success = localDB.deleteReport(report.id);
+
+      if (success) {
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        setShowDeleteModal(false);
+        toast.success('신고가 성공적으로 삭제되었습니다');
+        router.push('/reports');
+      } else {
+        throw new Error('삭제 실패');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('신고 삭제 중 오류가 발생했습니다');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (loading) {
@@ -276,120 +298,189 @@ export default function ReportDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/reports')}
-              className="flex items-center"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              목록으로
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{report.title}</h1>
-              <div className="flex items-center space-x-3 mt-2">
-                {getStatusBadge(report.status)}
-                <Badge variant="outline">{getTypeLabel(report.type)}</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {formatRelativeTime(report.createdAt)} 접수
-                </span>
+      <div className="max-w-7xl mx-auto space-y-8 p-6">
+        {/* Enhanced Header Section */}
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-900/30 p-8 shadow-lg">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="flex items-start space-x-6">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/reports')}
+                  className="flex items-center hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800 shadow-sm"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  목록으로
+                </Button>
+
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-3">
+                    {getStatusBadge(report.status)}
+                    <Badge variant="outline" className="bg-white/50">{getTypeLabel(report.type)}</Badge>
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 word-break-keep-all leading-tight">
+                    {report.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatRelativeTime(report.createdAt)} 접수</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4" />
+                      <span>신고번호: #{report.id.slice(0, 8)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  onClick={() => router.push(`/reports/new?edit=${report.id}`)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                  size="sm"
+                >
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  수정
+                </Button>
+                <Button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-red-500 hover:bg-red-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                  size="sm"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  삭제
+                </Button>
+                <Button
+                  className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                  size="sm"
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  PDF 내보내기
+                </Button>
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Edit3 className="h-4 w-4 mr-2" />
-              수정
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              내보내기
-            </Button>
+
+            {/* Progress Timeline Section - Moved here */}
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-6 border border-white/20 dark:border-gray-700/20">
+              <ProgressTimeline
+                status={report.status}
+                createdAt={report.createdAt}
+                updatedAt={report.updatedAt}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Report Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <span>신고 내용</span>
+        <div className="max-w-5xl mx-auto">
+          {/* Main Content - Full Width */}
+          <div className="space-y-8">
+            {/* Enhanced Report Details Card */}
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900">
+              <CardHeader className="border-b border-gray-100 dark:border-gray-800 bg-white/60 dark:bg-gray-800/60 backdrop-blur">
+                <CardTitle className="flex items-center space-x-3 text-xl">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-gray-900 dark:text-gray-100">신고 상세 내용</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">발생 일시</span>
+              <CardContent className="space-y-8 p-8">
+                {/* Enhanced Basic Information Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-xl p-6 border border-blue-100 dark:border-blue-900">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                        <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="font-semibold text-blue-800 dark:text-blue-200">발생 일시</span>
                     </div>
-                    <p className="font-medium">
+                    <p className="text-lg font-medium text-gray-900 dark:text-gray-100 word-break-keep-all">
                       {formatDate(report.incident_date)} {report.incident_time}
                     </p>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">발생 장소</span>
-                    </div>
-                    <p className="font-medium">{report.location}</p>
-                  </div>
-                  
-                  {report.witnesses && (
-                    <div className="space-y-2 md:col-span-2">
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">목격자</span>
+
+                  <div className="bg-green-50/50 dark:bg-green-950/20 rounded-xl p-6 border border-green-100 dark:border-green-900">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                        <MapPin className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
-                      <p className="font-medium">{report.witnesses}</p>
+                      <span className="font-semibold text-green-800 dark:text-green-200">발생 장소</span>
+                    </div>
+                    <p className="text-lg font-medium text-gray-900 dark:text-gray-100 word-break-keep-all">
+                      {report.location}
+                    </p>
+                  </div>
+
+                  {report.witnesses && (
+                    <div className="lg:col-span-2 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl p-6 border border-purple-100 dark:border-purple-900">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                          <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <span className="font-semibold text-purple-800 dark:text-purple-200">목격자</span>
+                      </div>
+                      <p className="text-lg font-medium text-gray-900 dark:text-gray-100 word-break-keep-all">
+                        {report.witnesses}
+                      </p>
                     </div>
                   )}
                 </div>
 
-                {/* Content */}
-                <div className="space-y-3">
-                  <h4 className="font-semibold">상황 설명</h4>
-                  <div className="bg-secondary/30 rounded-lg p-4">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                {/* Enhanced Content Section */}
+                <div className="space-y-4">
+                  <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                    <MessageSquare className="h-5 w-5 text-blue-600" />
+                    <span>상황 설명</span>
+                  </h4>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <p className="text-base leading-relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200 word-break-keep-all line-height-1-6">
                       {report.content}
                     </p>
                   </div>
                 </div>
 
-                {/* Desired Action */}
+                {/* Enhanced Desired Action */}
                 {report.desired_action && (
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">희망 조치사항</h4>
-                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                      <Star className="h-5 w-5 text-amber-600" />
+                      <span>희망 조치사항</span>
+                    </h4>
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-6 shadow-sm">
+                      <p className="text-base leading-relaxed whitespace-pre-wrap text-amber-900 dark:text-amber-100 word-break-keep-all line-height-1-6">
                         {report.desired_action}
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* Files */}
+                {/* Enhanced Files Section */}
                 {report.fileNames && report.fileNames.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">첨부 파일</h4>
-                    <div className="space-y-2">
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                      <FileText className="h-5 w-5 text-green-600" />
+                      <span>첨부 파일</span>
+                      <Badge variant="outline" className="ml-2">{report.fileNames.length}개</Badge>
+                    </h4>
+                    <div className="grid gap-3">
                       {report.fileNames.map((fileName, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <FileText className="h-5 w-5 text-primary" />
-                            <span className="text-sm font-medium">{fileName}</span>
+                        <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex items-center space-x-4">
+                            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                              <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-900 dark:text-gray-100 word-break-keep-all">{fileName}</span>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">증거 자료</p>
+                            </div>
                           </div>
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4" />
+                          <Button
+                            size="sm"
+                            className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            다운로드
                           </Button>
                         </div>
                       ))}
@@ -399,15 +490,17 @@ export default function ReportDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Comments Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                  <span>소통 내역</span>
+            {/* Enhanced Communication Section */}
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900">
+              <CardHeader className="border-b border-gray-100 dark:border-gray-800 bg-white/60 dark:bg-gray-800/60 backdrop-blur">
+                <CardTitle className="flex items-center space-x-3 text-xl">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-gray-900 dark:text-gray-100">전문가 소통 내역</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 p-8">
                 {/* Sample expert comment for demo */}
                 {(report.status === 'processing' || report.status === 'resolved') && (
                   <div className="border-l-4 border-l-primary pl-4 py-2">
@@ -441,7 +534,10 @@ export default function ReportDetailPage() {
                     className="resize-none"
                   />
                   <div className="flex justify-end">
-                    <Button size="sm">
+                    <Button
+                      size="sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                    >
                       <Send className="h-4 w-4 mr-2" />
                       메시지 전송
                     </Button>
@@ -451,71 +547,61 @@ export default function ReportDetailPage() {
             </Card>
           </div>
 
-          {/* Right Column - Progress & Actions */}
-          <div className="space-y-6">
-            {/* Progress Timeline */}
-            <Card>
-              <CardContent className="pt-6">
-                <ProgressTimeline 
-                  status={report.status}
-                  createdAt={report.createdAt}
-                  updatedAt={report.updatedAt}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">빠른 실행</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
-                  <Phone className="h-4 w-4 mr-2" />
-                  긴급 상담 요청
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Mail className="h-4 w-4 mr-2" />
-                  이메일 문의
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Shield className="h-4 w-4 mr-2" />
-                  법률 자문 요청
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  추가 신고
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Contact Info */}
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-900">
-              <CardHeader>
-                <CardTitle className="text-lg text-blue-900 dark:text-blue-100">
-                  24시간 지원센터
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Phone className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">1588-0119</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Mail className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">help@kk119.kr</span>
-                  </div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-3">
-                    긴급한 상황이거나 추가 지원이 필요하시면 
-                    언제든 연락해 주세요.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-auto shadow-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-950/30 rounded-full flex items-center justify-center">
+                <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  신고 삭제
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  이 작업은 되돌릴 수 없습니다
+                </p>
+              </div>
+            </div>
+
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              정말로 이 신고를 삭제하시겠습니까?<br />
+              <span className="font-medium">"{report.title}"</span>
+            </p>
+
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border-0 shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    삭제 중...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    삭제
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

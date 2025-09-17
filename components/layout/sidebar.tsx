@@ -44,14 +44,12 @@ const menuItems: MenuItems = {
       description: '대시보드 개요',
       badge: null 
     },
-    { 
-      href: '/reports/new', 
-      label: '신고 접수', 
-      icon: FileText, 
+    {
+      href: '/reports/new',
+      label: '신고 접수',
+      icon: FileText,
       description: '교권 침해 신고하기',
-      badge: '긴급',
-      badgeColor: 'urgent-modern',
-      isUrgent: true
+      badge: null
     },
     { 
       href: '/reports', 

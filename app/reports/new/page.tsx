@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,9 +104,11 @@ const Tooltip = ({ children, content }: { children: React.ReactNode; content: st
   );
 };
 
-export default function NewReportPage() {
+function NewReportPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useStore();
+  const editId = searchParams.get('edit');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
@@ -123,6 +125,26 @@ export default function NewReportPage() {
   });
 
   const steps = ['기본 정보', '사건 상세', '증거 자료', '확인 및 제출'];
+
+  // Load existing data for editing
+  useEffect(() => {
+    if (editId) {
+      const existingReport = localDB.getReportById(editId);
+      if (existingReport) {
+        setFormData({
+          type: existingReport.type,
+          title: existingReport.title,
+          incident_date: existingReport.incident_date,
+          incident_time: existingReport.incident_time,
+          location: existingReport.location,
+          witnesses: existingReport.witnesses || '',
+          content: existingReport.content,
+          desired_action: existingReport.desired_action || '',
+          files: [] // Reset files for editing
+        });
+      }
+    }
+  }, [editId]);
 
   // Calculate form completion percentage
   const calculateProgress = () => {
@@ -212,7 +234,9 @@ export default function NewReportPage() {
         fileNames: formData.files.map(file => file.name) // Store only file names
       };
 
-      const savedReport = localDB.createReport(reportData);
+      const savedReport = editId
+        ? localDB.updateReport(editId, reportData)
+        : localDB.createReport(reportData);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -220,10 +244,10 @@ export default function NewReportPage() {
       // Clear draft after successful submission
       localStorage.removeItem('reportDraft');
       
-      toast.success('신고가 성공적으로 접수되었습니다');
+      toast.success(editId ? '신고 내역이 성공적으로 수정되었습니다' : '신고가 성공적으로 접수되었습니다');
       router.push('/reports');
     } catch (error) {
-      toast.error('신고 접수 중 오류가 발생했습니다');
+      toast.error(editId ? '신고 수정 중 오류가 발생했습니다' : '신고 접수 중 오류가 발생했습니다');
     } finally {
       setIsSubmitting(false);
     }
@@ -293,9 +317,11 @@ export default function NewReportPage() {
                 <Shield className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">교권 침해 신고하기</h1>
+                <h1 className="text-3xl font-bold">
+                  {editId ? '신고 내역 수정' : '교권 침해 신고하기'}
+                </h1>
                 <p className="text-muted-foreground mt-1">
-                  신고 내용은 철저히 보호되며, 전문가가 검토합니다
+                  {editId ? '기존 신고 내역을 수정할 수 있습니다' : '신고 내용은 철저히 보호되며, 전문가가 검토합니다'}
                 </p>
               </div>
             </div>
@@ -805,12 +831,12 @@ export default function NewReportPage() {
                   {isSubmitting ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
-                      제출 중...
+                      {editId ? '수정 중...' : '제출 중...'}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="mr-2 h-4 w-4" />
-                      제출하기
+                      {editId ? '수정하기' : '제출하기'}
                     </>
                   )}
                 </Button>
@@ -820,5 +846,19 @@ export default function NewReportPage() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function NewReportPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    }>
+      <NewReportPageContent />
+    </Suspense>
   );
 }

@@ -87,6 +87,7 @@ export default function RichTextEditor({
       Highlight.configure({ multicolor: true }),
     ],
     content,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: "prose prose-sm sm:prose-base max-w-none focus:outline-none h-[400px] overflow-y-auto p-4",

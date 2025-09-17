@@ -18,8 +18,6 @@ import {
   ChevronRight,
   AlertTriangle,
   BookOpen,
-  HelpCircle,
-  Star,
   TrendingUp
 } from 'lucide-react';
 
@@ -170,20 +168,6 @@ const menuItems: MenuItems = {
   ],
 };
 
-const quickActions = [
-  {
-    label: '도움말',
-    icon: HelpCircle,
-    href: '/help',
-    color: 'protection'
-  },
-  {
-    label: '평가하기',
-    icon: Star,
-    href: '/feedback',
-    color: 'primary'
-  }
-];
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -293,34 +277,6 @@ export function Sidebar() {
               );
             })}
 
-            {/* Quick Actions */}
-            <div className="pt-6 mt-6 border-t border-border/40">
-              <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                빠른 실행
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {quickActions.map((action) => {
-                  const Icon = action.icon;
-                  return (
-                    <Link
-                      key={action.href}
-                      href={action.href}
-                      className="flex flex-col items-center p-3 rounded-xl hover:bg-accent/50 transition-all duration-200 group"
-                    >
-                      <div className={cn(
-                        'p-2 rounded-lg mb-2 transition-all duration-200',
-                        action.color === 'protection' 
-                          ? 'bg-protection-100 text-protection-600 group-hover:bg-protection-200 dark:bg-protection-950/50 dark:text-protection-400'
-                          : 'bg-primary-100 text-primary-600 group-hover:bg-primary-200 dark:bg-primary-950/50 dark:text-primary-400'
-                      )}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <span className="text-xs font-medium">{action.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
           </nav>
 
           {/* Enhanced Footer */}

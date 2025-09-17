@@ -14,7 +14,6 @@ import {
   LogOut,
   Settings,
   Shield,
-  Search,
   ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
@@ -66,19 +65,6 @@ export function Header() {
           </div>
         </Link>
 
-        {/* Search Bar (Desktop) */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="신고, 상담, 커뮤니티 검색..."
-              className="input-modern pl-10 w-full"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 md:flex-none" />
 
         {/* Right Section */}
         <div className="flex items-center space-x-3 ml-auto">

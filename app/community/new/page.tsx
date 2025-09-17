@@ -31,6 +31,7 @@ import {
   Upload,
   BookOpen,
 } from "lucide-react";
+import { toast } from 'react-hot-toast';
 
 // Dynamically import the editor to avoid SSR issues
 const RichTextEditor = dynamic(
@@ -90,10 +91,10 @@ export default function NewPostPage() {
         options,
       };
       localStorage.setItem("community_draft", JSON.stringify(draftData));
-      alert("임시 저장되었습니다.");
+      toast.success("임시 저장되었습니다.");
     } catch (error) {
       console.error("Failed to save draft:", error);
-      alert("임시 저장에 실패했습니다.");
+      toast.error("임시 저장에 실패했습니다.");
     } finally {
       setIsSavingDraft(false);
     }
@@ -113,13 +114,13 @@ export default function NewPostPage() {
           is_anonymous: false,
           is_notice: false,
         });
-        alert("임시 저장된 글을 불러왔습니다.");
+        toast.success("임시 저장된 글을 불러왔습니다.");
       } catch (error) {
         console.error("Failed to load draft:", error);
-        alert("임시 저장된 글을 불러오는데 실패했습니다.");
+        toast.error("임시 저장된 글을 불러오는데 실패했습니다.");
       }
     } else {
-      alert("임시 저장된 글이 없습니다.");
+      toast.error("임시 저장된 글이 없습니다.");
     }
   }, []);
 
@@ -127,17 +128,17 @@ export default function NewPostPage() {
     e.preventDefault();
 
     if (!category) {
-      alert("카테고리를 선택해주세요.");
+      toast.error("카테고리를 선택해주세요.");
       return;
     }
 
     if (!title.trim()) {
-      alert("제목을 입력해주세요.");
+      toast.error("제목을 입력해주세요.");
       return;
     }
 
     if (!content.trim() || content === "<p></p>") {
-      alert("내용을 입력해주세요.");
+      toast.error("내용을 입력해주세요.");
       return;
     }
 
@@ -177,10 +178,11 @@ export default function NewPostPage() {
       // Clear draft after successful submission
       localStorage.removeItem("community_draft");
 
+      toast.success("게시글이 성공적으로 작성되었습니다.");
       router.push(`/community/${newPost.id}`);
     } catch (error) {
       console.error("Error creating post:", error);
-      alert("글 작성에 실패했습니다. 다시 시도해주세요.");
+      toast.error("글 작성에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
     }

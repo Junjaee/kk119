@@ -18,7 +18,7 @@ import {
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { localDB, CommunityPost } from '@/lib/services/localDB';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 
 const categories = [
   { value: 'general', label: '일반' },

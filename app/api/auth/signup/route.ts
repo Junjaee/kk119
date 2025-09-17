@@ -5,7 +5,7 @@ import { auth, validateEmail, validatePassword, validatePhone } from '@/lib/auth
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, confirmPassword, name, school, position, phone } = body;
+    const { email, password, confirmPassword, name, school, position, phone, associations } = body;
 
     // Validation
     if (!email || !password || !confirmPassword || !name) {
@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
       name,
       school: school || null,
       position: position || null,
-      phone: phone || null
+      phone: phone || null,
+      associations: associations && associations.length > 0 ? associations : []
     });
 
     // Generate session token

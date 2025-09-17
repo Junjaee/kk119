@@ -58,16 +58,16 @@ RUN mkdir -p /app/.next/cache && \
 
 USER nextjs
 
-# Expose port 5000
-EXPOSE 5000
+# Expose port 4000
+EXPOSE 4000
 
 # Set port and host environment variables
-ENV PORT 5000
+ENV PORT 4000
 ENV HOSTNAME "0.0.0.0"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"
+  CMD node -e "require('http').get('http://localhost:4000/api/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"
 
 # Start the application with proper signal handling
 ENTRYPOINT ["dumb-init", "--"]

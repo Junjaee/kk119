@@ -59,10 +59,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
   
-  // Redirect to home if accessing login/signup with token
-  if ((pathname === '/login' || pathname === '/signup') && token) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
+  // Redirect to home if accessing login/signup with token (temporarily disabled for testing)
+  // if ((pathname === '/login' || pathname === '/signup') && token) {
+  //   return NextResponse.redirect(new URL('/', request.url));
+  // }
   
   // For admin paths, we'll need to verify admin status
   // This would require decoding the JWT or checking the session

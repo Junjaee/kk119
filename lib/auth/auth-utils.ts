@@ -75,9 +75,6 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
     errors.push('비밀번호는 최소 8자 이상이어야 합니다.');
   }
   
-  if (!/[A-Z]/.test(password)) {
-    errors.push('비밀번호는 대문자를 포함해야 합니다.');
-  }
   
   if (!/[a-z]/.test(password)) {
     errors.push('비밀번호는 소문자를 포함해야 합니다.');

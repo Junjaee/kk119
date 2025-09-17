@@ -11,7 +11,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'default', asChild = false, loading = false, children, disabled, ...props }, ref) => {
     const Comp = asChild ? 'span' : 'button';
-    
+
     const variantStyles = {
       default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md',
       primary: 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg hover:shadow-xl hover:from-primary-600 hover:to-primary-700 transform hover:-translate-y-0.5',
@@ -23,7 +23,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       urgent: 'bg-gradient-to-r from-urgent-500 to-urgent-600 text-white shadow-lg hover:shadow-xl hover:from-urgent-600 hover:to-urgent-700 transform hover:-translate-y-0.5 animate-pulse',
       trust: 'bg-gradient-to-r from-trust-500 to-trust-600 text-white shadow-lg hover:shadow-xl hover:from-trust-600 hover:to-trust-700 transform hover:-translate-y-0.5',
     };
-    
+
     const sizeStyles = {
       xs: 'h-7 px-2 py-1 text-xs rounded-md',
       sm: 'h-8 px-3 py-1.5 text-xs rounded-lg',
@@ -31,17 +31,29 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'h-12 px-8 py-3 text-base rounded-xl',
       icon: 'h-10 w-10 rounded-xl',
     };
-    
+
+    const baseStyles = cn(
+      'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+      'hover:scale-[1.02] active:scale-[0.98]',
+      variantStyles[variant],
+      sizeStyles[size],
+      loading && 'pointer-events-none',
+      className
+    );
+
+    if (asChild) {
+      return (
+        <span className={baseStyles}>
+          {React.cloneElement(children as React.ReactElement, {
+            className: cn((children as React.ReactElement).props?.className, 'w-full h-full flex items-center justify-center')
+          })}
+        </span>
+      );
+    }
+
     return (
       <button
-        className={cn(
-          'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-          'hover:scale-[1.02] active:scale-[0.98]',
-          variantStyles[variant],
-          sizeStyles[size],
-          loading && 'pointer-events-none',
-          className
-        )}
+        className={baseStyles}
         ref={ref}
         disabled={disabled || loading}
         {...props}

@@ -220,25 +220,8 @@ export function Sidebar() {
             </button>
           </div>
 
-          {/* User Role Banner */}
-          <div className="px-6 py-4 border-b border-border/40">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="font-bold text-lg">교권119</h2>
-                <p className="text-xs text-muted-foreground">
-                  {userRole === 'admin' ? '관리자 패널' : 
-                   userRole === 'lawyer' ? '변호사 패널' : 
-                   '교사 패널'}
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Enhanced Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 scrollbar-modern overflow-y-auto">
+          <nav className="flex-1 px-4 pt-2 lg:pt-6 space-y-2 scrollbar-modern overflow-y-auto">
             {items.map((item) => {
               const Icon = item.icon;
               // More precise active state check to prevent false positives

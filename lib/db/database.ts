@@ -28,6 +28,7 @@ export function initDatabase() {
       school TEXT,
       position TEXT,
       phone TEXT,
+      association TEXT,
       is_verified BOOLEAN DEFAULT 0,
       is_admin BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -72,6 +73,36 @@ export function initDatabase() {
     )
   `);
 
+  // Resources table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS resources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      category TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      file_size INTEGER NOT NULL,
+      file_type TEXT NOT NULL,
+      uploaded_by INTEGER NOT NULL,
+      download_count INTEGER DEFAULT 0,
+      is_approved BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Add association column if it doesn't exist (migration)
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN association TEXT`);
+  } catch (error: any) {
+    // Column already exists or other error - ignore
+    if (!error.message.includes('duplicate column name')) {
+      console.warn('Migration warning:', error.message);
+    }
+  }
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -79,6 +110,9 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_verification_tokens_token ON verification_tokens(token);
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+    CREATE INDEX IF NOT EXISTS idx_resources_category ON resources(category);
+    CREATE INDEX IF NOT EXISTS idx_resources_uploaded_by ON resources(uploaded_by);
+    CREATE INDEX IF NOT EXISTS idx_resources_created_at ON resources(created_at);
   `);
 
   console.log('Database initialized successfully');
@@ -93,12 +127,13 @@ export const userDb = {
     school?: string;
     position?: string;
     phone?: string;
+    associations?: string[];
   }) => {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     
     const stmt = db.prepare(`
-      INSERT INTO users (email, password, name, school, position, phone)
-      VALUES (@email, @password, @name, @school, @position, @phone)
+      INSERT INTO users (email, password, name, school, position, phone, association)
+      VALUES (@email, @password, @name, @school, @position, @phone, @association)
     `);
     
     try {
@@ -108,7 +143,8 @@ export const userDb = {
         name: userData.name,
         school: userData.school || null,
         position: userData.position || null,
-        phone: userData.phone || null
+        phone: userData.phone || null,
+        association: userData.associations ? JSON.stringify(userData.associations) : null
       });
       
       return { id: result.lastInsertRowid, ...userData };
@@ -263,6 +299,109 @@ export const tokenDb = {
   deletePasswordResetToken: (token: string) => {
     const stmt = db.prepare('DELETE FROM password_reset_tokens WHERE token = ?');
     return stmt.run(token);
+  }
+};
+
+// Resource operations
+export const resourceDb = {
+  create: (resourceData: {
+    title: string;
+    description?: string;
+    category: string;
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    fileType: string;
+    uploadedBy: number;
+  }) => {
+    const stmt = db.prepare(`
+      INSERT INTO resources (title, description, category, file_name, file_path, file_size, file_type, uploaded_by)
+      VALUES (@title, @description, @category, @fileName, @filePath, @fileSize, @fileType, @uploadedBy)
+    `);
+
+    const result = stmt.run({
+      title: resourceData.title,
+      description: resourceData.description || null,
+      category: resourceData.category,
+      fileName: resourceData.fileName,
+      filePath: resourceData.filePath,
+      fileSize: resourceData.fileSize,
+      fileType: resourceData.fileType,
+      uploadedBy: resourceData.uploadedBy
+    });
+
+    return { id: result.lastInsertRowid, ...resourceData };
+  },
+
+  findAll: (filters?: { category?: string; search?: string; limit?: number; offset?: number }) => {
+    let query = `
+      SELECT r.*, u.name as uploader_name
+      FROM resources r
+      JOIN users u ON r.uploaded_by = u.id
+      WHERE r.is_approved = 1
+    `;
+    const params: any[] = [];
+
+    if (filters?.category) {
+      query += ' AND r.category = ?';
+      params.push(filters.category);
+    }
+
+    if (filters?.search) {
+      query += ' AND (r.title LIKE ? OR r.description LIKE ?)';
+      params.push(`%${filters.search}%`, `%${filters.search}%`);
+    }
+
+    query += ' ORDER BY r.created_at DESC';
+
+    if (filters?.limit) {
+      query += ' LIMIT ?';
+      params.push(filters.limit);
+
+      if (filters?.offset) {
+        query += ' OFFSET ?';
+        params.push(filters.offset);
+      }
+    }
+
+    const stmt = db.prepare(query);
+    return stmt.all(...params);
+  },
+
+  findById: (id: number) => {
+    const stmt = db.prepare(`
+      SELECT r.*, u.name as uploader_name
+      FROM resources r
+      JOIN users u ON r.uploaded_by = u.id
+      WHERE r.id = ? AND r.is_approved = 1
+    `);
+    return stmt.get(id);
+  },
+
+  incrementDownloadCount: (id: number) => {
+    const stmt = db.prepare('UPDATE resources SET download_count = download_count + 1 WHERE id = ?');
+    return stmt.run(id);
+  },
+
+  findByUser: (userId: number) => {
+    const stmt = db.prepare(`
+      SELECT r.*, u.name as uploader_name
+      FROM resources r
+      JOIN users u ON r.uploaded_by = u.id
+      WHERE r.uploaded_by = ?
+      ORDER BY r.created_at DESC
+    `);
+    return stmt.all(userId);
+  },
+
+  delete: (id: number, userId: number) => {
+    const stmt = db.prepare('DELETE FROM resources WHERE id = ? AND uploaded_by = ?');
+    return stmt.run(id, userId);
+  },
+
+  getCategories: () => {
+    const stmt = db.prepare('SELECT DISTINCT category FROM resources WHERE is_approved = 1 ORDER BY category');
+    return stmt.all();
   }
 };
 

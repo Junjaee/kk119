@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   User, 
   Mail, 
@@ -19,9 +20,12 @@ import {
   Eye,
   EyeOff,
   CheckCircle,
-  Shield
+  Shield,
+  Plus,
+  Minus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { associationUtils } from '@/lib/data/associations';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -37,20 +41,59 @@ export default function SignUpPage() {
     name: '',
     school: '',
     position: '',
-    phone: ''
+    phone: '',
+    associations: [''] // 배열로 변경하고 빈 문자열 하나로 시작
   });
 
   const [passwordStrength, setPasswordStrength] = useState({
-    hasUpperCase: false,
     hasLowerCase: false,
     hasNumber: false,
     hasSpecialChar: false,
     hasMinLength: false
   });
 
+  // 협회 관리 함수들
+  const addAssociation = () => {
+    setFormData(prev => ({
+      ...prev,
+      associations: [...prev.associations, '']
+    }));
+  };
+
+  const removeAssociation = (index: number) => {
+    if (formData.associations.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        associations: prev.associations.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const updateAssociation = (index: number, value: string) => {
+    // 중복 검사: 다른 인덱스에서 이미 선택된 협회인지 확인
+    const isDuplicate = formData.associations.some((assoc, i) => i !== index && assoc === value && value !== '');
+
+    if (isDuplicate && value !== '') {
+      toast.error('이미 선택된 협회입니다. 다른 협회를 선택해주세요.');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      associations: prev.associations.map((assoc, i) => i === index ? value : assoc)
+    }));
+  };
+
+  // 특정 인덱스에서 선택 가능한 협회 목록 반환 (이미 선택된 협회 제외)
+  const getAvailableAssociations = (currentIndex: number) => {
+    const allAssociations = associationUtils.getActiveAssociations();
+    const selectedAssociations = formData.associations.filter((assoc, i) => i !== currentIndex && assoc !== '');
+
+    return allAssociations.filter(assoc => !selectedAssociations.includes(assoc.id));
+  };
+
   const checkPasswordStrength = (password: string) => {
     setPasswordStrength({
-      hasUpperCase: /[A-Z]/.test(password),
       hasLowerCase: /[a-z]/.test(password),
       hasNumber: /[0-9]/.test(password),
       hasSpecialChar: /[!@#$%^&*]/.test(password),
@@ -119,10 +162,16 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
+      // 빈 협회를 제거하고 API에 전송할 데이터 준비
+      const submitData = {
+        ...formData,
+        associations: formData.associations.filter(assoc => assoc.trim() !== '')
+      };
+
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       const data = await response.json();
@@ -224,7 +273,6 @@ export default function SignUpPage() {
                     <div className="space-y-1">
                       {[
                         { check: passwordStrength.hasMinLength, text: '8자 이상' },
-                        { check: passwordStrength.hasUpperCase, text: '대문자 포함' },
                         { check: passwordStrength.hasLowerCase, text: '소문자 포함' },
                         { check: passwordStrength.hasNumber, text: '숫자 포함' },
                         { check: passwordStrength.hasSpecialChar, text: '특수문자(!@#$%^&*) 포함' }
@@ -359,6 +407,71 @@ export default function SignUpPage() {
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.phone}
+                  </p>
+                )}
+              </div>
+
+              {/* Associations */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    소속 협회
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addAssociation}
+                    disabled={isLoading}
+                    className="text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    협회 추가
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {formData.associations.map((association, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Select
+                          value={association}
+                          onValueChange={(value) => updateAssociation(index, value)}
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger className={errors.associations ? 'border-red-500' : ''}>
+                            <SelectValue placeholder="협회를 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getAvailableAssociations(index).map((assoc) => (
+                              <SelectItem key={assoc.id} value={assoc.id}>
+                                {assoc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {formData.associations.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeAssociation(index)}
+                          disabled={isLoading}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {errors.associations && (
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.associations}
                   </p>
                 )}
               </div>

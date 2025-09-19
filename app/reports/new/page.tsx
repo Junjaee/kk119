@@ -146,12 +146,6 @@ function NewReportPageContent() {
     }
   }, [editId]);
 
-  // Calculate form completion percentage
-  const calculateProgress = () => {
-    const fields = ['type', 'title', 'incident_date', 'incident_time', 'location', 'content'];
-    const filledFields = fields.filter(field => formData[field as keyof typeof formData]);
-    return Math.round((filledFields.length / fields.length) * 100);
-  };
 
   // Validate current step
   const validateStep = (step: number) => {
@@ -325,19 +319,8 @@ function NewReportPageContent() {
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-primary">{calculateProgress()}%</div>
-              <div className="text-xs text-muted-foreground">작성 완료</div>
-            </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-primary to-primary-600 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${calculateProgress()}%` }}
-            />
-          </div>
         </div>
 
         {/* Step Indicator */}

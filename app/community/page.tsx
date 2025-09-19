@@ -238,11 +238,11 @@ export default function CommunityPage() {
 
             return (
               <Card key={post.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-8">
+                <CardContent className="px-8 pt-4 pb-8">
                   <div className="space-y-4">
                     {/* Header */}
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-semibold hover:text-primary">
                             <Link href={`/community/${post.id}`}>

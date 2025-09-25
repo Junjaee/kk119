@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  MessageSquare, 
+import {
+  MessageSquare,
   User,
   Calendar,
   Shield,
@@ -18,11 +18,14 @@ import {
   Send
 } from 'lucide-react';
 import { formatDate, formatRelativeTime } from '@/lib/utils/date';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import toast from 'react-hot-toast';
 
-// Mock data for consults
+// Demo mode toggle - true로 설정하면 Mock 데이터 사용
+const USE_MOCK_DATA = true;
+
+// Mock data for demonstration
 const mockConsults = [
   {
     id: '1',
@@ -92,17 +95,89 @@ const mockConsults = [
 
 export default function ConsultPage() {
   const { user } = useStore();
+  const [consults, setConsults] = useState<any[]>([]);
+  const [stats, setStats] = useState({ total: 0, answered: 0, pending: 0 });
+  const [loading, setLoading] = useState(true);
   const [expandedConsult, setExpandedConsult] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  const handleReply = (consultId: string) => {
+  useEffect(() => {
+    fetchConsults();
+  }, []);
+
+  const fetchConsults = async () => {
+    try {
+      if (USE_MOCK_DATA) {
+        // Mock 데이터 사용
+        setConsults(mockConsults);
+        setStats({
+          total: mockConsults.length,
+          answered: mockConsults.filter(c => c.status === 'answered').length,
+          pending: mockConsults.filter(c => c.status === 'pending' || c.status === 'reviewing').length
+        });
+      } else {
+        // API 호출
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/consult', {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setConsults(data.data.consults);
+          setStats(data.data.stats);
+        } else {
+          toast.error('상담 목록을 불러오는데 실패했습니다');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching consults:', error);
+      toast.error('상담 목록을 불러오는데 실패했습니다');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReply = async (consultId: string) => {
     if (!replyContent.trim()) {
       toast.error('내용을 입력해주세요');
       return;
     }
-    
-    toast.success('추가 질문이 등록되었습니다');
+
+    try {
+      if (USE_MOCK_DATA) {
+        // Mock 모드에서는 단순히 성공 메시지만 표시
+        toast.success('추가 질문이 등록되었습니다');
+      } else {
+        // API 호출
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/consult/reply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({
+            consult_id: consultId,
+            content: replyContent
+          })
+        });
+
+        if (response.ok) {
+          toast.success('추가 질문이 등록되었습니다');
+          fetchConsults(); // 목록 새로고침
+        } else {
+          toast.error('추가 질문 등록에 실패했습니다');
+        }
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast.error('추가 질문 등록에 실패했습니다');
+    }
+
     setReplyContent('');
     setReplyingTo(null);
   };
@@ -132,7 +207,14 @@ export default function ConsultPage() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">변호사 상담</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">변호사 상담</h1>
+            {USE_MOCK_DATA && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                데모 모드
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground mt-2">
             전문 변호사가 교권 침해 사건에 대한 법률 자문을 제공합니다
           </p>
@@ -146,7 +228,7 @@ export default function ConsultPage() {
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">5</div>
+              <div className="text-2xl font-bold">{stats.total}</div>
               <p className="text-xs text-muted-foreground">
                 신고 건수 대비 상담
               </p>
@@ -159,7 +241,7 @@ export default function ConsultPage() {
               <CheckCircle className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{stats.answered}</div>
               <p className="text-xs text-muted-foreground">
                 24시간 내 답변
               </p>
@@ -172,7 +254,7 @@ export default function ConsultPage() {
               <Clock className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2</div>
+              <div className="text-2xl font-bold">{stats.pending}</div>
               <p className="text-xs text-muted-foreground">
                 답변 대기중
               </p>
@@ -182,7 +264,14 @@ export default function ConsultPage() {
 
         {/* Consults List */}
         <div className="space-y-6">
-          {mockConsults.map((consult) => (
+          {loading ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-pulse" />
+                <p className="text-muted-foreground">상담 내역을 불러오는 중...</p>
+              </CardContent>
+            </Card>
+          ) : consults.map((consult) => (
             <Card key={consult.id} className="overflow-hidden">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -296,7 +385,7 @@ export default function ConsultPage() {
             </Card>
           ))}
 
-          {mockConsults.length === 0 && (
+          {!loading && consults.length === 0 && (
             <Card>
               <CardContent className="text-center py-12">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

@@ -103,9 +103,9 @@ export default function ReportsPage() {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      parent: '학부모 민원',
-      student: '학생 폭력',
-      verbal: '욕설 및 폭언',
+      verbal: '학부모 민원',
+      violence: '학생 폭력',
+      sexual: '욕설 및 폭언',
       defamation: '명예훼손',
       harassment: '성희롱',
       threat: '협박',
@@ -116,12 +116,18 @@ export default function ReportsPage() {
 
   const getTypeIcon = (type: string) => {
     switch(type) {
-      case 'parent':
+      case 'verbal':
         return <FileWarning className="h-4 w-4 text-yellow-500" />;
-      case 'student':
+      case 'violence':
         return <FileWarning className="h-4 w-4 text-red-500" />;
+      case 'sexual':
+        return <FileWarning className="h-4 w-4 text-orange-500" />;
       case 'defamation':
         return <FileWarning className="h-4 w-4 text-purple-500" />;
+      case 'harassment':
+        return <FileWarning className="h-4 w-4 text-pink-500" />;
+      case 'threat':
+        return <FileWarning className="h-4 w-4 text-red-600" />;
       default:
         return <FileText className="h-4 w-4 text-gray-500" />;
     }
@@ -208,9 +214,9 @@ export default function ReportsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">모든 유형</SelectItem>
-                  <SelectItem value="parent">학부모 민원</SelectItem>
-                  <SelectItem value="student">학생 폭력</SelectItem>
-                  <SelectItem value="verbal">욕설 및 폭언</SelectItem>
+                  <SelectItem value="verbal">학부모 민원</SelectItem>
+                  <SelectItem value="violence">학생 폭력</SelectItem>
+                  <SelectItem value="sexual">욕설 및 폭언</SelectItem>
                   <SelectItem value="defamation">명예훼손</SelectItem>
                   <SelectItem value="harassment">성희롱</SelectItem>
                   <SelectItem value="threat">협박</SelectItem>

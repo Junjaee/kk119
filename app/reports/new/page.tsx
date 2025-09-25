@@ -363,9 +363,9 @@ function NewReportPageContent() {
                       <SelectValue placeholder="선택하세요" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="parent">학부모 민원</SelectItem>
-                      <SelectItem value="student">학생 폭력</SelectItem>
-                      <SelectItem value="verbal">욕설 및 폭언</SelectItem>
+                      <SelectItem value="verbal">학부모 민원</SelectItem>
+                      <SelectItem value="violence">학생 폭력</SelectItem>
+                      <SelectItem value="sexual">욕설 및 폭언</SelectItem>
                       <SelectItem value="defamation">명예훼손</SelectItem>
                       <SelectItem value="harassment">성희롱</SelectItem>
                       <SelectItem value="threat">협박</SelectItem>

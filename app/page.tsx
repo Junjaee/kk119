@@ -134,9 +134,10 @@ export default function HomePage() {
       received: 'status-received',
       reviewing: 'status-reviewing',
       consulting: 'status-consulting',
+      answered: 'status-consulting',
       completed: 'status-completed',
     };
-    
+
     return statusClasses[status] || 'status-received';
   };
 
@@ -145,9 +146,10 @@ export default function HomePage() {
       received: '접수완료',
       reviewing: '검토중',
       consulting: '상담진행',
+      answered: '답변완료',
       completed: '해결완료',
     };
-    
+
     return labels[status] || status;
   };
 

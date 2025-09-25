@@ -82,40 +82,11 @@ const menuItems: MenuItems = {
     },
   ],
   lawyer: [
-    { 
-      href: '/lawyer', 
-      label: '대시보드', 
-      icon: Home, 
-      description: '변호사 전용 대시보드',
-      badge: null
-    },
-    { 
-      href: '/lawyer/cases', 
-      label: '사건 관리', 
-      icon: Briefcase, 
-      description: '담당 사건 관리',
-      badge: '12건'
-    },
-    { 
-      href: '/lawyer/consults', 
-      label: '상담 관리', 
-      icon: MessageSquare, 
-      description: '상담 일정 및 내역',
-      badge: '신규',
-      badgeColor: 'protection-modern'
-    },
-    { 
-      href: '/community', 
-      label: '커뮤니티', 
-      icon: Users, 
-      description: '교사 커뮤니티 참여',
-      badge: null
-    },
-    { 
-      href: '/lawyer/stats', 
-      label: '통계', 
-      icon: BarChart3, 
-      description: '성과 및 분석',
+    {
+      href: '/lawyer',
+      label: '상담 센터',
+      icon: Home,
+      description: '상담 선택 및 관리',
       badge: null
     },
   ],

@@ -27,6 +27,7 @@ const protectedPaths = [
   '/reports',
   '/community/new',
   '/lawyer',
+  '/lawyer-admin',
   '/consult'
 ];
 

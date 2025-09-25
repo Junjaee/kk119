@@ -46,6 +46,7 @@ export default function ReportDetailPage() {
   const [comment, setComment] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRequestingConsult, setIsRequestingConsult] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -108,9 +109,9 @@ export default function ReportDetailPage() {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      parent: '학부모 민원',
-      student: '학생 폭력',
-      verbal: '욕설 및 폭언',
+      verbal: '학부모 민원',
+      violence: '학생 폭력',
+      sexual: '욕설 및 폭언',
       defamation: '명예훼손',
       harassment: '성희롱',
       threat: '협박',
@@ -143,6 +144,44 @@ export default function ReportDetailPage() {
       toast.error('신고 삭제 중 오류가 발생했습니다');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleRequestConsult = async () => {
+    if (!report) return;
+
+    setIsRequestingConsult(true);
+
+    try {
+      // Create consultation from report
+      const response = await fetch('/api/consult', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          title: report.title,
+          report_type: report.type,
+          incident_date: report.incident_date,
+          report_content: report.content,
+          report_id: report.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('변호사 상담이 요청되었습니다');
+        router.push('/consult');
+      } else {
+        throw new Error(data.error || '상담 요청 실패');
+      }
+    } catch (error) {
+      console.error('Consultation request error:', error);
+      toast.error('상담 요청 중 오류가 발생했습니다');
+    } finally {
+      setIsRequestingConsult(false);
     }
   };
 
@@ -212,6 +251,15 @@ export default function ReportDetailPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  onClick={handleRequestConsult}
+                  disabled={isRequestingConsult}
+                  className="bg-primary hover:bg-primary/90 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                  size="sm"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  {isRequestingConsult ? '요청 중...' : '변호사 상담 요청'}
+                </Button>
                 <Button
                   onClick={() => router.push(`/reports/new?edit=${report.id}`)}
                   className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"

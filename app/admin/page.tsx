@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -121,10 +122,12 @@ export default function AdminDashboard() {
   const { user, setUser } = useStore();
   
   // Switch to admin user for testing
-  if (user?.role !== 'admin') {
-    const adminUser = switchUser('admin');
-    setUser(adminUser);
-  }
+  useEffect(() => {
+    if (user?.role !== 'admin') {
+      const adminUser = switchUser('admin');
+      setUser(adminUser);
+    }
+  }, [user?.role, setUser]);
 
   return (
     <DashboardLayout>

@@ -37,12 +37,12 @@ type MenuItems = {
 
 const menuItems: MenuItems = {
   teacher: [
-    { 
-      href: '/', 
-      label: '홈', 
-      icon: Home, 
+    {
+      href: '/',
+      label: '홈',
+      icon: Home,
       description: '대시보드 개요',
-      badge: null 
+      badge: null
     },
     {
       href: '/reports/new',
@@ -51,115 +51,168 @@ const menuItems: MenuItems = {
       description: '교권 침해 신고하기',
       badge: null
     },
-    { 
-      href: '/reports', 
-      label: '내 신고 내역', 
-      icon: Shield, 
+    {
+      href: '/reports',
+      label: '내 신고 내역',
+      icon: Shield,
       description: '신고 처리 현황',
       badge: '3건'
     },
-    { 
-      href: '/community', 
-      label: '커뮤니티', 
-      icon: Users, 
+    {
+      href: '/community',
+      label: '커뮤니티',
+      icon: Users,
       description: '교사들과 소통하기',
       badge: 'HOT',
       badgeColor: 'trust-modern'
     },
-    { 
-      href: '/consult', 
-      label: '변호사 상담', 
-      icon: MessageSquare, 
+    {
+      href: '/consult',
+      label: '변호사 상담',
+      icon: MessageSquare,
       description: '전문가 법률 상담',
       badge: null
     },
-    { 
-      href: '/resources', 
-      label: '교권 자료실', 
-      icon: BookOpen, 
+    {
+      href: '/resources',
+      label: '교권 자료실',
+      icon: BookOpen,
       description: '유용한 자료와 가이드',
       badge: null
     },
   ],
   lawyer: [
-    { 
-      href: '/lawyer', 
-      label: '대시보드', 
-      icon: Home, 
+    {
+      href: '/lawyer',
+      label: '대시보드',
+      icon: Home,
       description: '변호사 전용 대시보드',
       badge: null
     },
-    { 
-      href: '/lawyer/cases', 
-      label: '사건 관리', 
-      icon: Briefcase, 
+    {
+      href: '/lawyer/cases',
+      label: '사건 관리',
+      icon: Briefcase,
       description: '담당 사건 관리',
       badge: '12건'
     },
-    { 
-      href: '/lawyer/consults', 
-      label: '상담 관리', 
-      icon: MessageSquare, 
+    {
+      href: '/lawyer/consults',
+      label: '상담 관리',
+      icon: MessageSquare,
       description: '상담 일정 및 내역',
       badge: '신규',
       badgeColor: 'protection-modern'
     },
-    { 
-      href: '/community', 
-      label: '커뮤니티', 
-      icon: Users, 
+    {
+      href: '/community',
+      label: '커뮤니티',
+      icon: Users,
       description: '교사 커뮤니티 참여',
       badge: null
     },
-    { 
-      href: '/lawyer/stats', 
-      label: '통계', 
-      icon: BarChart3, 
+    {
+      href: '/lawyer/stats',
+      label: '통계',
+      icon: BarChart3,
       description: '성과 및 분석',
       badge: null
     },
   ],
   admin: [
-    { 
-      href: '/admin', 
-      label: '관리자 대시보드', 
-      icon: Home, 
+    {
+      href: '/admin',
+      label: '관리자 대시보드',
+      icon: Home,
       description: '시스템 전체 현황',
       badge: null
     },
-    { 
-      href: '/admin/reports', 
-      label: '신고 관리', 
-      icon: FileText, 
+    {
+      href: '/admin/reports',
+      label: '신고 관리',
+      icon: FileText,
       description: '모든 신고 관리',
       badge: '대기중',
       badgeColor: 'warning-modern'
     },
-    { 
-      href: '/admin/users', 
-      label: '사용자 관리', 
-      icon: Users, 
+    {
+      href: '/admin/user-management',
+      label: '사용자 관리',
+      icon: Users,
       description: '회원 및 권한 관리',
       badge: null
     },
-    { 
-      href: '/admin/lawyers', 
-      label: '변호사 관리', 
-      icon: Briefcase, 
+    {
+      href: '/admin/lawyers',
+      label: '변호사 관리',
+      icon: Briefcase,
       description: '변호사 승인 및 관리',
       badge: null
     },
-    { 
-      href: '/admin/stats', 
-      label: '시스템 통계', 
-      icon: BarChart3, 
+    {
+      href: '/admin/stats',
+      label: '시스템 통계',
+      icon: BarChart3,
       description: '전체 시스템 분석',
       badge: null
     },
-    { 
-      href: '/admin/settings', 
-      label: '시스템 설정', 
-      icon: Settings, 
+    {
+      href: '/admin/settings',
+      label: '시스템 설정',
+      icon: Settings,
+      description: '시스템 환경 설정',
+      badge: null
+    },
+  ],
+  super_admin: [
+    {
+      href: '/admin',
+      label: '슈퍼어드민 대시보드',
+      icon: Home,
+      description: '시스템 전체 현황',
+      badge: null
+    },
+    {
+      href: '/admin/user-management',
+      label: '계정 생성 관리',
+      icon: Users,
+      description: '모든 사용자 생성/관리',
+      badge: 'NEW',
+      badgeColor: 'protection-modern'
+    },
+    {
+      href: '/admin/associations',
+      label: '협회 관리',
+      icon: Shield,
+      description: '협회 생성 및 관리',
+      badge: null
+    },
+    {
+      href: '/admin/reports',
+      label: '신고 관리',
+      icon: FileText,
+      description: '모든 신고 관리',
+      badge: '대기중',
+      badgeColor: 'warning-modern'
+    },
+    {
+      href: '/admin/lawyers',
+      label: '변호사 관리',
+      icon: Briefcase,
+      description: '변호사 승인 및 관리',
+      badge: null
+    },
+    {
+      href: '/admin/stats',
+      label: '시스템 통계',
+      icon: BarChart3,
+      description: '전체 시스템 분석',
+      badge: null
+    },
+    {
+      href: '/admin/settings',
+      label: '시스템 설정',
+      icon: Settings,
       description: '시스템 환경 설정',
       badge: null
     },

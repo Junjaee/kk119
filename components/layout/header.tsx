@@ -191,9 +191,21 @@ export function Header() {
                       variant="ghost"
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg"
                       onClick={async () => {
-                        await fetch('/api/auth/logout', { method: 'POST' });
+                        try {
+                          // 서버에서 세션 정리
+                          await fetch('/api/auth/logout', {
+                            method: 'POST',
+                            credentials: 'include'
+                          });
+                        } catch (error) {
+                          console.error('Server logout error:', error);
+                        }
+
+                        // 사용자 메뉴 닫기
+                        setShowUserMenu(false);
+
+                        // 클라이언트 정리 실행 (페이지 새로고침 포함)
                         logout();
-                        router.push('/');
                       }}
                     >
                       <LogOut className="h-4 w-4 mr-3" />

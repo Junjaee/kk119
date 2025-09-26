@@ -122,14 +122,17 @@ const chartData = {
 export default function AdminDashboard() {
   const { user, setUser } = useStore();
   
-  // Allow both admin and super_admin to access this page
+  // Only use mock user in development when there's a logged in user with insufficient permissions
+  // Do NOT use mock user when user is null (logged out)
   console.log('🔍 Admin Page - User Role Check:', user?.role);
-  if (user?.role !== 'admin' && user?.role !== 'super_admin') {
-    console.log('🔍 Admin Page - Switching to admin user');
+  if (user && user?.role !== 'admin' && user?.role !== 'super_admin') {
+    console.log('🔍 Admin Page - User has insufficient permissions, switching to admin user');
     const adminUser = switchUser('admin');
     setUser(adminUser);
-  } else {
+  } else if (user) {
     console.log('🔍 Admin Page - User role allowed:', user?.role);
+  } else {
+    console.log('🔍 Admin Page - No user logged in');
   }
 
   return (

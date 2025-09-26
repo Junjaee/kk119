@@ -17,7 +17,8 @@
       "Bash(npm install:*)",
       "Bash(winget install:*)",
       "Bash(sqlite3:*)",
-      "Bash(refreshenv)"
+      "Bash(refreshenv)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

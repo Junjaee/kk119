@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sessionDb, userDb } from '@/lib/db/database';
+import { userDb } from '@/lib/db/database';
+import { auth } from '@/lib/auth/auth-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth-token')?.value;
+    // Try to get token from cookie first, then Authorization header
+    let token = request.cookies.get('auth-token')?.value;
+
+    if (!token) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
 
     if (!token) {
       return NextResponse.json(
@@ -12,17 +21,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find session
-    const session = sessionDb.findByToken(token) as any;
-    if (!session) {
+    // Verify JWT token
+    const payload = await auth.verifyToken(token);
+    if (!payload) {
       return NextResponse.json(
-        { error: '유효하지 않은 세션입니다.' },
+        { error: '유효하지 않은 토큰입니다.' },
         { status: 401 }
       );
     }
 
     // Get user data
-    const user = userDb.findById(session.user_id) as any;
+    const user = userDb.findById(payload.userId) as any;
     if (!user) {
       return NextResponse.json(
         { error: '사용자를 찾을 수 없습니다.' },

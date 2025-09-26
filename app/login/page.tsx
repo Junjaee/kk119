@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import { useStore } from '@/lib/store';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setUser } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -94,8 +95,11 @@ export default function LoginPage() {
       toast.success(`환영합니다, ${data.user.name}님!`);
       
       // Redirect to dashboard or previous page
-      const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
+      const fromUrl = searchParams.get('from');
+      const redirectUrl = fromUrl || sessionStorage.getItem('redirectAfterLogin') || '/';
       sessionStorage.removeItem('redirectAfterLogin');
+
+      // Use Next.js router for proper navigation
       router.push(redirectUrl);
       
     } catch (error: any) {
@@ -282,25 +286,25 @@ export default function LoginPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-white dark:bg-gray-800 p-2 rounded border">
                     <div className="font-medium text-green-700 dark:text-green-400">교사</div>
-                    <div className="text-gray-600 dark:text-gray-300">teacher@test.com</div>
-                    <div className="text-gray-500">Teacher123!</div>
+                    <div className="text-gray-600 dark:text-gray-300">teacher@kk119.com</div>
+                    <div className="text-gray-500">Teacher2025!</div>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-2 rounded border">
                     <div className="font-medium text-blue-700 dark:text-blue-400">변호사</div>
-                    <div className="text-gray-600 dark:text-gray-300">lawyer@test.com</div>
-                    <div className="text-gray-500">Lawyer123!</div>
+                    <div className="text-gray-600 dark:text-gray-300">lawyer@kk119.com</div>
+                    <div className="text-gray-500">Lawyer2025!</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-white dark:bg-gray-800 p-2 rounded border">
-                    <div className="font-medium text-purple-700 dark:text-purple-400">관리자</div>
-                    <div className="text-gray-600 dark:text-gray-300">admin@test.com</div>
-                    <div className="text-gray-500">Admin123!</div>
+                    <div className="font-medium text-purple-700 dark:text-purple-400">협회관리자</div>
+                    <div className="text-gray-600 dark:text-gray-300">association@kk119.com</div>
+                    <div className="text-gray-500">Assoc2025!</div>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-2 rounded border">
-                    <div className="font-medium text-orange-700 dark:text-orange-400">교장</div>
-                    <div className="text-gray-600 dark:text-gray-300">principal@test.com</div>
-                    <div className="text-gray-500">Principal123!</div>
+                    <div className="font-medium text-red-700 dark:text-red-400">슈퍼관리자</div>
+                    <div className="text-gray-600 dark:text-gray-300">super@kk119.com</div>
+                    <div className="text-gray-500">Super2025!</div>
                   </div>
                 </div>
               </div>

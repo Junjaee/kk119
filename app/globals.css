@@ -248,15 +248,15 @@
   }
   
   .card-urgent {
-    @apply border-urgent-200 bg-urgent-50/50 dark:border-urgent-800 dark:bg-urgent-950/20;
+    @apply border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20;
   }
   
   .card-protection {
-    @apply border-protection-200 bg-protection-50/50 dark:border-protection-800 dark:bg-protection-950/20;
+    @apply border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20;
   }
   
   .card-trust {
-    @apply border-trust-200 bg-trust-50/50 dark:border-trust-800 dark:bg-trust-950/20;
+    @apply border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20;
   }
   
   /* 향상된 버튼 스타일 */
@@ -286,7 +286,12 @@
   }
   
   .btn-urgent-modern {
-    @apply btn-modern bg-urgent-500 text-white shadow-lg hover:shadow-xl px-6 py-3 hover:bg-urgent-600;
+    @apply btn-modern text-white shadow-lg hover:shadow-xl px-6 py-3;
+    background-color: #ef4444; /* urgent-500 */
+  }
+
+  .btn-urgent-modern:hover {
+    background-color: #dc2626; /* urgent-600 */
   }
   
   .btn-ghost-modern {
@@ -316,15 +321,15 @@
   }
   
   .badge-protection-modern {
-    @apply badge-modern bg-protection-50 text-protection-600 border border-protection-200 dark:bg-protection-950/50 dark:text-protection-400;
+    @apply badge-modern bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-400;
   }
   
   .badge-trust-modern {
-    @apply badge-modern bg-trust-50 text-trust-600 border border-trust-200 dark:bg-trust-950/50 dark:text-trust-400;
+    @apply badge-modern bg-green-50 text-green-600 border border-green-200 dark:bg-green-950/50 dark:text-green-400;
   }
   
   .badge-urgent-modern {
-    @apply badge-modern bg-urgent-50 text-urgent-600 border border-urgent-200 dark:bg-urgent-950/50 dark:text-urgent-400;
+    @apply badge-modern bg-red-50 text-red-600 border border-red-200 dark:bg-red-950/50 dark:text-red-400;
   }
   
   .badge-warning-modern {

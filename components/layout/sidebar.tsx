@@ -8,11 +8,9 @@ import { cn } from '@/lib/utils/cn';
 import {
   Home,
   FileText,
-  MessageSquare,
   Users,
   BarChart3,
   Shield,
-  Briefcase,
   Settings,
   X,
   ChevronRight,
@@ -67,13 +65,6 @@ const menuItems: MenuItems = {
       badgeColor: 'trust-modern'
     },
     {
-      href: '/consult',
-      label: '변호사 상담',
-      icon: MessageSquare,
-      description: '전문가 법률 상담',
-      badge: null
-    },
-    {
       href: '/resources',
       label: '교권 자료실',
       icon: BookOpen,
@@ -82,42 +73,6 @@ const menuItems: MenuItems = {
     },
   ],
   lawyer: [
-    {
-      href: '/lawyer',
-      label: '대시보드',
-      icon: Home,
-      description: '변호사 전용 대시보드',
-      badge: null
-    },
-    {
-      href: '/lawyer/cases',
-      label: '사건 관리',
-      icon: Briefcase,
-      description: '담당 사건 관리',
-      badge: '12건'
-    },
-    {
-      href: '/lawyer/consults',
-      label: '상담 관리',
-      icon: MessageSquare,
-      description: '상담 일정 및 내역',
-      badge: '신규',
-      badgeColor: 'protection-modern'
-    },
-    {
-      href: '/community',
-      label: '커뮤니티',
-      icon: Users,
-      description: '교사 커뮤니티 참여',
-      badge: null
-    },
-    {
-      href: '/lawyer/stats',
-      label: '통계',
-      icon: BarChart3,
-      description: '성과 및 분석',
-      badge: null
-    },
   ],
   admin: [
     {
@@ -140,13 +95,6 @@ const menuItems: MenuItems = {
       label: '사용자 관리',
       icon: Users,
       description: '회원 및 권한 관리',
-      badge: null
-    },
-    {
-      href: '/admin/lawyers',
-      label: '변호사 관리',
-      icon: Briefcase,
-      description: '변호사 승인 및 관리',
       badge: null
     },
     {
@@ -194,13 +142,6 @@ const menuItems: MenuItems = {
       description: '모든 신고 관리',
       badge: '대기중',
       badgeColor: 'warning-modern'
-    },
-    {
-      href: '/admin/lawyers',
-      label: '변호사 관리',
-      icon: Briefcase,
-      description: '변호사 승인 및 관리',
-      badge: null
     },
     {
       href: '/admin/stats',

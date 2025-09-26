@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/lib/store';
 import {
   FileText,
-  MessageSquare,
   Users,
   TrendingUp,
   AlertTriangle,
@@ -62,22 +61,6 @@ const recentReports = [
   }
 ];
 
-const recentConsults = [
-  {
-    id: '1',
-    title: '명예훼손 대응 방법',
-    lawyer: '김변호사',
-    created_at: '2025-08-27T15:00:00Z',
-    status: 'answered'
-  },
-  {
-    id: '2',
-    title: '체벌 관련 법적 문제',
-    lawyer: '이변호사',
-    created_at: '2025-08-26T11:30:00Z',
-    status: 'pending'
-  }
-];
 
 const popularPosts = [
   {
@@ -113,13 +96,6 @@ const upcomingEvents = [
     date: '2025-08-30',
     time: '14:00',
     type: 'seminar'
-  },
-  {
-    id: '2',
-    title: '변호사 1:1 상담',
-    date: '2025-08-31',
-    time: '10:30',
-    type: 'consultation'
   }
 ];
 
@@ -321,8 +297,8 @@ export default function HomePage() {
           </CardContent>
         </div>
 
-        {/* Three Boards in One Row */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        {/* Two Boards in One Row */}
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Popular Community Posts */}
           <div className="card-modern">
             <CardHeader>
@@ -369,51 +345,6 @@ export default function HomePage() {
             </CardContent>
           </div>
 
-          {/* Recent Lawyer Consultations */}
-          <div className="card-modern">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="h-5 w-5 text-protection-600" />
-                  <CardTitle>변호사 상담</CardTitle>
-                </div>
-                <Link href="/consult">
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    전체보기 <ArrowRight className="ml-1 h-3 w-3" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentConsults.slice(0, 3).map((consult) => (
-                  <div key={consult.id} className="p-3 rounded-xl bg-protection-50/50 dark:bg-protection-950/20 border border-protection-200/50 dark:border-protection-800/50 hover:bg-protection-100/50 dark:hover:bg-protection-900/30 transition-colors cursor-pointer">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-sm font-medium flex-1 line-clamp-2">{consult.title}</p>
-                      <div className={`badge-${consult.status === 'answered' ? 'trust-modern' : 'warning-modern'} text-xs ml-2 flex-shrink-0`}>
-                        {consult.status === 'answered' ? '답변완료' : '대기중'}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{consult.lawyer}</span>
-                      <span>{formatRelativeTime(consult.created_at)}</span>
-                    </div>
-                  </div>
-                ))}
-                {recentConsults.length === 0 && (
-                  <div className="text-center py-6">
-                    <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                    <p className="text-xs text-muted-foreground mb-3">상담 내역이 없습니다</p>
-                    <Link href="/consult">
-                      <Button size="sm" className="btn-protection-modern text-xs">
-                        상담 신청하기
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </div>
 
           {/* Recent Resources */}
           <div className="card-modern">

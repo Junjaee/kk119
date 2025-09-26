@@ -37,6 +37,12 @@ import { localDB, Report } from '@/lib/services/localDB';
 import { cn } from '@/lib/utils/cn';
 import toast from 'react-hot-toast';
 
+// Lawyer Consultation Components
+import { LawyerProfile } from '@/components/lawyer-consultation/LawyerProfile';
+import { ConsultationProgress } from '@/components/lawyer-consultation/ConsultationProgress';
+import { LawyerResponse } from '@/components/lawyer-consultation/LawyerResponse';
+import { AdditionalInquiry } from '@/components/lawyer-consultation/AdditionalInquiry';
+import { ConsultationTimeline } from '@/components/lawyer-consultation/ConsultationTimeline';
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -47,13 +53,37 @@ export default function ReportDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Lawyer consultation states
+  const [consultationData, setConsultationData] = useState<any>(null);
+  const [loadingConsultation, setLoadingConsultation] = useState(false);
+
   useEffect(() => {
     if (params.id) {
       const reportData = localDB.getReportById(params.id as string);
       setReport(reportData);
       setLoading(false);
+
+      // Load lawyer consultation data if report requires legal consultation
+      if (reportData && reportData.requires_legal_consultation) {
+        loadConsultationData(params.id as string);
+      }
     }
   }, [params.id]);
+
+  const loadConsultationData = async (reportId: string) => {
+    setLoadingConsultation(true);
+    try {
+      const response = await fetch(`/api/reports/${reportId}/consultation`);
+      if (response.ok) {
+        const data = await response.json();
+        setConsultationData(data);
+      }
+    } catch (error) {
+      console.error('Failed to load consultation data:', error);
+    } finally {
+      setLoadingConsultation(false);
+    }
+  };
 
   const getStatusBadge = (status: Report['status']) => {
     const config = {
@@ -146,6 +176,16 @@ export default function ReportDetailPage() {
     }
   };
 
+  const handleAdditionalInquiry = async (question: string, files: File[]) => {
+    if (!report) return;
+
+    // Mock implementation - in real app, this would submit to API
+    console.log('Submitting additional inquiry:', { question, files });
+
+    // For demo, we'll show a success message
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -172,6 +212,85 @@ export default function ReportDetailPage() {
       </DashboardLayout>
     );
   }
+
+  // Mock data for demonstration
+  const mockLawyerInfo = {
+    id: 'lawyer-001',
+    name: '김철수',
+    email: 'kim@lawfirm.com',
+    specialization: ['학교폭력', '명예훼손', '성희롱'],
+    law_firm: '법무법인 정의',
+    experience_years: 15,
+    rating: 4.8,
+    cases_handled: 150,
+    bio: '15년간 학교폭력 및 교육법 전문 변호사로 활동하며 다수의 성공적인 사건을 해결한 경험이 있습니다.'
+  };
+
+  const mockAssignmentInfo = {
+    assigned_at: '2024-09-25T10:00:00Z',
+    assigned_by: {
+      id: 'admin-001',
+      name: '관리자',
+      email: 'admin@example.com'
+    },
+    consultation_priority: 'high' as const,
+    consultation_notes: '학교폭력 사안으로 신속한 대응이 필요합니다.'
+  };
+
+  const mockConsultationResponse = {
+    id: 'response-001',
+    consultation_content: '접수해주신 학교폭력 사건을 검토한 결과, 다음과 같은 법적 대응이 가능합니다.\n\n첫째, 학교폭력예방 및 대책에 관한 법률에 따라 학교폭력대책자치위원회 개최를 요청할 수 있습니다.\n둘째, 피해 학생에 대한 보호조치와 가해 학생에 대한 선도조치를 요구할 수 있습니다.\n셋째, 민사상 손해배상 청구도 검토해볼 수 있습니다.',
+    recommended_actions: '1. 학교에 학교폭력대책자치위원회 개최 요청서 제출\n2. 피해 증거 수집 (진단서, 상담기록, 목격자 진술서 등)\n3. 교육청에 신고 접수\n4. 필요시 민사소송 준비',
+    legal_references: [
+      '학교폭력예방 및 대책에 관한 법률 제17조 (학교폭력대책자치위원회의 구성·운영)',
+      '학교폭력예방 및 대책에 관한 법률 제16조 (피해학생의 보호)',
+      '민법 제750조 (불법행위의 내용)'
+    ],
+    consultation_type: 'initial' as const,
+    priority_level: 3,
+    estimated_duration: 2,
+    actual_duration: 1.5,
+    created_at: '2024-09-25T14:30:00Z',
+    updated_at: '2024-09-25T14:30:00Z'
+  };
+
+  const mockTimelineEvents = [
+    {
+      id: 'event-1',
+      type: 'report_created' as const,
+      timestamp: '2024-09-25T09:00:00Z',
+      actor: { id: 'user-001', name: '김학부모', email: 'parent@example.com', role: 'reporter' as const },
+      title: '신고 접수',
+      description: '학교폭력 신고가 접수되었습니다.',
+      details: report.content
+    },
+    {
+      id: 'event-2',
+      type: 'lawyer_assigned' as const,
+      timestamp: '2024-09-25T10:00:00Z',
+      actor: { id: 'admin-001', name: '관리자', email: 'admin@example.com', role: 'admin' as const },
+      title: '변호사 배정',
+      description: '김철수 변호사가 배정되었습니다.',
+      details: '학교폭력 전문 변호사로 신속한 대응을 위해 배정되었습니다.'
+    },
+    {
+      id: 'event-3',
+      type: 'consultation_started' as const,
+      timestamp: '2024-09-25T11:00:00Z',
+      actor: { id: 'lawyer-001', name: '김철수', email: 'kim@lawfirm.com', role: 'lawyer' as const },
+      title: '상담 시작',
+      description: '변호사가 사건 검토를 시작했습니다.',
+    },
+    {
+      id: 'event-4',
+      type: 'lawyer_response' as const,
+      timestamp: '2024-09-25T14:30:00Z',
+      actor: { id: 'lawyer-001', name: '김철수', email: 'kim@lawfirm.com', role: 'lawyer' as const },
+      title: '변호사 답변',
+      description: '법적 검토 의견과 권장 조치사항을 제공했습니다.',
+      details: mockConsultationResponse.consultation_content
+    }
+  ];
 
   return (
     <DashboardLayout>
@@ -237,7 +356,6 @@ export default function ReportDetailPage() {
                 </Button>
               </div>
             </div>
-
           </div>
         </div>
 
@@ -359,6 +477,53 @@ export default function ReportDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Lawyer Consultation Section - NEW */}
+            {report.requires_legal_consultation && (
+              <div className="space-y-8">
+                {/* Lawyer Profile */}
+                <LawyerProfile
+                  lawyer={mockLawyerInfo}
+                  assignment={mockAssignmentInfo}
+                  showContactInfo={true}
+                />
+
+                {/* Consultation Progress */}
+                <ConsultationProgress
+                  status="in_progress"
+                  assignedAt={mockAssignmentInfo.assigned_at}
+                  startedAt="2024-09-25T11:00:00Z"
+                  priority={mockAssignmentInfo.consultation_priority}
+                  estimatedDuration={2}
+                  showTimeline={true}
+                />
+
+                {/* Lawyer Response */}
+                <LawyerResponse
+                  response={mockConsultationResponse}
+                  lawyer={mockLawyerInfo}
+                  canRate={true}
+                  currentRating={0}
+                  onRate={(rating) => {
+                    console.log('Rating submitted:', rating);
+                    toast.success('평가가 제출되었습니다.');
+                  }}
+                />
+
+                {/* Additional Inquiry */}
+                <AdditionalInquiry
+                  reportId={report.id}
+                  onSubmit={handleAdditionalInquiry}
+                  previousInquiries={[]}
+                />
+
+                {/* Consultation Timeline */}
+                <ConsultationTimeline
+                  reportId={report.id}
+                  events={mockTimelineEvents}
+                />
+              </div>
+            )}
+
             {/* Enhanced Communication Section */}
             <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900">
               <CardHeader className="border-b border-gray-100 dark:border-gray-800 bg-white/60 dark:bg-gray-800/60 backdrop-blur">
@@ -366,56 +531,57 @@ export default function ReportDetailPage() {
                   <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                     <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <span className="text-gray-900 dark:text-gray-100">전문가 소통 내역</span>
+                  <span className="text-gray-900 dark:text-gray-100">일반 소통 내역</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 p-8">
                 {/* Sample expert comment for demo */}
-                {(report.status === 'processing' || report.status === 'resolved') && (
+                {(report.status === 'processing' || report.status === 'resolved') && !report.requires_legal_consultation && (
                   <div className="border-l-4 border-l-primary pl-4 py-2">
                     <div className="flex items-center space-x-2 mb-2">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                         <Shield className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">김○○ 변호사</p>
+                        <p className="font-medium text-sm">담당자</p>
                         <p className="text-xs text-muted-foreground">
                           {formatRelativeTime(report.updatedAt)}
                         </p>
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {report.status === 'resolved' 
-                        ? '신고 내용을 검토한 결과, 적절한 법적 조치를 통해 문제가 해결되었습니다. 추가 지원이 필요하시면 언제든 연락해 주세요.'
-                        : '접수해주신 신고를 검토 중입니다. 관련 법적 절차와 대응 방안을 검토하여 빠른 시일 내에 연락드리겠습니다.'
+                      {report.status === 'resolved'
+                        ? '신고 내용을 검토한 결과, 적절한 조치를 통해 문제가 해결되었습니다. 추가 지원이 필요하시면 언제든 연락해 주세요.'
+                        : '접수해주신 신고를 검토 중입니다. 관련 절차와 대응 방안을 검토하여 빠른 시일 내에 연락드리겠습니다.'
                       }
                     </p>
                   </div>
                 )}
 
-                {/* Comment input */}
-                <div className="space-y-3">
-                  <Textarea
-                    placeholder="궁금한 점이나 추가 정보를 입력해주세요..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={3}
-                    className="resize-none"
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      size="sm"
-                      className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      메시지 전송
-                    </Button>
+                {/* Comment input for non-legal consultation reports */}
+                {!report.requires_legal_consultation && (
+                  <div className="space-y-3">
+                    <Textarea
+                      placeholder="궁금한 점이나 추가 정보를 입력해주세요..."
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      rows={3}
+                      className="resize-none"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        메시지 전송
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
-
         </div>
       </div>
 

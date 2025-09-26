@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration System Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4">
+        <h1 class="text-3xl font-bold text-center mb-8">🧪 Migration System Test</h1>
+
+        <div class="grid gap-6">
+            <!-- Test Results -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+                <div id="test-results" class="space-y-2">
+                    <div class="text-gray-500">Running tests...</div>
+                </div>
+            </div>
+
+            <!-- LocalStorage Data -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">LocalStorage Data</h2>
+                <div id="localStorage-data" class="space-y-4">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Migration Test Controls -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Migration Test Controls</h2>
+                <div class="flex gap-4 flex-wrap">
+                    <button onclick="initSampleData()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Init Sample Data
+                    </button>
+                    <button onclick="testLocalDB()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Test LocalDB
+                    </button>
+                    <button onclick="clearAllData()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        Clear All Data
+                    </button>
+                    <button onclick="runMigrationTest()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        Test Migration Logic
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock LocalDB functionality for testing
+        class TestLocalDB {
+            getAllReports() {
+                try {
+                    const data = localStorage.getItem('kk119_reports');
+                    return data ? JSON.parse(data) : [];
+                } catch (error) {
+                    console.error('Error reading reports:', error);
+                    return [];
+                }
+            }
+
+            getAllPosts() {
+                try {
+                    const data = localStorage.getItem('kk119_community_posts');
+                    return data ? JSON.parse(data) : [];
+                } catch (error) {
+                    console.error('Error reading posts:', error);
+                    return [];
+                }
+            }
+
+            getAllComments() {
+                try {
+                    const data = localStorage.getItem('kk119_community_comments');
+                    return data ? JSON.parse(data) : [];
+                } catch (error) {
+                    console.error('Error reading comments:', error);
+                    return [];
+                }
+            }
+
+            createReport(data) {
+                const reports = this.getAllReports();
+                const newReport = {
+                    ...data,
+                    id: `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                reports.push(newReport);
+                localStorage.setItem('kk119_reports', JSON.stringify(reports));
+                return newReport;
+            }
+
+            createPost(data) {
+                const posts = this.getAllPosts();
+                const newPost = {
+                    ...data,
+                    id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    likes: 0,
+                    likedBy: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                posts.push(newPost);
+                localStorage.setItem('kk119_community_posts', JSON.stringify(posts));
+                return newPost;
+            }
+
+            initWithSampleData() {
+                // Sample reports
+                const sampleReports = [
+                    {
+                        type: 'parent',
+                        title: '학부모 폭언 및 협박 사건',
+                        incident_date: '2024-03-15',
+                        incident_time: '14:30',
+                        location: '3학년 2반 교실',
+                        witnesses: '김○○ 선생님, 이○○ 선생님',
+                        content: '학생 성적 문제로 찾아온 학부모가 교실에서 큰소리로 폭언을 하며 협박하는 일이 발생했습니다.',
+                        desired_action: '법적 조치 및 학교 차원의 보호 조치'
+                    },
+                    {
+                        type: 'student',
+                        title: '학생의 수업 방해 및 폭력 행위',
+                        incident_date: '2024-03-10',
+                        incident_time: '10:20',
+                        location: '음악실',
+                        witnesses: '박○○ 학생 외 3명',
+                        content: '수업 중 학생이 지속적으로 수업을 방해하고, 제지하는 과정에서 교사를 밀치는 등의 폭력 행위가 있었습니다.',
+                        desired_action: '학생 상담 및 학부모 면담'
+                    }
+                ];
+
+                // Sample posts
+                const samplePosts = [
+                    {
+                        title: '교권 침해 대응 경험 공유',
+                        content: '안녕하세요. 최근 학부모 민원으로 힘든 시간을 보냈는데, 학교 상담사와 함께 체계적으로 대응한 경험을 공유하고 싶습니다.',
+                        author: '김선생',
+                        authorId: 'teacher_001',
+                        category: 'experience'
+                    },
+                    {
+                        title: '법적 대응 절차에 대해 궁금합니다',
+                        content: '학생으로부터 지속적인 욕설과 위협을 받고 있습니다. 법적 대응을 고려하고 있는데, 어떤 절차를 거쳐야 하는지 조언 부탁드립니다.',
+                        author: '박교사',
+                        authorId: 'teacher_002',
+                        category: 'legal'
+                    }
+                ];
+
+                sampleReports.forEach(report => this.createReport(report));
+                samplePosts.forEach(post => this.createPost(post));
+            }
+
+            clearAllData() {
+                localStorage.removeItem('kk119_reports');
+                localStorage.removeItem('kk119_community_posts');
+                localStorage.removeItem('kk119_community_comments');
+            }
+        }
+
+        const testDB = new TestLocalDB();
+
+        function updateResults(message, isError = false) {
+            const resultsDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = isError ? 'text-red-600' : 'text-green-600';
+            resultsDiv.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+        }
+
+        function updateLocalStorageDisplay() {
+            const reports = testDB.getAllReports();
+            const posts = testDB.getAllPosts();
+            const comments = testDB.getAllComments();
+
+            const dataDiv = document.getElementById('localStorage-data');
+            dataDiv.innerHTML = `
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center p-4 bg-blue-50 rounded">
+                        <div class="text-2xl font-bold text-blue-600">${reports.length}</div>
+                        <div class="text-sm text-gray-600">Reports</div>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded">
+                        <div class="text-2xl font-bold text-green-600">${posts.length}</div>
+                        <div class="text-sm text-gray-600">Posts</div>
+                    </div>
+                    <div class="text-center p-4 bg-purple-50 rounded">
+                        <div class="text-2xl font-bold text-purple-600">${comments.length}</div>
+                        <div class="text-sm text-gray-600">Comments</div>
+                    </div>
+                </div>
+                ${reports.length > 0 ? `
+                    <div class="mt-4">
+                        <h3 class="font-semibold mb-2">Sample Reports:</h3>
+                        <div class="space-y-2">
+                            ${reports.slice(0, 3).map(report => `
+                                <div class="p-2 bg-gray-50 rounded text-sm">
+                                    <strong>${report.title}</strong> - ${report.status}
+                                    <br><small>Created: ${new Date(report.createdAt).toLocaleString()}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function initSampleData() {
+            testDB.initWithSampleData();
+            updateResults('✅ Sample data initialized successfully');
+            updateLocalStorageDisplay();
+        }
+
+        function testLocalDB() {
+            try {
+                const reports = testDB.getAllReports();
+                const posts = testDB.getAllPosts();
+                const comments = testDB.getAllComments();
+
+                updateResults(`✅ LocalDB test passed - Reports: ${reports.length}, Posts: ${posts.length}, Comments: ${comments.length}`);
+
+                // Test creating new data
+                const testReport = testDB.createReport({
+                    type: 'test',
+                    title: 'Test Report',
+                    incident_date: '2024-01-01',
+                    incident_time: '12:00',
+                    location: 'Test Location',
+                    witnesses: 'Test Witness',
+                    content: 'Test content',
+                    desired_action: 'Test action'
+                });
+
+                updateResults(`✅ Test report created with ID: ${testReport.id}`);
+                updateLocalStorageDisplay();
+
+            } catch (error) {
+                updateResults(`❌ LocalDB test failed: ${error.message}`, true);
+            }
+        }
+
+        function clearAllData() {
+            testDB.clearAllData();
+            updateResults('🗑️ All localStorage data cleared');
+            updateLocalStorageDisplay();
+        }
+
+        function runMigrationTest() {
+            updateResults('🧪 Running migration system test...');
+
+            // Test 1: Check localStorage availability
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                updateResults('✅ LocalStorage availability: OK');
+            } catch (error) {
+                updateResults(`❌ LocalStorage not available: ${error.message}`, true);
+                return;
+            }
+
+            // Test 2: Check data structure
+            const reports = testDB.getAllReports();
+            const posts = testDB.getAllPosts();
+
+            if (reports.length === 0 && posts.length === 0) {
+                updateResults('⚠️ No data found for migration');
+                return;
+            }
+
+            updateResults(`✅ Found ${reports.length} reports and ${posts.length} posts for migration`);
+
+            // Test 3: Simulate migration readiness check
+            const canMigrate = reports.length > 0 || posts.length > 0;
+            updateResults(`✅ Migration readiness: ${canMigrate ? 'Ready' : 'Not ready'}`);
+
+            // Test 4: Test data structure integrity
+            let structureValid = true;
+            reports.forEach(report => {
+                if (!report.id || !report.title || !report.createdAt) {
+                    structureValid = false;
+                }
+            });
+
+            posts.forEach(post => {
+                if (!post.id || !post.title || !post.content || !post.authorId) {
+                    structureValid = false;
+                }
+            });
+
+            updateResults(`✅ Data structure integrity: ${structureValid ? 'Valid' : 'Invalid'}`);
+
+            if (canMigrate && structureValid) {
+                updateResults('🎉 Migration system test completed successfully!');
+            } else {
+                updateResults('⚠️ Migration system test completed with warnings', true);
+            }
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateResults('🚀 Migration test system initialized');
+            updateLocalStorageDisplay();
+        });
+    </script>
+</body>
+</html>

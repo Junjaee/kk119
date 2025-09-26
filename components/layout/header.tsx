@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,13 @@ export function Header() {
   const { user, theme, toggleTheme, setSidebarOpen, sidebarOpen, notifications, logout } = useStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  // Hydration 완료 체크
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -69,7 +75,7 @@ export function Header() {
         {/* Right Section */}
         <div className="flex items-center space-x-3 ml-auto">
           {/* Notifications */}
-          {user && (
+          {isHydrated && user && (
             <div className="relative">
               <Button
                 variant="ghost"
@@ -79,7 +85,7 @@ export function Header() {
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 h-5 w-5 bg-urgent-500 text-white text-xs rounded-full flex items-center justify-center font-semibold animate-pulse">
+                  <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold animate-pulse">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </div>
                 )}
@@ -120,7 +126,7 @@ export function Header() {
           {/* User Status and Auth Buttons */}
           <div className="flex items-center space-x-2">
             {/* User Menu - if logged in */}
-            {user && (
+            {isHydrated && user && (
               <div className="relative">
                 <Button
                   variant="ghost"
@@ -160,18 +166,22 @@ export function Header() {
                   </div>
 
                   <div className="p-2">
-                    <Link href="/profile">
-                      <Button variant="ghost" className="w-full justify-start rounded-lg">
-                        <User className="h-4 w-4 mr-3" />
-                        프로필 관리
-                      </Button>
-                    </Link>
-                    <Link href="/settings">
-                      <Button variant="ghost" className="w-full justify-start rounded-lg">
-                        <Settings className="h-4 w-4 mr-3" />
-                        설정
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-lg"
+                      onClick={() => router.push('/profile')}
+                    >
+                      <User className="h-4 w-4 mr-3" />
+                      프로필 관리
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-lg"
+                      onClick={() => router.push('/settings')}
+                    >
+                      <Settings className="h-4 w-4 mr-3" />
+                      설정
+                    </Button>
                   </div>
 
                   <div className="p-2 border-t">
@@ -193,21 +203,24 @@ export function Header() {
               </div>
             )}
 
-            {/* Auth Buttons - Only show when not logged in */}
-            {!user && (
+            {/* Auth Buttons - Only show when not logged in and hydrated */}
+            {isHydrated && !user && (
               <>
-                <Link
-                  href="/login"
-                  className="relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98] hover:bg-accent/50 hover:text-accent-foreground rounded-lg h-8 px-3 py-1.5 text-xs"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push('/login')}
+                  className="text-xs"
                 >
                   로그인
-                </Link>
-                <Link
-                  href="/signup"
-                  className="relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98] bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md h-8 px-3 py-1.5 text-xs rounded-lg"
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => router.push('/signup')}
+                  className="text-xs"
                 >
                   회원가입
-                </Link>
+                </Button>
               </>
             )}
           </div>

@@ -19,7 +19,7 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
       warning: 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/50',
       error: 'bg-urgent-50 text-urgent-700 border border-urgent-200 dark:bg-urgent-950/50 dark:text-urgent-400 hover:bg-urgent-100 dark:hover:bg-urgent-900/50',
       protection: 'bg-protection-50 text-protection-700 border border-protection-200 dark:bg-protection-950/50 dark:text-protection-400 hover:bg-protection-100 dark:hover:bg-protection-900/50',
-      urgent: 'bg-urgent-500 text-white shadow-md hover:bg-urgent-600',
+      urgent: 'bg-red-500 text-white shadow-md hover:bg-red-600',
       trust: 'bg-trust-50 text-trust-700 border border-trust-200 dark:bg-trust-950/50 dark:text-trust-400 hover:bg-trust-100 dark:hover:bg-trust-900/50',
     };
     
@@ -49,7 +49,7 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
               variant === 'urgent' && 'bg-white animate-pulse',
               variant === 'success' && 'bg-trust-500',
               variant === 'warning' && 'bg-yellow-500',
-              variant === 'error' && 'bg-urgent-500',
+              variant === 'error' && 'bg-red-500',
               variant === 'protection' && 'bg-protection-500',
               variant === 'primary' && 'bg-primary',
               variant === 'default' && 'bg-primary'

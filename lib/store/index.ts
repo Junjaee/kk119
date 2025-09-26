@@ -60,7 +60,13 @@ export const useStore = create<AppStore>()(
         try {
           const token = localStorage.getItem('token');
           if (token) {
-            const response = await fetch('/api/auth/me');
+            const response = await fetch('/api/auth/me', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include'
+            });
             if (response.ok) {
               const data = await response.json();
               set({ user: data.user });

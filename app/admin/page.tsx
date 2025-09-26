@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/lib/store';
 import { switchUser } from '@/lib/auth/mock-auth';
-import { 
-  Users, 
-  FileText, 
-  Briefcase, 
+import {
+  Users,
+  FileText,
+  Briefcase,
   TrendingUp,
   AlertCircle,
   CheckCircle,
@@ -18,9 +18,11 @@ import {
   Download,
   Settings,
   Shield,
-  BarChart3
+  BarChart3,
+  Bell
 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils/date';
+import Link from 'next/link';
 
 // Mock data for admin dashboard
 const systemStats = {
@@ -332,19 +334,37 @@ export default function AdminDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <Button variant="outline" className="justify-start">
-                <Users className="h-4 w-4 mr-2" />
-                사용자 관리
-              </Button>
-              <Button variant="outline" className="justify-start">
-                <Briefcase className="h-4 w-4 mr-2" />
-                변호사 추가
-              </Button>
-              <Button variant="outline" className="justify-start">
-                <FileText className="h-4 w-4 mr-2" />
-                신고 관리
-              </Button>
+            <div className="grid gap-4 md:grid-cols-6">
+              <Link href="/admin/user-management">
+                <Button variant="outline" className="justify-start w-full">
+                  <Users className="h-4 w-4 mr-2" />
+                  사용자 관리
+                </Button>
+              </Link>
+              <Link href="/admin/lawyers">
+                <Button variant="outline" className="justify-start w-full">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  변호사 관리
+                </Button>
+              </Link>
+              <Link href="/admin/reports">
+                <Button variant="outline" className="justify-start w-full">
+                  <FileText className="h-4 w-4 mr-2" />
+                  신고 관리
+                </Button>
+              </Link>
+              <Link href="/admin/consultations">
+                <Button variant="outline" className="justify-start w-full">
+                  <Activity className="h-4 w-4 mr-2" />
+                  상담 모니터링
+                </Button>
+              </Link>
+              <Link href="/admin/notifications">
+                <Button variant="outline" className="justify-start w-full">
+                  <Bell className="h-4 w-4 mr-2" />
+                  알림 관리
+                </Button>
+              </Link>
               <Button variant="outline" className="justify-start">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 통계 보고서

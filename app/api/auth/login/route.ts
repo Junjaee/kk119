@@ -41,10 +41,12 @@ export async function POST(request: NextRequest) {
     sessionDb.create(user.id, sessionToken);
 
     // Generate JWT token
-    const jwtToken = auth.generateToken({
+    const jwtToken = await auth.generateToken({
       userId: user.id,
       email: user.email,
       name: user.name,
+      role: user.role || 'teacher',
+      association_id: user.association_id || undefined,
       isAdmin: user.is_admin === 1
     });
 
@@ -66,8 +68,8 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Set HTTP-only cookie
-    response.cookies.set('auth-token', sessionToken, {
+    // Set HTTP-only cookie with JWT token
+    response.cookies.set('auth-token', jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

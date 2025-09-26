@@ -103,6 +103,26 @@ export function initDatabase() {
     }
   }
 
+  // Add role column if it doesn't exist (migration)
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'teacher'`);
+  } catch (error: any) {
+    // Column already exists or other error - ignore
+    if (!error.message.includes('duplicate column name')) {
+      console.warn('Role migration warning:', error.message);
+    }
+  }
+
+  // Add association_id column if it doesn't exist (migration)
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN association_id INTEGER`);
+  } catch (error: any) {
+    // Column already exists or other error - ignore
+    if (!error.message.includes('duplicate column name')) {
+      console.warn('Association ID migration warning:', error.message);
+    }
+  }
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -114,6 +134,52 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_resources_uploaded_by ON resources(uploaded_by);
     CREATE INDEX IF NOT EXISTS idx_resources_created_at ON resources(created_at);
   `);
+
+  // Data migration: Set proper roles for existing users
+  try {
+    // Update super admin accounts
+    const updateSuperAdminStmt = db.prepare(`
+      UPDATE users
+      SET role = 'super_admin'
+      WHERE email = 'super@kk119.com' OR email LIKE '%super%'
+    `);
+    const superAdminResult = updateSuperAdminStmt.run();
+
+    // Update admin accounts
+    const updateAdminStmt = db.prepare(`
+      UPDATE users
+      SET role = 'admin'
+      WHERE (email LIKE '%admin%' OR email = 'association@kk119.com') AND role != 'super_admin'
+    `);
+    const adminResult = updateAdminStmt.run();
+
+    // Update lawyer accounts
+    const updateLawyerStmt = db.prepare(`
+      UPDATE users
+      SET role = 'lawyer'
+      WHERE email LIKE '%lawyer%' AND role != 'super_admin' AND role != 'admin'
+    `);
+    const lawyerResult = updateLawyerStmt.run();
+
+    // Set default teacher role for remaining users
+    const updateTeacherStmt = db.prepare(`
+      UPDATE users
+      SET role = 'teacher'
+      WHERE role IS NULL OR role = ''
+    `);
+    const teacherResult = updateTeacherStmt.run();
+
+    if (superAdminResult.changes > 0 || adminResult.changes > 0 || lawyerResult.changes > 0 || teacherResult.changes > 0) {
+      console.log('✅ User roles updated:', {
+        superAdmins: superAdminResult.changes,
+        admins: adminResult.changes,
+        lawyers: lawyerResult.changes,
+        teachers: teacherResult.changes
+      });
+    }
+  } catch (error: any) {
+    console.error('❌ Error updating user roles:', error.message);
+  }
 
   console.log('Database initialized successfully');
 }
@@ -128,14 +194,16 @@ export const userDb = {
     position?: string;
     phone?: string;
     associations?: string[];
+    role?: string;
+    association_id?: number;
   }) => {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-    
+
     const stmt = db.prepare(`
-      INSERT INTO users (email, password, name, school, position, phone, association)
-      VALUES (@email, @password, @name, @school, @position, @phone, @association)
+      INSERT INTO users (email, password, name, school, position, phone, association, role, association_id)
+      VALUES (@email, @password, @name, @school, @position, @phone, @association, @role, @association_id)
     `);
-    
+
     try {
       const result = stmt.run({
         email: userData.email,
@@ -144,9 +212,11 @@ export const userDb = {
         school: userData.school || null,
         position: userData.position || null,
         phone: userData.phone || null,
-        association: userData.associations ? JSON.stringify(userData.associations) : null
+        association: userData.associations ? JSON.stringify(userData.associations) : null,
+        role: userData.role || 'teacher',
+        association_id: userData.association_id || null
       });
-      
+
       return { id: result.lastInsertRowid, ...userData };
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {

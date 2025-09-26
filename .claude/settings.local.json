@@ -13,7 +13,11 @@
       "Bash(Select-Object -Last 50)",
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(winget install:*)",
+      "Bash(sqlite3:*)",
+      "Bash(refreshenv)"
     ],
     "deny": [],
     "ask": []

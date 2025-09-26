@@ -5,7 +5,7 @@ import { UserManager } from '@/components/admin/user-manager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useStore } from '@/lib/store';
 import {
   Users,
   Shield,
@@ -20,10 +20,10 @@ import {
 import { roleDisplayNames } from '@/lib/types/user';
 
 export default function UserManagementPage() {
-  const { profile } = useAuth();
+  const { user } = useStore();
 
   // 슈퍼어드민 권한 확인
-  if (profile?.role !== 'super_admin') {
+  if (user?.role !== 'super_admin') {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">

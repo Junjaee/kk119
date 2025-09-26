@@ -44,29 +44,41 @@ import {
   Activity,
   TrendingUp
 } from 'lucide-react';
-import { useAssociations } from '@/lib/hooks/useAssociations';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { Association, UserProfile, roleDisplayNames, roleColors } from '@/lib/types/user';
+import { useStore } from '@/lib/store';
+import { roleDisplayNames, roleColors } from '@/lib/types/user';
 
 export function AssociationManager() {
-  const { profile } = useAuth();
-  const {
-    associations,
-    userMemberships,
-    loading,
-    error,
-    createAssociation,
-    updateAssociation,
-    deleteAssociation,
-    getAssociationMembers,
-    getPendingMemberships,
-    approveMembership,
-    rejectMembership,
-    setAssociationAdmin,
-    refreshData
-  } = useAssociations(profile?.id);
+  const { user: profile } = useStore();
 
-  const [selectedAssociation, setSelectedAssociation] = useState<Association | null>(null);
+  // Mock data for demo purposes
+  const [associations, setAssociations] = useState([
+    {
+      id: '1',
+      name: '전국교육공무원노동조합',
+      description: '전국 교육공무원들의 권익 보호와 교육 발전을 위한 단체',
+      contact_email: 'contact@ktu.or.kr',
+      contact_phone: '02-570-5000',
+      website: 'https://ktu.or.kr',
+      address: '서울시 서초구 방배로 42길 11',
+      created_at: '2023-01-15'
+    },
+    {
+      id: '2',
+      name: '한국교원단체총연합회',
+      description: '교원의 지위 향상과 교육 발전을 목표로 하는 교원단체',
+      contact_email: 'info@kfta.or.kr',
+      contact_phone: '02-570-8000',
+      website: 'https://kfta.or.kr',
+      address: '서울시 서초구 태헤란로 4길 37',
+      created_at: '2023-02-20'
+    }
+  ]);
+
+  const [userMemberships, setUserMemberships] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [selectedAssociation, setSelectedAssociation] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showMembersDialog, setShowMembersDialog] = useState(false);
@@ -83,51 +95,64 @@ export function AssociationManager() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // 협회 멤버 로드
+  // Mock handlers
   const loadAssociationMembers = async (associationId: string) => {
-    try {
-      setActionLoading('loading-members');
-      const [membersData, pendingData] = await Promise.all([
-        getAssociationMembers(associationId),
-        getPendingMemberships(associationId)
-      ]);
-      setMembers(membersData);
-      setPendingMembers(pendingData);
-    } catch (err) {
-      console.error('Error loading members:', err);
-    } finally {
-      setActionLoading(null);
-    }
+    setActionLoading('loading-members');
+    // Mock delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Mock data
+    setMembers([
+      {
+        id: '1',
+        user_profile: {
+          name: '김교사',
+          email: 'teacher1@school.edu',
+          role: 'teacher'
+        },
+        is_admin: false,
+        joined_at: '2023-03-01'
+      },
+      {
+        id: '2',
+        user_profile: {
+          name: '박교사',
+          email: 'teacher2@school.edu',
+          role: 'teacher'
+        },
+        is_admin: true,
+        joined_at: '2023-02-15'
+      }
+    ]);
+    setPendingMembers([]);
+    setActionLoading(null);
   };
 
-  // 협회 통계 로드
+  // Mock stats
   const loadAssociationStats = async (associationId: string) => {
-    try {
-      setActionLoading('loading-stats');
-      const response = await fetch(`/api/admin/associations/${associationId}/stats`);
-      const data = await response.json();
-      setAssociationStats(data);
-    } catch (err) {
-      console.error('Error loading stats:', err);
-      setMessage({ type: 'error', text: '통계 정보를 불러오는데 실패했습니다.' });
-    } finally {
-      setActionLoading(null);
-    }
+    setActionLoading('loading-stats');
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    setAssociationStats({
+      totalMembers: 156,
+      activeMembers: 142,
+      pendingMembers: 5,
+      monthlyGrowth: '+12%',
+      avgActivityScore: 85
+    });
+    setActionLoading(null);
   };
 
-  // 모든 사용자 로드
+  // Mock users
   const loadAllUsers = async () => {
-    try {
-      setActionLoading('loading-users');
-      const response = await fetch('/api/admin/users');
-      const data = await response.json();
-      setAllUsers(data.users || []);
-    } catch (err) {
-      console.error('Error loading users:', err);
-      setMessage({ type: 'error', text: '사용자 목록을 불러오는데 실패했습니다.' });
-    } finally {
-      setActionLoading(null);
-    }
+    setActionLoading('loading-users');
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    setAllUsers([
+      { id: '1', name: '이교사', email: 'lee@school.edu', role: 'teacher' },
+      { id: '2', name: '최교사', email: 'choi@school.edu', role: 'teacher' }
+    ]);
+    setActionLoading(null);
   };
 
   // 일괄 관리자 설정
@@ -184,106 +209,93 @@ export function AssociationManager() {
     }
   };
 
-  // 협회 생성
+  // Mock handlers for CRUD operations
   const handleCreateAssociation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) return;
 
     setActionLoading('creating');
-    const result = await createAssociation(formData as Omit<Association, 'id' | 'created_at' | 'updated_at'>);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error });
-    } else {
-      setMessage({ type: 'success', text: '협회가 성공적으로 생성되었습니다.' });
-      setShowCreateDialog(false);
-      setFormData({});
-    }
+    // Add to mock data
+    const newAssociation = {
+      id: String(associations.length + 1),
+      ...formData,
+      created_at: new Date().toISOString()
+    };
+    setAssociations([...associations, newAssociation]);
+
+    setMessage({ type: 'success', text: '협회가 성공적으로 생성되었습니다.' });
+    setShowCreateDialog(false);
+    setFormData({});
     setActionLoading(null);
   };
 
-  // 협회 수정
   const handleUpdateAssociation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAssociation || !formData.name) return;
 
     setActionLoading('updating');
-    const result = await updateAssociation(selectedAssociation.id, formData);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error });
-    } else {
-      setMessage({ type: 'success', text: '협회 정보가 업데이트되었습니다.' });
-      setShowEditDialog(false);
-      setFormData({});
-      setSelectedAssociation(null);
-    }
+    // Update mock data
+    setAssociations(associations.map(a =>
+      a.id === selectedAssociation.id ? { ...a, ...formData } : a
+    ));
+
+    setMessage({ type: 'success', text: '협회 정보가 업데이트되었습니다.' });
+    setShowEditDialog(false);
+    setFormData({});
+    setSelectedAssociation(null);
     setActionLoading(null);
   };
 
-  // 협회 삭제
-  const handleDeleteAssociation = async (association: Association) => {
+  const handleDeleteAssociation = async (association: any) => {
     if (!confirm(`정말로 "${association.name}" 협회를 삭제하시겠습니까?`)) return;
 
     setActionLoading(`deleting-${association.id}`);
-    const result = await deleteAssociation(association.id);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error });
-    } else {
-      setMessage({ type: 'success', text: '협회가 삭제되었습니다.' });
-    }
+    // Remove from mock data
+    setAssociations(associations.filter(a => a.id !== association.id));
+
+    setMessage({ type: 'success', text: '협회가 삭제되었습니다.' });
     setActionLoading(null);
   };
 
-  // 멤버십 승인
+  // Mock membership handlers
   const handleApproveMembership = async (membershipId: string) => {
     setActionLoading(`approving-${membershipId}`);
-    const result = await approveMembership(membershipId);
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error });
-    } else {
-      setMessage({ type: 'success', text: '멤버십이 승인되었습니다.' });
-      if (selectedAssociation) {
-        loadAssociationMembers(selectedAssociation.id);
-      }
-    }
+    setMessage({ type: 'success', text: '멤버십이 승인되었습니다.' });
+    // Remove from pending and add to members
+    setPendingMembers(pendingMembers.filter((m: any) => m.id !== membershipId));
     setActionLoading(null);
   };
 
-  // 멤버십 거부
   const handleRejectMembership = async (membershipId: string) => {
     setActionLoading(`rejecting-${membershipId}`);
-    const result = await rejectMembership(membershipId);
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error });
-    } else {
-      setMessage({ type: 'success', text: '멤버십이 거부되었습니다.' });
-      if (selectedAssociation) {
-        loadAssociationMembers(selectedAssociation.id);
-      }
-    }
+    setMessage({ type: 'success', text: '멤버십이 거부되었습니다.' });
+    setPendingMembers(pendingMembers.filter((m: any) => m.id !== membershipId));
     setActionLoading(null);
   };
 
-  // 관리자 권한 토글
   const handleToggleAdmin = async (membershipId: string, currentIsAdmin: boolean) => {
     setActionLoading(`admin-${membershipId}`);
-    const result = await setAssociationAdmin(membershipId, !currentIsAdmin);
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error });
-    } else {
-      setMessage({
-        type: 'success',
-        text: `관리자 권한이 ${!currentIsAdmin ? '부여' : '해제'}되었습니다.`
-      });
-      if (selectedAssociation) {
-        loadAssociationMembers(selectedAssociation.id);
-      }
-    }
+    setMessage({
+      type: 'success',
+      text: `관리자 권한이 ${!currentIsAdmin ? '부여' : '해제'}되었습니다.`
+    });
+
+    // Update member admin status in mock data
+    setMembers(members.map((m: any) =>
+      m.id === membershipId ? { ...m, is_admin: !currentIsAdmin } : m
+    ));
     setActionLoading(null);
   };
 

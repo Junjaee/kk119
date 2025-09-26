@@ -27,7 +27,7 @@ import {
   Upload
 } from 'lucide-react';
 import { UserProfile, UserRole, roleDisplayNames, roleColors } from '@/lib/types/user';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useStore } from '@/lib/store';
 import { toast } from 'react-hot-toast';
 
 interface UserManagerProps {
@@ -42,7 +42,7 @@ interface UsersResponse {
 }
 
 export function UserManager({ className }: UserManagerProps) {
-  const { profile } = useAuth();
+  const { user: profile } = useStore();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);

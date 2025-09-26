@@ -89,7 +89,9 @@ export default function LoginPage() {
         email: data.user.email,
         school: data.user.school,
         position: data.user.position,
-        isAdmin: data.user.isAdmin
+        role: data.user.role,
+        isAdmin: data.user.isAdmin,
+        isVerified: data.user.isVerified
       });
 
       toast.success(`환영합니다, ${data.user.name}님!`);

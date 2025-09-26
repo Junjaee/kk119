@@ -122,7 +122,7 @@ const menuItems: MenuItems = {
     },
     {
       href: '/admin/user-management',
-      label: '계정 생성 관리',
+      label: '계정 생성 게시판',
       icon: Users,
       description: '모든 사용자 생성/관리',
       badge: 'NEW',
@@ -130,18 +130,10 @@ const menuItems: MenuItems = {
     },
     {
       href: '/admin/associations',
-      label: '협회 관리',
+      label: '협회 생성 게시판',
       icon: Shield,
       description: '협회 생성 및 관리',
       badge: null
-    },
-    {
-      href: '/admin/reports',
-      label: '신고 관리',
-      icon: FileText,
-      description: '모든 신고 관리',
-      badge: '대기중',
-      badgeColor: 'warning-modern'
     },
     {
       href: '/admin/stats',
@@ -167,6 +159,13 @@ export function Sidebar() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const userRole = user?.role || 'teacher';
   const items = menuItems[userRole];
+
+  console.log('🔍 Sidebar Debug:', {
+    userRole,
+    availableRoles: Object.keys(menuItems),
+    itemsCount: items?.length || 0,
+    user: user
+  });
 
   return (
     <>

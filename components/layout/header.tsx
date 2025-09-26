@@ -33,6 +33,7 @@ export function Header() {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
+      case 'super_admin': return 'trust-modern';
       case 'admin': return 'urgent-modern';
       case 'lawyer': return 'protection-modern';
       default: return 'primary-modern';
@@ -41,6 +42,7 @@ export function Header() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
+      case 'super_admin': return '슈퍼관리자';
       case 'admin': return '관리자';
       case 'lawyer': return '변호사';
       default: return '교사';

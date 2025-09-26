@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/client';
+import { userDb } from '@/lib/db/database';
+import { auth } from '@/lib/auth/auth-utils';
 import { UserRole } from '@/lib/types/user';
 
 // 사용자 생성 요청 타입
@@ -20,27 +21,15 @@ interface CreateUserRequest {
 
 // 권한 검증 함수
 async function checkSuperAdminPermission(req: NextRequest) {
-  const supabase = createClient();
-
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { authorized: false, error: '인증이 필요합니다.' };
+    // JWT 토큰 검증
+    const token = req.cookies.get('auth-token')?.value;
+    if (!token) {
+      return { authorized: false, error: '인증 토큰이 없습니다.' };
     }
 
-    // 사용자 프로필 조회
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return { authorized: false, error: '사용자 정보를 찾을 수 없습니다.' };
-    }
-
-    if (profile.role !== 'super_admin') {
+    const decodedToken = await auth.verifyToken(token);
+    if (!decodedToken || decodedToken.role !== 'super_admin') {
       return { authorized: false, error: '슈퍼어드민 권한이 필요합니다.' };
     }
 
@@ -62,7 +51,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const supabase = createClient();
   const { searchParams } = new URL(req.url);
 
   const page = parseInt(searchParams.get('page') || '1');
@@ -71,41 +59,50 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get('search');
 
   try {
-    let query = supabase
-      .from('user_profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // 데이터베이스에서 사용자 목록 조회
+    let query = 'SELECT * FROM users WHERE 1=1';
+    const params: any[] = [];
 
-    // 역할 필터
-    if (role) {
-      query = query.eq('role', role);
+    if (role && role !== 'all') {
+      query += ' AND role = ?';
+      params.push(role);
     }
 
-    // 검색 필터
     if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+      query += ' AND (name LIKE ? OR email LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
     }
 
-    // 페이지네이션
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    query = query.range(from, to);
+    // 전체 개수 조회
+    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
+    const db = await import('@/lib/db/database');
+    const countResult = db.default.prepare(countQuery).get(...params) as { total: number };
+    const totalCount = countResult.total;
 
-    const { data: users, error, count } = await query;
+    // 페이지네이션 적용
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, (page - 1) * limit);
 
-    if (error) {
-      console.error('Users fetch error:', error);
-      return NextResponse.json(
-        { error: '사용자 목록 조회에 실패했습니다.' },
-        { status: 500 }
-      );
-    }
+    const users = db.default.prepare(query).all(...params);
 
     return NextResponse.json({
-      users: users || [],
-      totalCount: count || 0,
+      users: users.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'teacher',
+        phone: user.phone,
+        school_name: user.school,
+        position: user.position,
+        is_active: user.is_verified === 1,
+        is_verified: user.is_verified === 1,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        last_login: user.last_login
+      })),
+      totalCount,
       currentPage: page,
-      totalPages: Math.ceil((count || 0) / limit),
+      totalPages: Math.ceil(totalCount / limit),
     });
 
   } catch (error) {
@@ -183,72 +180,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = createClient();
-
-    // Supabase Auth로 사용자 생성
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // 사용자 생성
+    const newUser = await userDb.create({
       email,
       password,
-      email_confirm: true, // 이메일 인증 자동 완료
-    });
-
-    if (authError || !authData.user) {
-      console.error('Auth user creation error:', authError);
-      return NextResponse.json(
-        { error: authError?.message || '계정 생성에 실패했습니다.' },
-        { status: 500 }
-      );
-    }
-
-    // 사용자 프로필 생성
-    const profileData = {
-      id: authData.user.id,
-      email,
       name,
-      role,
+      school: school_name,
+      position: employee_id,
       phone,
-      school_name: role === 'teacher' ? school_name : null,
-      employee_id: role === 'teacher' ? employee_id : null,
-      license_number: role === 'lawyer' ? license_number : null,
-      law_firm: role === 'lawyer' ? law_firm : null,
-      specialization: role === 'lawyer' ? specialization : null,
-      is_active: true,
-      is_verified: true, // 슈퍼어드민이 생성하므로 자동 승인
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .insert(profileData)
-      .select()
-      .single();
-
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-
-      // 실패 시 Auth 사용자도 삭제
-      await supabase.auth.admin.deleteUser(authData.user.id);
-
-      return NextResponse.json(
-        { error: '프로필 생성에 실패했습니다.' },
-        { status: 500 }
-      );
-    }
-
-    // 비밀번호는 응답에서 제외
-    const { password: _, ...responseData } = body;
+      role,
+      association_id: null // 기본값으로 null 설정
+    });
 
     return NextResponse.json({
       message: '사용자가 성공적으로 생성되었습니다.',
       user: {
-        ...profile,
-        auth_id: authData.user.id,
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role || role
       },
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('User creation error:', error);
+    if (error.message.includes('이미 등록된 이메일')) {
+      return NextResponse.json(
+        { error: '이미 등록된 이메일입니다.' },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

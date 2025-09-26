@@ -1,29 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/client';
+import { userDb } from '@/lib/db/database';
+import { auth } from '@/lib/auth/auth-utils';
 import { UserRole } from '@/lib/types/user';
 
 // 권한 검증 함수
 async function checkSuperAdminPermission(req: NextRequest) {
-  const supabase = createClient();
-
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { authorized: false, error: '인증이 필요합니다.' };
+    // JWT 토큰 검증
+    const token = req.cookies.get('auth-token')?.value;
+    if (!token) {
+      return { authorized: false, error: '인증 토큰이 없습니다.' };
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return { authorized: false, error: '사용자 정보를 찾을 수 없습니다.' };
-    }
-
-    if (profile.role !== 'super_admin') {
+    const decodedToken = await auth.verifyToken(token);
+    if (!decodedToken || decodedToken.role !== 'super_admin') {
       return { authorized: false, error: '슈퍼어드민 권한이 필요합니다.' };
     }
 
@@ -48,25 +38,34 @@ export async function GET(
     );
   }
 
-  const supabase = createClient();
-  const userId = params.id;
+  const userId = parseInt(params.id);
 
   try {
-    const { data: user, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const user = await userDb.findById(userId);
 
-    if (error) {
-      console.error('User fetch error:', error);
+    if (!user) {
       return NextResponse.json(
         { error: '사용자 정보를 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'teacher',
+        phone: user.phone,
+        school_name: user.school,
+        employee_id: user.position,
+        is_active: user.is_verified === 1,
+        is_verified: user.is_verified === 1,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        last_login: user.last_login
+      }
+    });
 
   } catch (error) {
     console.error('User API error:', error);
@@ -91,8 +90,7 @@ export async function PUT(
     );
   }
 
-  const supabase = createClient();
-  const userId = params.id;
+  const userId = parseInt(params.id);
 
   try {
     const body = await req.json();
@@ -102,9 +100,6 @@ export async function PUT(
       phone,
       school_name,
       employee_id,
-      license_number,
-      law_firm,
-      specialization,
       is_active,
       is_verified
     } = body;
@@ -125,37 +120,17 @@ export async function PUT(
       );
     }
 
-    if (role === 'lawyer' && (!license_number || !specialization)) {
-      return NextResponse.json(
-        { error: '변호사 계정은 면허번호와 전문분야가 필요합니다.' },
-        { status: 400 }
-      );
-    }
-
-    // 업데이트할 데이터 준비
-    const updateData = {
+    // 사용자 업데이트
+    const updatedUser = await userDb.update(userId, {
       name,
       role,
       phone,
-      school_name: role === 'teacher' ? school_name : null,
-      employee_id: role === 'teacher' ? employee_id : null,
-      license_number: role === 'lawyer' ? license_number : null,
-      law_firm: role === 'lawyer' ? law_firm : null,
-      specialization: role === 'lawyer' ? specialization : null,
-      is_active: is_active !== undefined ? is_active : true,
-      is_verified: is_verified !== undefined ? is_verified : true,
-      updated_at: new Date().toISOString(),
-    };
+      school: role === 'teacher' ? school_name : null,
+      position: role === 'teacher' ? employee_id : null,
+      is_verified: is_verified !== undefined ? (is_verified ? 1 : 0) : 1,
+    });
 
-    const { data: user, error } = await supabase
-      .from('user_profiles')
-      .update(updateData)
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('User update error:', error);
+    if (!updatedUser) {
       return NextResponse.json(
         { error: '사용자 정보 수정에 실패했습니다.' },
         { status: 500 }
@@ -164,7 +139,17 @@ export async function PUT(
 
     return NextResponse.json({
       message: '사용자 정보가 성공적으로 수정되었습니다.',
-      user,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        phone: updatedUser.phone,
+        school_name: updatedUser.school,
+        employee_id: updatedUser.position,
+        is_active: updatedUser.is_verified === 1,
+        is_verified: updatedUser.is_verified === 1,
+      },
     });
 
   } catch (error) {
@@ -190,46 +175,37 @@ export async function DELETE(
     );
   }
 
-  const supabase = createClient();
-  const userId = params.id;
+  const userId = parseInt(params.id);
 
   try {
     // 먼저 해당 사용자가 존재하는지 확인
-    const { data: existingUser, error: fetchError } = await supabase
-      .from('user_profiles')
-      .select('role, name, email')
-      .eq('id', userId)
-      .single();
+    const existingUser = await userDb.findById(userId);
 
-    if (fetchError || !existingUser) {
+    if (!existingUser) {
       return NextResponse.json(
         { error: '사용자를 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
 
-    // 자기 자신을 비활성화하려는 경우 방지
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (currentUser && currentUser.id === userId) {
-      return NextResponse.json(
-        { error: '자기 자신의 계정은 비활성화할 수 없습니다.' },
-        { status: 403 }
-      );
+    // JWT에서 현재 사용자 확인
+    const token = req.cookies.get('auth-token')?.value;
+    if (token) {
+      const decodedToken = await auth.verifyToken(token);
+      if (decodedToken && decodedToken.userId === userId) {
+        return NextResponse.json(
+          { error: '자기 자신의 계정은 비활성화할 수 없습니다.' },
+          { status: 403 }
+        );
+      }
     }
 
     // 계정 비활성화
-    const { data: user, error } = await supabase
-      .from('user_profiles')
-      .update({
-        is_active: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
-      .select()
-      .single();
+    const updatedUser = await userDb.update(userId, {
+      is_verified: 0, // 비활성화
+    });
 
-    if (error) {
-      console.error('User deactivation error:', error);
+    if (!updatedUser) {
       return NextResponse.json(
         { error: '계정 비활성화에 실패했습니다.' },
         { status: 500 }
@@ -238,7 +214,14 @@ export async function DELETE(
 
     return NextResponse.json({
       message: '계정이 성공적으로 비활성화되었습니다.',
-      user,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        is_active: updatedUser.is_verified === 1,
+        is_verified: updatedUser.is_verified === 1,
+      },
     });
 
   } catch (error) {

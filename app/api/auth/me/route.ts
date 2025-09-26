@@ -39,6 +39,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Add debug logging
+    console.log('🔍 /api/auth/me - User from DB:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      is_admin: user.is_admin
+    });
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -47,6 +55,7 @@ export async function GET(request: NextRequest) {
         school: user.school,
         position: user.position,
         phone: user.phone,
+        role: user.role || 'teacher',  // ← 핵심 수정: role 필드 추가
         isAdmin: user.is_admin === 1,
         isVerified: user.is_verified === 1,
         createdAt: user.created_at,

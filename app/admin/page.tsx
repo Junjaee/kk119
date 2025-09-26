@@ -122,10 +122,14 @@ const chartData = {
 export default function AdminDashboard() {
   const { user, setUser } = useStore();
   
-  // Switch to admin user for testing
-  if (user?.role !== 'admin') {
+  // Allow both admin and super_admin to access this page
+  console.log('🔍 Admin Page - User Role Check:', user?.role);
+  if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+    console.log('🔍 Admin Page - Switching to admin user');
     const adminUser = switchUser('admin');
     setUser(adminUser);
+  } else {
+    console.log('🔍 Admin Page - User role allowed:', user?.role);
   }
 
   return (
@@ -134,7 +138,9 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">관리자 대시보드</h1>
+            <h1 className="text-3xl font-bold">
+              {user?.role === 'super_admin' ? '슈퍼관리자 대시보드' : '관리자 대시보드'}
+            </h1>
             <p className="text-muted-foreground mt-2">
               교권119 시스템 전체 현황을 모니터링합니다
             </p>

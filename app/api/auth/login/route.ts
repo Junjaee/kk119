@@ -17,6 +17,13 @@ export async function POST(request: NextRequest) {
 
     // Find user
     const user = userDb.findByEmail(email) as any;
+    console.log('🔍 Login Debug - User from DB:', {
+      id: user?.id,
+      email: user?.email,
+      name: user?.name,
+      role: user?.role,
+      is_admin: user?.is_admin
+    });
     if (!user) {
       return NextResponse.json(
         { error: '이메일 또는 비밀번호가 올바르지 않습니다.' },
@@ -60,6 +67,7 @@ export async function POST(request: NextRequest) {
           name: user.name,
           school: user.school,
           position: user.position,
+          role: user.role || 'teacher',
           isAdmin: user.is_admin === 1,
           isVerified: user.is_verified === 1
         },

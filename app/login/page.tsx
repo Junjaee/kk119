@@ -95,10 +95,26 @@ export default function LoginPage() {
       });
 
       toast.success(`환영합니다, ${data.user.name}님!`);
-      
-      // Redirect to dashboard or previous page
+
+      // Redirect based on user role
       const fromUrl = searchParams.get('from');
-      const redirectUrl = fromUrl || sessionStorage.getItem('redirectAfterLogin') || '/';
+      let redirectUrl = fromUrl || sessionStorage.getItem('redirectAfterLogin');
+
+      // If no specific redirect URL, determine based on user role
+      if (!redirectUrl) {
+        switch (data.user.role) {
+          case 'super_admin':
+            redirectUrl = '/admin';
+            break;
+          case 'admin':
+            redirectUrl = '/admin';
+            break;
+          default:
+            redirectUrl = '/';
+            break;
+        }
+      }
+
       sessionStorage.removeItem('redirectAfterLogin');
 
       // Use Next.js router for proper navigation

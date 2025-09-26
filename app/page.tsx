@@ -30,7 +30,8 @@ import {
   Eye
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatRelativeTime } from '@/lib/utils/date';
 
 // Enhanced mock data
@@ -101,9 +102,33 @@ const upcomingEvents = [
 
 export default function HomePage() {
   const { user } = useStore();
+  const router = useRouter();
   const [showAllReports, setShowAllReports] = useState(false);
   const [currentReportPage, setCurrentReportPage] = useState(0);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const reportsPerPage = 5;
+
+  // Redirect super_admin and admin to admin dashboard
+  useEffect(() => {
+    if (user?.role === 'super_admin' || user?.role === 'admin') {
+      setIsRedirecting(true);
+      router.push('/admin');
+    }
+  }, [user, router]);
+
+  // Don't render teacher content if user is admin/super_admin
+  if (user?.role === 'super_admin' || user?.role === 'admin' || isRedirecting) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">관리자 대시보드로 이동 중...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
   
   const getStatusBadgeClass = (status: string) => {
     const statusClasses: Record<string, string> = {

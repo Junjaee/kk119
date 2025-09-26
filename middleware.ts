@@ -56,23 +56,37 @@ export async function middleware(request: NextRequest) {
   // 🔍 DEBUG: Log all requests
   console.log(`[MIDDLEWARE] Request: ${request.method} ${pathname}`);
 
-  // Check if path is public
-  const isPublicPath = publicPaths.some(path => 
-    pathname === path || pathname.startsWith(`${path}/`)
-  );
-  
-  // Check if path is protected
-  const isProtectedPath = protectedPaths.some(path => 
-    pathname === path || pathname.startsWith(`${path}/`)
-  );
-  
-  // Check if path is admin only
-  const isAdminPath = adminPaths.some(path => 
-    pathname === path || pathname.startsWith(`${path}/`)
-  );
-  
-  // Get auth token from cookie
+  // Get auth token from cookie early
   const token = request.cookies.get('auth-token')?.value;
+
+  // Handle root path redirect for authenticated admin users
+  if (pathname === '/' && token) {
+    try {
+      const payload = await auth.verifyToken(token);
+      if (payload && (payload.role === 'super_admin' || payload.role === 'admin')) {
+        console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /admin`);
+        return NextResponse.redirect(new URL('/admin', request.url));
+      }
+    } catch (error) {
+      console.log(`[MIDDLEWARE] Token verification failed for root path:`, error);
+      // Continue with normal flow
+    }
+  }
+
+  // Check if path is public
+  const isPublicPath = publicPaths.some(path =>
+    pathname === path || pathname.startsWith(`${path}/`)
+  );
+
+  // Check if path is protected
+  const isProtectedPath = protectedPaths.some(path =>
+    pathname === path || pathname.startsWith(`${path}/`)
+  );
+
+  // Check if path is admin only
+  const isAdminPath = adminPaths.some(path =>
+    pathname === path || pathname.startsWith(`${path}/`)
+  );
 
   // Redirect to login if accessing protected path without token
   if ((isProtectedPath || isAdminPath) && !token) {

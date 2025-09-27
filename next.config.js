@@ -184,9 +184,9 @@ const nextConfig = {
       })
     );
 
-    // Tree shaking 최적화
-    config.optimization.usedExports = true;
-    config.optimization.sideEffects = false;
+    // Tree shaking 최적화 (webpack 호환성 문제로 임시 비활성화)
+    // config.optimization.usedExports = true;
+    // config.optimization.sideEffects = false;
 
     return config;
   },

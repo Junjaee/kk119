@@ -271,7 +271,32 @@ export default function AdminDashboardPage() {
 
   return (
     <AuthGuard>
-      <RoleGuard roles={['super_admin', 'admin']}>
+      <RoleGuard
+        roles={['super_admin', 'admin']}
+        fallback={
+          <DashboardLayout>
+            <div className="text-center py-16">
+              <Shield className="h-16 w-16 mx-auto text-red-500 mb-4" />
+              <h2 className="text-2xl font-bold mb-2 text-red-600">접근 권한이 없습니다</h2>
+              <p className="text-muted-foreground mb-6">
+                협회관리자 대시보드에 접근하려면 관리자 권한이 필요합니다.
+              </p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>현재 권한: <Badge variant="outline">{user?.role || 'teacher'}</Badge></p>
+                <p>필요 권한: <Badge variant="default">admin</Badge> 또는 <Badge variant="default">super_admin</Badge></p>
+              </div>
+              <div className="mt-6 space-x-2">
+                <Link href="/">
+                  <Button>홈으로 돌아가기</Button>
+                </Link>
+                <Button variant="outline" onClick={() => window.history.back()}>
+                  뒤로 가기
+                </Button>
+              </div>
+            </div>
+          </DashboardLayout>
+        }
+      >
         <DashboardLayout>
           <div className="space-y-8">
             {/* Header */}

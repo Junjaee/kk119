@@ -4,7 +4,8 @@ import bcrypt from 'bcryptjs';
 import { UserRole, User, getUserRoleHierarchy, canAccessRole, hasRole as hasUserRole } from '../types/index';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'kyokwon119-secret-key-2024-change-this-in-production';
-const JWT_EXPIRES_IN = '7d';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
 // Convert secret to Uint8Array for jose
 const getJwtSecret = () => new TextEncoder().encode(JWT_SECRET);

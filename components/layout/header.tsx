@@ -63,6 +63,23 @@ export function Header() {
           <Menu className="h-5 w-5" />
         </Button>
 
+        {/* Logo Section */}
+        {isHydrated && (
+          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                교권119
+              </h1>
+              <p className="text-xs text-muted-foreground -mt-1">
+                교사의 권리를 지킵니다
+              </p>
+            </div>
+          </Link>
+        )}
+
         {/* Right Section */}
         <div className="flex items-center space-x-3 ml-auto">
           {/* Notifications */}

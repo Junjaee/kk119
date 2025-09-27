@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useStore } from '@/lib/store';
+import { authSync } from '@/lib/auth/auth-sync';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,8 +20,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const { theme, initialize } = useStore();
 
   useEffect(() => {
-    // Initialize store with mock user
-    initialize();
+    // Initialize store and refresh auth state
+    const initializeApp = async () => {
+      // First initialize the store
+      initialize();
+
+      // Then refresh auth state from server to sync user info
+      try {
+        await authSync.refreshAuthState();
+      } catch (error) {
+        console.error('Failed to refresh auth state during initialization:', error);
+      }
+    };
+
+    initializeApp();
   }, [initialize]);
 
   useEffect(() => {

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Header } from './Header';
-import { Sidebar } from './Sidebar';
+import { Header } from './header';
+import { Sidebar } from './sidebar';
 import { useStore } from '@/lib/store';
 
 interface DashboardLayoutProps {

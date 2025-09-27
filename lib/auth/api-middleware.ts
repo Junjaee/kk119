@@ -20,7 +20,9 @@ export interface AuthResult {
 /**
  * Extract and verify auth token from API request
  */
-export function authenticateRequest(request: NextRequest): AuthResult {
+export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
+  console.log('🔍 [AUTH] Starting authenticateRequest');
+
   // Try to get token from Authorization header first
   let token = auth.extractTokenFromHeaders(request.headers);
 
@@ -30,26 +32,33 @@ export function authenticateRequest(request: NextRequest): AuthResult {
     token = auth.extractTokenFromCookie(cookieHeader);
   }
 
+  console.log('🔍 [AUTH] Token extracted:', token ? 'YES' : 'NO');
+
   if (!token) {
+    console.log('🔍 [AUTH] No token found');
     return {
       success: false,
       error: 'No authentication token provided'
     };
   }
 
-  const user = getUserFromToken(token);
+  const user = await getUserFromToken(token);
+  console.log('🔍 [AUTH] User from token:', user ? { id: user.id, email: user.email, role: user.role } : 'NULL');
+
   if (!user) {
+    console.log('🔍 [AUTH] Invalid token');
     return {
       success: false,
       error: 'Invalid authentication token'
     };
   }
 
+  console.log('🔍 [AUTH] Authentication successful');
   return {
     success: true,
     user: {
       id: user.id as number,
-      email: user.email,
+      email: user.email || '',
       name: user.name || '',
       role: user.role as UserRole,
       association_id: user.association_id
@@ -60,11 +69,14 @@ export function authenticateRequest(request: NextRequest): AuthResult {
 /**
  * Authorize API request with role-based access control
  */
-export function authorizeRequest(
+export async function authorizeRequest(
   request: NextRequest,
   context: AuthorizationContext
-): AuthResult {
-  const authResult = authenticateRequest(request);
+): Promise<AuthResult> {
+  console.log('🔍 [AUTHZ] Starting authorizeRequest with context:', context);
+
+  const authResult = await authenticateRequest(request);
+  console.log('🔍 [AUTHZ] Authentication result:', authResult.success ? 'SUCCESS' : `FAILED: ${authResult.error}`);
 
   if (!authResult.success || !authResult.user) {
     return authResult;
@@ -77,13 +89,20 @@ export function authorizeRequest(
     token = auth.extractTokenFromCookie(cookieHeader);
   }
 
-  if (!token || !isAuthorized(token, context)) {
+  console.log('🔍 [AUTHZ] Token for authorization check:', token ? 'YES' : 'NO');
+
+  const authorized = token ? await isAuthorized(token, context) : false;
+  console.log('🔍 [AUTHZ] Authorization result:', authorized ? 'AUTHORIZED' : 'DENIED');
+
+  if (!token || !authorized) {
+    console.log('🔍 [AUTHZ] Access denied - User role:', authResult.user.role, 'Required:', context);
     return {
       success: false,
       error: 'Access denied: insufficient permissions'
     };
   }
 
+  console.log('🔍 [AUTHZ] Authorization successful');
   return authResult;
 }
 
@@ -98,9 +117,9 @@ export function withAuth<T extends any[]>(
     let result: AuthResult;
 
     if (authContext) {
-      result = authorizeRequest(request, authContext);
+      result = await authorizeRequest(request, authContext);
     } else {
-      result = authenticateRequest(request);
+      result = await authenticateRequest(request);
     }
 
     if (!result.success) {

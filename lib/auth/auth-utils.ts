@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 // Web Crypto API를 사용하여 Edge Runtime 호환성 유지
-import { UserRole, User, getUserRoleHierarchy, canAccessRole, hasRole as hasUserRole } from '../types';
+import { UserRole, User, getUserRoleHierarchy, canAccessRole, hasRole as hasUserRole } from '../types/index';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'kyokwon119-secret-key-2024-change-this-in-production';
 const JWT_EXPIRES_IN = '7d';
@@ -266,17 +266,17 @@ export const isAdminOrHigherFromPayload = (payload: JWTPayload): boolean => {
 /**
  * Get user's association ID from token
  */
-export const getUserAssociationId = (token: string): number | null => {
-  const payload = auth.verifyToken(token);
+export const getUserAssociationId = async (token: string): Promise<number | null> => {
+  const payload = await auth.verifyToken(token);
   return payload?.association_id || null;
 };
 
 /**
  * Check if users are in the same association
  */
-export const isSameAssociation = (token1: string, token2: string): boolean => {
-  const assoc1 = getUserAssociationId(token1);
-  const assoc2 = getUserAssociationId(token2);
+export const isSameAssociation = async (token1: string, token2: string): Promise<boolean> => {
+  const assoc1 = await getUserAssociationId(token1);
+  const assoc2 = await getUserAssociationId(token2);
   return assoc1 !== null && assoc2 !== null && assoc1 === assoc2;
 };
 
@@ -284,16 +284,16 @@ export const isSameAssociation = (token1: string, token2: string): boolean => {
  * Create authorization middleware helper
  */
 export const createAuthCheck = (context: AuthorizationContext) => {
-  return (token: string): boolean => {
-    return isAuthorized(token, context);
+  return async (token: string): Promise<boolean> => {
+    return await isAuthorized(token, context);
   };
 };
 
 /**
  * Extract full user info from JWT token
  */
-export const getUserFromToken = (token: string): Partial<User> | null => {
-  const payload = auth.verifyToken(token);
+export const getUserFromToken = async (token: string): Promise<Partial<User> | null> => {
+  const payload = await auth.verifyToken(token);
   if (!payload) return null;
 
   return {

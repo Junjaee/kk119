@@ -43,8 +43,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { AuthGuard, RoleGuard } from '@/components/auth/permission-guard';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { useAssociations } from '@/lib/hooks/useAssociations';
+import { useStore } from '@/lib/store';
 
 interface DashboardStats {
   overview: {
@@ -100,8 +99,7 @@ interface HealthMetric {
 }
 
 export default function AdminDashboardPage() {
-  const { profile } = useAuth();
-  const { associations } = useAssociations(profile?.id);
+  const { user } = useStore();
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -281,10 +279,10 @@ export default function AdminDashboardPage() {
               <div>
                 <h1 className="text-3xl font-bold flex items-center gap-3">
                   <BarChart3 className="h-8 w-8" />
-                  관리자 대시보드
+                  협회관리자 대시보드
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  시스템 전체 현황과 통계를 확인하세요
+                  협회 전체 현황과 통계를 확인하세요
                 </p>
               </div>
               <div className="flex gap-2">

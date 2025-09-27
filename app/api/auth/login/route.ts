@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { userDb, sessionDb } from '@/lib/db/database';
 import { auth } from '@/lib/auth/auth-utils';
+import { ensureAdminRecord } from '@/lib/db/admin-sync';
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,7 +58,17 @@ export async function POST(request: NextRequest) {
       isAdmin: user.is_admin === 1
     });
 
-    // Create response
+    // Ensure admin users have corresponding admins table records
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      try {
+        ensureAdminRecord(user.id, user.association_id || null);
+      } catch (adminSyncError) {
+        console.error('❌ [ADMIN-SYNC] Failed to sync admin record for user:', user.email, adminSyncError);
+        // Don't fail login if admin sync fails, just log the error
+      }
+    }
+
+    // Create response with additional auth state data for client sync
     const response = NextResponse.json(
       {
         message: '로그인되었습니다.',
@@ -69,9 +80,11 @@ export async function POST(request: NextRequest) {
           position: user.position,
           role: user.role || 'teacher',
           isAdmin: user.is_admin === 1,
-          isVerified: user.is_verified === 1
+          isVerified: user.is_verified === 1,
+          association_id: user.association_id
         },
-        token: jwtToken
+        token: jwtToken,
+        syncRequired: true // Signal to client to sync auth state
       },
       { status: 200 }
     );

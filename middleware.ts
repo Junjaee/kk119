@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth, getUserRole, canAccess, isSuperAdmin, isAdminOrHigher } from './lib/auth/auth-utils';
-import { UserRole } from './lib/types';
+import { UserRole } from './lib/types/index';
 
 // Public paths that don't require authentication
 const publicPaths = [
@@ -63,12 +63,30 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/' && token) {
     try {
       const payload = await auth.verifyToken(token);
-      if (payload && (payload.role === 'super_admin' || payload.role === 'admin')) {
+      if (payload && payload.role === 'super_admin') {
         console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /admin`);
         return NextResponse.redirect(new URL('/admin', request.url));
+      } else if (payload && payload.role === 'admin') {
+        console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /admin/dashboard`);
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       }
     } catch (error) {
       console.log(`[MIDDLEWARE] Token verification failed for root path:`, error);
+      // Continue with normal flow
+    }
+  }
+
+  // Handle admin path redirect based on role
+  if (pathname === '/admin' && token) {
+    try {
+      const payload = await auth.verifyToken(token);
+      if (payload && payload.role === 'admin') {
+        console.log(`[MIDDLEWARE] Redirecting admin from /admin to /admin/dashboard`);
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      }
+      // super_admin stays at /admin
+    } catch (error) {
+      console.log(`[MIDDLEWARE] Token verification failed for admin path:`, error);
       // Continue with normal flow
     }
   }

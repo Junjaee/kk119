@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withSuperAdminAuth } from '../../../../../lib/auth/api-middleware';
-import { UserRole, isValidUserRole } from '../../../../../lib/types';
+import { UserRole, isValidUserRole } from '../../../../../lib/types/index';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 import path from 'path';

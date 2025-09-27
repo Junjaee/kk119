@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '../../../../../lib/auth/api-middleware';
+import { approveMembership, rejectMembership } from '@/lib/db/membership-sync';
 import Database from 'better-sqlite3';
 import path from 'path';
 
@@ -87,72 +88,36 @@ async function updateMembership(request: NextRequest, authResult: any, { params 
       }
     }
 
-    // Begin transaction
-    db.exec('BEGIN TRANSACTION');
-
-    try {
-      let updateQuery: string;
-      let updateParams: any[];
-
-      if (action === 'approve') {
-        updateQuery = `
-          UPDATE association_members
-          SET status = 'approved',
-              approved_by = ?,
-              approved_at = datetime('now'),
-              rejection_reason = NULL
-          WHERE id = ?
-        `;
-        updateParams = [adminId, membershipId];
-
-        // Update user's association_id if not already set
-        const user = db.prepare('SELECT association_id FROM users WHERE id = ?').get(membershipData.user_id) as any;
-        if (!user.association_id) {
-          db.prepare('UPDATE users SET association_id = ? WHERE id = ?')
-            .run(membershipData.association_id, membershipData.user_id);
-        }
-      } else {
-        updateQuery = `
-          UPDATE association_members
-          SET status = 'rejected',
-              approved_by = ?,
-              approved_at = datetime('now'),
-              rejection_reason = ?
-          WHERE id = ?
-        `;
-        updateParams = [adminId, rejection_reason, membershipId];
-      }
-
-      db.prepare(updateQuery).run(...updateParams);
-
-      db.exec('COMMIT');
-
-      // Get updated membership
-      const updatedMembership = db.prepare(`
-        SELECT
-          am.id, am.user_id, am.association_id, am.status,
-          am.approved_by, am.approved_at, am.rejection_reason, am.created_at,
-          u.name as user_name, u.email as user_email,
-          a.name as association_name, a.code as association_code,
-          admin.name as approved_by_name
-        FROM association_members am
-        JOIN users u ON am.user_id = u.id
-        JOIN associations a ON am.association_id = a.id
-        LEFT JOIN users admin ON am.approved_by = admin.id
-        WHERE am.id = ?
-      `).get(membershipId);
-
-      db.close();
-
-      return NextResponse.json({
-        message: `Membership ${action}d successfully`,
-        membership: updatedMembership
-      });
-
-    } catch (error) {
-      db.exec('ROLLBACK');
-      throw error;
+    // Use the centralized membership sync functions
+    let result;
+    if (action === 'approve') {
+      result = approveMembership(membershipId, adminId);
+    } else {
+      result = rejectMembership(membershipId, adminId, rejection_reason);
     }
+
+    // Get updated membership
+    const updatedMembership = db.prepare(`
+      SELECT
+        am.id, am.user_id, am.association_id, am.status,
+        am.approved_by, am.approved_at, am.rejection_reason, am.created_at,
+        u.name as user_name, u.email as user_email,
+        a.name as association_name, a.code as association_code,
+        admin.name as approved_by_name
+      FROM association_members am
+      JOIN users u ON am.user_id = u.id
+      JOIN associations a ON am.association_id = a.id
+      LEFT JOIN users admin ON am.approved_by = admin.id
+      WHERE am.id = ?
+    `).get(membershipId);
+
+    db.close();
+
+    return NextResponse.json({
+      message: `Membership ${action}d successfully`,
+      membership: updatedMembership,
+      result
+    });
   } catch (error) {
     console.error('Update membership error:', error);
     return NextResponse.json(

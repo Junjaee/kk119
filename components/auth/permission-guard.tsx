@@ -1,7 +1,7 @@
 'use client';
 
 import { usePermissions, WithPermissionProps } from '@/lib/hooks/usePermissions';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { AssociationMember } from '@/lib/types/user';
 import { createClient } from '@/lib/supabase/client';
@@ -14,7 +14,7 @@ export function PermissionGuard({
   fallback = null,
   children
 }: WithPermissionProps) {
-  const { profile } = useAuth();
+  const { user } = useStore();
   const [userAssociations, setUserAssociations] = useState<AssociationMember[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +23,7 @@ export function PermissionGuard({
   // 사용자 협회 정보 로드
   useEffect(() => {
     const loadUserAssociations = async () => {
-      if (!profile?.id) {
+      if (!user?.id) {
         setLoading(false);
         return;
       }
@@ -32,7 +32,7 @@ export function PermissionGuard({
         const { data, error } = await supabase
           .from('association_members')
           .select('*')
-          .eq('user_id', profile.id)
+          .eq('user_id', user.id)
           .eq('is_active', true);
 
         if (error) {
@@ -48,9 +48,9 @@ export function PermissionGuard({
     };
 
     loadUserAssociations();
-  }, [profile?.id, supabase]);
+  }, [user?.id, supabase]);
 
-  const { hasPermission } = usePermissions(profile, userAssociations);
+  const { hasPermission } = usePermissions(user, userAssociations);
 
   if (loading) {
     return (
@@ -75,10 +75,10 @@ interface RoleGuardProps {
 }
 
 export function RoleGuard({ roles, fallback = null, children }: RoleGuardProps) {
-  const { profile } = useAuth();
+  const { user } = useStore();
 
   const allowedRoles = Array.isArray(roles) ? roles : [roles];
-  const hasRequiredRole = profile?.role && allowedRoles.includes(profile.role);
+  const hasRequiredRole = user?.role && allowedRoles.includes(user.role);
 
   if (!hasRequiredRole) {
     return <>{fallback}</>;
@@ -101,7 +101,8 @@ export function AuthGuard({
   fallback = null,
   children
 }: AuthGuardProps) {
-  const { user, profile, loading } = useAuth();
+  const { user } = useStore();
+  const loading = false; // Since we're not using async auth, no loading state needed
 
   if (loading) {
     return (
@@ -115,7 +116,7 @@ export function AuthGuard({
     return <>{fallback}</>;
   }
 
-  if (requireVerification && !profile?.is_verified) {
+  if (requireVerification && !user?.is_verified) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <p className="text-yellow-800">
@@ -142,7 +143,7 @@ export function AssociationGuard({
   fallback = null,
   children
 }: AssociationGuardProps) {
-  const { profile } = useAuth();
+  const { user } = useStore();
   const [userAssociations, setUserAssociations] = useState<AssociationMember[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -150,7 +151,7 @@ export function AssociationGuard({
 
   useEffect(() => {
     const loadUserAssociations = async () => {
-      if (!profile?.id) {
+      if (!user?.id) {
         setLoading(false);
         return;
       }
@@ -159,7 +160,7 @@ export function AssociationGuard({
         const query = supabase
           .from('association_members')
           .select('*')
-          .eq('user_id', profile.id)
+          .eq('user_id', user.id)
           .eq('is_active', true);
 
         if (associationId) {
@@ -181,7 +182,7 @@ export function AssociationGuard({
     };
 
     loadUserAssociations();
-  }, [profile?.id, associationId, supabase]);
+  }, [user?.id, associationId, supabase]);
 
   if (loading) {
     return (
@@ -206,7 +207,7 @@ export function AssociationGuard({
       m => (!associationId || m.association_id === associationId) && m.is_admin
     );
 
-    if (!isAssociationAdmin && profile?.role !== 'super_admin') {
+    if (!isAssociationAdmin && user?.role !== 'super_admin') {
       return <>{fallback}</>;
     }
   }

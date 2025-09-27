@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FB923C" stroke="#fff" stroke-width="8"/>
+
+  <!-- Shield shape for protection -->
+  <path d="M256 80 L320 120 L320 200 Q320 280 256 320 Q192 280 192 200 L192 120 Z"
+        fill="#fff" stroke="#FB923C" stroke-width="4"/>
+
+  <!-- Book icon inside shield representing education -->
+  <rect x="220" y="140" width="72" height="54" rx="4" fill="#FB923C"/>
+  <rect x="224" y="144" width="64" height="46" rx="2" fill="#fff"/>
+
+  <!-- Pages lines -->
+  <line x1="232" y1="155" x2="280" y2="155" stroke="#FB923C" stroke-width="2"/>
+  <line x1="232" y1="165" x2="280" y2="165" stroke="#FB923C" stroke-width="2"/>
+  <line x1="232" y1="175" x2="270" y2="175" stroke="#FB923C" stroke-width="2"/>
+
+  <!-- Justice scales icon for legal protection -->
+  <g transform="translate(256, 220)">
+    <!-- Central pillar -->
+    <line x1="0" y1="-15" x2="0" y2="25" stroke="#fff" stroke-width="4"/>
+    <!-- Left scale -->
+    <circle cx="-20" cy="0" r="12" fill="none" stroke="#fff" stroke-width="3"/>
+    <!-- Right scale -->
+    <circle cx="20" cy="0" r="12" fill="none" stroke="#fff" stroke-width="3"/>
+    <!-- Balance beam -->
+    <line x1="-32" y1="0" x2="32" y2="0" stroke="#fff" stroke-width="3"/>
+  </g>
+
+  <!-- "119" text at bottom -->
+  <text x="256" y="400" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="48" font-weight="bold" fill="#fff">119</text>
+</svg>

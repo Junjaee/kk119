@@ -37,7 +37,7 @@ export default function UserManagementPage() {
                 </p>
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-sm">현재 권한:</span>
-                  <Badge>{roleDisplayNames[profile?.role || 'teacher']}</Badge>
+                  <Badge>{roleDisplayNames[user?.role || 'teacher']}</Badge>
                 </div>
               </div>
             </CardContent>

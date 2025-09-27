@@ -285,6 +285,12 @@ export const userDb = {
     
     const stmt = db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`);
     return stmt.run(...values);
+  },
+
+  getUserCount: () => {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM users');
+    const result = stmt.get() as { count: number };
+    return result.count;
   }
 };
 

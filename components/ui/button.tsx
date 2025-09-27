@@ -2,7 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils/cn';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'primary' | 'protection' | 'urgent' | 'trust';
+  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'primary' | 'protection' | 'urgent' | 'trust' | 'success' | 'error' | 'warning' | 'info';
   size?: 'default' | 'sm' | 'lg' | 'icon' | 'xs';
   asChild?: boolean;
   loading?: boolean;
@@ -22,6 +22,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       protection: 'bg-gradient-to-r from-protection-500 to-protection-600 text-white shadow-lg hover:shadow-xl hover:from-protection-600 hover:to-protection-700 transform hover:-translate-y-0.5',
       urgent: 'bg-gradient-to-r from-urgent-500 to-urgent-600 text-white shadow-lg hover:shadow-xl hover:from-urgent-600 hover:to-urgent-700 transform hover:-translate-y-0.5 animate-pulse',
       trust: 'bg-gradient-to-r from-trust-500 to-trust-600 text-white shadow-lg hover:shadow-xl hover:from-trust-600 hover:to-trust-700 transform hover:-translate-y-0.5',
+      success: 'bg-green-600 text-white shadow-lg hover:bg-green-700 hover:shadow-xl',
+      error: 'bg-red-600 text-white shadow-lg hover:bg-red-700 hover:shadow-xl',
+      warning: 'bg-yellow-600 text-white shadow-lg hover:bg-yellow-700 hover:shadow-xl',
+      info: 'bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl',
     };
 
     const sizeStyles = {

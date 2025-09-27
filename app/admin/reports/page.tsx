@@ -59,7 +59,7 @@ interface Report {
 }
 
 export default function AdminReportsPage() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
@@ -68,31 +68,7 @@ export default function AdminReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // 관리자 권한 확인
-  if (profile?.role !== 'admin' && profile?.role !== 'super_admin') {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="w-full max-w-md">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <Scale className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">접근 권한 없음</h2>
-                <p className="text-muted-foreground mb-4">
-                  이 페이지는 관리자만 접근할 수 있습니다.
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-sm">현재 권한:</span>
-                  <Badge>{roleDisplayNames[profile?.role || 'teacher']}</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const [mounted, setMounted] = useState(false);
 
   // Load reports from API
   useEffect(() => {
@@ -180,6 +156,11 @@ export default function AdminReportsPage() {
     };
 
     loadReports();
+  }, []);
+
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   const getStatusBadge = (status: string) => {
@@ -279,11 +260,41 @@ export default function AdminReportsPage() {
     inConsulting: reports.filter(r => r.status === 'consulting').length
   };
 
-  if (loading) {
+  // Don't render anything until mounted (prevents SSR issues)
+  if (!mounted) {
+    return null;
+  }
+
+  if (loading || authLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // 관리자 권한 확인
+  if (profile?.role !== 'admin' && profile?.role !== 'super_admin') {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-6">
+              <div className="text-center">
+                <Scale className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">접근 권한 없음</h2>
+                <p className="text-muted-foreground mb-4">
+                  이 페이지는 관리자만 접근할 수 있습니다.
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-sm">현재 권한:</span>
+                  <Badge>{roleDisplayNames[profile?.role || 'teacher']}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </DashboardLayout>
     );

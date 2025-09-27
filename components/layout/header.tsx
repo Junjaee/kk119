@@ -52,7 +52,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 glass-morphism animate-slide-down">
-      <div className="flex h-18 items-center px-4 lg:px-8">
+      <div className="flex h-36 items-center px-4 lg:px-8">
         {/* Mobile Menu Button */}
         <Button
           variant="ghost"
@@ -64,30 +64,30 @@ export function Header() {
         </Button>
 
         {/* Enhanced Logo */}
-        <Link href="/" className="flex items-center space-x-3 group">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-300">
+        <Link href="/" className="flex items-center space-x-4 group">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-300">
             {isHydrated ? (
               <Image
                 src="/icons/icon-master.svg"
                 alt="교권119 로고"
-                width={20}
-                height={20}
-                className="w-5 h-5"
+                width={28}
+                height={28}
+                className="w-7 h-7"
                 priority
               />
             ) : (
-              <Shield className="h-5 w-5" />
+              <Shield className="h-7 w-7" />
             )}
           </div>
           <div className="hidden sm:block">
-            <span className="text-2xl font-bold gradient-text">교권119</span>
-            <p className="text-xs text-muted-foreground -mt-1">교사의 권리를 지킵니다</p>
+            <span className="text-3xl font-bold gradient-text">교권119</span>
+            <p className="text-sm text-muted-foreground -mt-1">교사의 권리를 지킵니다</p>
           </div>
         </Link>
 
 
         {/* Right Section */}
-        <div className="flex items-center space-x-3 ml-auto">
+        <div className="flex items-center space-x-4 ml-auto">
           {/* Notifications */}
           {isHydrated && user && (
             <div className="relative">
@@ -147,8 +147,8 @@ export function Header() {
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center space-x-2 px-3 py-2 hover:bg-accent/50 rounded-xl"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
                   </div>
                   <div className="hidden md:block text-left">
                     <p className="text-sm font-medium">

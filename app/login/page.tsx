@@ -65,15 +65,19 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+      console.log('🔍 Login API Response:', response.status, data);
 
       if (!response.ok) {
         throw new Error(data.error || '로그인에 실패했습니다.');
       }
 
+      console.log('🔍 Login Success - User Data:', data.user);
+      console.log('🔍 Login Success - User Role:', data.user.role);
+
       // Store token
       if (data.token) {
         localStorage.setItem('token', data.token);
-        
+
         // Store in localStorage if remember me is checked
         if (rememberMe) {
           localStorage.setItem('rememberedEmail', formData.email);
@@ -96,29 +100,42 @@ export default function LoginPage() {
 
       toast.success(`환영합니다, ${data.user.name}님!`);
 
-      // Redirect based on user role
+      // Redirect based on user role (prioritize role-based redirects)
       const fromUrl = searchParams.get('from');
-      let redirectUrl = fromUrl || sessionStorage.getItem('redirectAfterLogin');
+      let redirectUrl;
 
-      // If no specific redirect URL, determine based on user role
-      if (!redirectUrl) {
-        switch (data.user.role) {
-          case 'super_admin':
-            redirectUrl = '/admin';
-            break;
-          case 'admin':
-            redirectUrl = '/admin';
-            break;
-          default:
-            redirectUrl = '/';
-            break;
-        }
+      console.log('🔍 Determining redirect for role:', data.user.role);
+
+      // Prioritize role-based redirects for specific roles
+      switch (data.user.role) {
+        case 'super_admin':
+          redirectUrl = '/admin';
+          console.log('🔍 Redirect: super_admin -> /admin');
+          break;
+        case 'admin':
+          redirectUrl = '/admin';
+          console.log('🔍 Redirect: admin -> /admin');
+          break;
+        case 'lawyer':
+          redirectUrl = '/lawyer';
+          console.log('🔍 Redirect: lawyer -> /lawyer');
+          break;
+        default:
+          // For teachers and other roles, use from URL or session storage or default
+          redirectUrl = fromUrl || sessionStorage.getItem('redirectAfterLogin') || '/';
+          console.log('🔍 Redirect: default ->', redirectUrl);
+          break;
       }
 
       sessionStorage.removeItem('redirectAfterLogin');
 
-      // Use Next.js router for proper navigation
-      router.push(redirectUrl);
+      console.log('🔍 Final redirectUrl:', redirectUrl);
+
+      // Use setTimeout to ensure state is updated before redirect
+      setTimeout(() => {
+        console.log('🔄 Executing redirect to:', redirectUrl);
+        window.location.href = redirectUrl; // Force immediate redirect
+      }, 100);
       
     } catch (error: any) {
       setError(error.message);

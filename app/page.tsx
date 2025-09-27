@@ -108,22 +108,26 @@ export default function HomePage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const reportsPerPage = 5;
 
-  // Redirect super_admin and admin to admin dashboard
+  // Redirect users to their respective dashboards
   useEffect(() => {
     if (user?.role === 'super_admin' || user?.role === 'admin') {
       setIsRedirecting(true);
       router.push('/admin');
+    } else if (user?.role === 'lawyer') {
+      setIsRedirecting(true);
+      router.push('/lawyer');
     }
   }, [user, router]);
 
-  // Don't render teacher content if user is admin/super_admin
-  if (user?.role === 'super_admin' || user?.role === 'admin' || isRedirecting) {
+  // Don't render teacher content if user is admin/super_admin/lawyer
+  if (user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'lawyer' || isRedirecting) {
+    const dashboardType = user?.role === 'lawyer' ? '변호사' : '관리자';
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">관리자 대시보드로 이동 중...</p>
+            <p className="text-muted-foreground">{dashboardType} 대시보드로 이동 중...</p>
           </div>
         </div>
       </DashboardLayout>

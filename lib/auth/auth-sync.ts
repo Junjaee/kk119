@@ -104,7 +104,27 @@ export class AuthSync implements AuthSyncManager {
         this.syncUserState(data.user);
         console.log('✅ [AUTH-SYNC] Auth state refreshed successfully');
       } else {
-        console.log('⚠️ [AUTH-SYNC] Server returned non-ok status, clearing auth state');
+        // Check if this is a JWT format issue that can be ignored
+        if (response.status === 401) {
+          try {
+            const errorData = await response.json();
+            // If it's a JWT format/issuer error, don't clear user state
+            // The user was successfully authenticated, just has old token format
+            if (errorData.error && (
+              errorData.error.includes('missing required') ||
+              errorData.error.includes('iss') ||
+              errorData.error.includes('issuer') ||
+              errorData.error.includes('audience')
+            )) {
+              console.log('⚠️ [AUTH-SYNC] JWT format issue detected, keeping user state');
+              return;
+            }
+          } catch (parseError) {
+            // If we can't parse the error, fall through to clearing state
+          }
+        }
+
+        console.log('⚠️ [AUTH-SYNC] Authentication failed, clearing auth state');
         this.syncUserState(null);
       }
     } catch (error) {

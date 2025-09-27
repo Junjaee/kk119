@@ -16,7 +16,9 @@ import {
   ChevronRight,
   AlertTriangle,
   BookOpen,
-  TrendingUp
+  TrendingUp,
+  Scale,
+  MessageSquare
 } from 'lucide-react';
 
 type MenuItem = {
@@ -73,6 +75,28 @@ const menuItems: MenuItems = {
     },
   ],
   lawyer: [
+    {
+      href: '/lawyer',
+      label: '변호사 대시보드',
+      icon: Scale,
+      description: '상담 센터 관리',
+      badge: null
+    },
+    {
+      href: '/lawyer/consult',
+      label: '상담 관리',
+      icon: MessageSquare,
+      description: '법률 상담 관리',
+      badge: '대기중',
+      badgeColor: 'warning-modern'
+    },
+    {
+      href: '/resources',
+      label: '법률 자료실',
+      icon: BookOpen,
+      description: '법률 자료와 판례',
+      badge: null
+    },
   ],
   admin: [
     {
@@ -164,7 +188,9 @@ export function Sidebar() {
     userRole,
     availableRoles: Object.keys(menuItems),
     itemsCount: items?.length || 0,
-    user: user
+    user: user,
+    menuItemsLawyer: menuItems.lawyer,
+    itemsRaw: items
   });
 
   return (

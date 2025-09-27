@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { userDb, sessionDb } from '@/lib/db/database';
 import { auth } from '@/lib/auth/auth-utils';
+import { enhancedAuth } from '@/lib/auth/enhanced-auth';
 import { ensureAdminRecord } from '@/lib/db/admin-sync';
 
 export async function POST(request: NextRequest) {
@@ -48,15 +49,23 @@ export async function POST(request: NextRequest) {
     const sessionToken = auth.generateSessionToken();
     sessionDb.create(user.id, sessionToken);
 
-    // Generate JWT token
-    const jwtToken = await auth.generateToken({
+    // Generate JWT token pair using enhanced auth
+    const tokenPair = await enhancedAuth.generateTokenPair({
       userId: user.id,
       email: user.email,
       name: user.name,
       role: user.role || 'teacher',
       association_id: user.association_id || undefined,
+      deviceId: enhancedAuth.generateDeviceFingerprint(
+        request.headers.get('user-agent') || undefined,
+        request.headers.get('accept-language') || undefined,
+        request.headers.get('accept-encoding') || undefined
+      ),
+      ipAddress: enhancedAuth.getClientIP(request.headers),
       isAdmin: user.is_admin === 1
     });
+
+    const jwtToken = tokenPair.accessToken;
 
     // Ensure admin users have corresponding admins table records
     if (user.role === 'admin' || user.role === 'super_admin') {

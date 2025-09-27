@@ -101,60 +101,68 @@ const menuItems: MenuItems = {
   admin: [
     {
       href: '/admin',
-      label: '관리자 대시보드',
+      label: '협회관리자 대시보드',
       icon: Home,
-      description: '시스템 전체 현황',
+      description: '협회 전체 현황',
       badge: null
     },
     {
       href: '/admin/reports',
       label: '신고 관리',
       icon: FileText,
-      description: '모든 신고 관리',
+      description: '협회 신고 관리',
       badge: '대기중',
       badgeColor: 'warning-modern'
     },
     {
-      href: '/admin/user-management',
-      label: '사용자 관리',
+      href: '/admin/members',
+      label: '회원 관리',
       icon: Users,
-      description: '회원 및 권한 관리',
+      description: '협회 회원 관리',
+      badge: null
+    },
+    {
+      href: '/admin/associations',
+      label: '협회 관리',
+      icon: Shield,
+      description: '협회 정보 관리',
       badge: null
     },
     {
       href: '/admin/stats',
-      label: '시스템 통계',
+      label: '협회 통계',
       icon: BarChart3,
-      description: '전체 시스템 분석',
-      badge: null
-    },
-    {
-      href: '/admin/settings',
-      label: '시스템 설정',
-      icon: Settings,
-      description: '시스템 환경 설정',
+      description: '협회별 통계 분석',
       badge: null
     },
   ],
   super_admin: [
     {
       href: '/admin',
-      label: '슈퍼어드민 대시보드',
+      label: '슈퍼관리자 대시보드',
       icon: Home,
-      description: '시스템 전체 현황',
+      description: '전체 시스템 현황',
       badge: null
     },
     {
       href: '/admin/user-management',
-      label: '계정 생성 게시판',
+      label: '사용자 관리',
       icon: Users,
       description: '모든 사용자 생성/관리',
-      badge: 'NEW',
+      badge: 'ADMIN',
       badgeColor: 'protection-modern'
     },
     {
+      href: '/admin/reports',
+      label: '전체 신고 관리',
+      icon: FileText,
+      description: '모든 신고 관리',
+      badge: '대기중',
+      badgeColor: 'warning-modern'
+    },
+    {
       href: '/admin/associations',
-      label: '협회 생성 게시판',
+      label: '협회 관리',
       icon: Shield,
       description: '협회 생성 및 관리',
       badge: null
@@ -181,15 +189,27 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, sidebarOpen, setSidebarOpen } = useStore();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Wait for user to load
+  React.useEffect(() => {
+    if (user !== null) {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   const userRole = user?.role || 'teacher';
   const items = menuItems[userRole];
 
   console.log('🔍 Sidebar Debug:', {
+    isLoading,
+    user,
     userRole,
+    userRoleFromUser: user?.role,
+    fallbackToTeacher: !user?.role,
     availableRoles: Object.keys(menuItems),
     itemsCount: items?.length || 0,
-    user: user,
-    menuItemsLawyer: menuItems.lawyer,
+    menuItemsAdmin: menuItems.admin,
     itemsRaw: items
   });
 

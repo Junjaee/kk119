@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Bell, 
-  Menu, 
-  Moon, 
-  Sun, 
+import {
+  Bell,
+  Menu,
+  Moon,
+  Sun,
   User,
   LogOut,
   Settings,
@@ -17,6 +17,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function Header() {
   const router = useRouter();
@@ -65,7 +66,18 @@ export function Header() {
         {/* Enhanced Logo */}
         <Link href="/" className="flex items-center space-x-3 group">
           <div className="p-2 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-300">
-            <Shield className="h-5 w-5" />
+            {isHydrated ? (
+              <Image
+                src="/icons/icon-master.svg"
+                alt="교권119 로고"
+                width={20}
+                height={20}
+                className="w-5 h-5"
+                priority
+              />
+            ) : (
+              <Shield className="h-5 w-5" />
+            )}
           </div>
           <div className="hidden sm:block">
             <span className="text-2xl font-bold gradient-text">교권119</span>

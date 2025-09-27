@@ -147,10 +147,7 @@ export function Header() {
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center space-x-2 px-3 py-2 hover:bg-accent/50 rounded-xl"
                 >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="hidden md:block text-left">
+                  <div className="text-left">
                     <p className="text-sm font-medium">
                       {user?.name || user?.nickname || '사용자'}
                     </p>
@@ -165,16 +162,11 @@ export function Header() {
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-64 rounded-xl border bg-card/95 backdrop-blur-md shadow-xl animate-scale-in">
                   <div className="p-4 border-b">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                        <User className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold">{user?.nickname || '사용자'}</p>
-                        <p className="text-sm text-muted-foreground">{user?.email || 'user@example.com'}</p>
-                        <div className={`badge-${getRoleBadgeVariant(user?.role || 'teacher')} text-xs mt-1`}>
-                          {getRoleLabel(user?.role || 'teacher')}
-                        </div>
+                    <div>
+                      <p className="font-semibold">{user?.nickname || '사용자'}</p>
+                      <p className="text-sm text-muted-foreground">{user?.email || 'user@example.com'}</p>
+                      <div className={`badge-${getRoleBadgeVariant(user?.role || 'teacher')} text-xs mt-1`}>
+                        {getRoleLabel(user?.role || 'teacher')}
                       </div>
                     </div>
                   </div>
@@ -185,7 +177,6 @@ export function Header() {
                       className="w-full justify-start rounded-lg"
                       onClick={() => router.push('/profile')}
                     >
-                      <User className="h-4 w-4 mr-3" />
                       프로필 관리
                     </Button>
                     <Button

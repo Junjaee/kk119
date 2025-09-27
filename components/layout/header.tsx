@@ -63,29 +63,6 @@ export function Header() {
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Enhanced Logo */}
-        <Link href="/" className="flex items-center space-x-3 group">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-300">
-            {isHydrated ? (
-              <Image
-                src="/icons/icon-master.svg"
-                alt="교권119 로고"
-                width={24}
-                height={24}
-                className="w-6 h-6"
-                priority
-              />
-            ) : (
-              <Shield className="h-6 w-6" />
-            )}
-          </div>
-          <div className="hidden sm:block">
-            <span className="text-2xl font-bold gradient-text">교권119</span>
-            <p className="text-xs text-muted-foreground -mt-1">교사의 권리를 지킵니다</p>
-          </div>
-        </Link>
-
-
         {/* Right Section */}
         <div className="flex items-center space-x-3 ml-auto">
           {/* Notifications */}

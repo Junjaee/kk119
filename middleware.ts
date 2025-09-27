@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
   // Get auth token from cookie early
   const token = request.cookies.get('auth-token')?.value;
 
-  // Handle root path redirect for authenticated admin users
+  // Handle root path redirect for authenticated users
   if (pathname === '/' && token) {
     try {
       const payload = await auth.verifyToken(token);
@@ -69,6 +69,9 @@ export async function middleware(request: NextRequest) {
       } else if (payload && payload.role === 'admin') {
         console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /admin/dashboard`);
         return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      } else if (payload && payload.role === 'lawyer') {
+        console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /lawyer`);
+        return NextResponse.redirect(new URL('/lawyer', request.url));
       }
     } catch (error) {
       console.log(`[MIDDLEWARE] Token verification failed for root path:`, error);

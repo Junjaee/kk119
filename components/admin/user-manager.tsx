@@ -53,8 +53,8 @@ export function UserManager({ className }: UserManagerProps) {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // 권한 확인
-  const canManageUsers = profile?.role === 'super_admin';
+  // 권한 확인 (슈퍼어드민 또는 협회관리자)
+  const canManageUsers = profile?.role === 'super_admin' || profile?.role === 'admin';
 
   // 사용자 목록 불러오기
   const fetchUsers = async (page = 1) => {
@@ -203,7 +203,7 @@ export function UserManager({ className }: UserManagerProps) {
             <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">접근 권한 없음</h3>
             <p className="text-muted-foreground">
-              이 기능은 슈퍼어드민만 사용할 수 있습니다.
+              이 기능은 관리자만 사용할 수 있습니다.
             </p>
           </div>
         </CardContent>

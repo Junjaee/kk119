@@ -115,7 +115,7 @@ const menuItems: MenuItems = {
       badgeColor: 'warning-modern'
     },
     {
-      href: '/admin/members',
+      href: '/admin/user-management',
       label: '회원 관리',
       icon: Users,
       description: '협회 회원 관리',

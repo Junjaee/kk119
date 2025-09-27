@@ -19,8 +19,8 @@ interface CreateUserRequest {
   specialization?: string;
 }
 
-// 권한 검증 함수
-async function checkSuperAdminPermission(req: NextRequest) {
+// 권한 검증 함수 (슈퍼어드민 또는 협회관리자)
+async function checkAdminPermission(req: NextRequest) {
   try {
     // JWT 토큰 검증
     const token = req.cookies.get('auth-token')?.value;
@@ -29,21 +29,21 @@ async function checkSuperAdminPermission(req: NextRequest) {
     }
 
     const decodedToken = await auth.verifyToken(token);
-    if (!decodedToken || decodedToken.role !== 'super_admin') {
-      return { authorized: false, error: '슈퍼어드민 권한이 필요합니다.' };
+    if (!decodedToken || (decodedToken.role !== 'super_admin' && decodedToken.role !== 'admin')) {
+      return { authorized: false, error: '관리자 권한이 필요합니다.' };
     }
 
-    return { authorized: true };
+    return { authorized: true, user: decodedToken };
   } catch (error) {
     console.error('Permission check error:', error);
     return { authorized: false, error: '권한 확인 중 오류가 발생했습니다.' };
   }
 }
 
-// GET: 사용자 목록 조회 (슈퍼어드민만 가능)
+// GET: 사용자 목록 조회 (관리자 권한 필요)
 export async function GET(req: NextRequest) {
   // 권한 검증
-  const permissionCheck = await checkSuperAdminPermission(req);
+  const permissionCheck = await checkAdminPermission(req);
   if (!permissionCheck.authorized) {
     return NextResponse.json(
       { error: permissionCheck.error },
@@ -114,10 +114,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: 새 사용자 생성 (슈퍼어드민만 가능)
+// POST: 새 사용자 생성 (관리자 권한 필요)
 export async function POST(req: NextRequest) {
   // 권한 검증
-  const permissionCheck = await checkSuperAdminPermission(req);
+  const permissionCheck = await checkAdminPermission(req);
   if (!permissionCheck.authorized) {
     return NextResponse.json(
       { error: permissionCheck.error },

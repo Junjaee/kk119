@@ -22,8 +22,8 @@ import { roleDisplayNames } from '@/lib/types/user';
 export default function UserManagementPage() {
   const { user } = useStore();
 
-  // 슈퍼어드민 권한 확인
-  if (user?.role !== 'super_admin') {
+  // 관리자 권한 확인 (슈퍼어드민 또는 협회관리자)
+  if (user?.role !== 'super_admin' && user?.role !== 'admin') {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -33,7 +33,7 @@ export default function UserManagementPage() {
                 <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h2 className="text-xl font-semibold mb-2">접근 권한 없음</h2>
                 <p className="text-muted-foreground mb-4">
-                  이 페이지는 슈퍼어드민만 접근할 수 있습니다.
+                  이 페이지는 관리자만 접근할 수 있습니다.
                 </p>
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-sm">현재 권한:</span>
@@ -47,6 +47,10 @@ export default function UserManagementPage() {
     );
   }
 
+  // 권한별 기능 구분
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isAssociationAdmin = user?.role === 'admin';
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -55,10 +59,13 @@ export default function UserManagementPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Users className="h-8 w-8" />
-              사용자 관리
+              {isSuperAdmin ? '사용자 관리' : '회원 관리'}
             </h1>
             <p className="text-muted-foreground mt-2">
-              시스템의 모든 사용자를 생성, 수정, 관리합니다.
+              {isSuperAdmin
+                ? '시스템의 모든 사용자를 생성, 수정, 관리합니다.'
+                : '소속 협회의 회원을 관리합니다.'
+              }
             </p>
           </div>
           <div className="flex gap-2">
@@ -138,12 +145,25 @@ export default function UserManagementPage() {
             <div className="flex space-x-3">
               <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-amber-900 dark:text-amber-100">
-                <p className="font-semibold mb-2">사용자 관리 주의사항</p>
+                <p className="font-semibold mb-2">
+                  {isSuperAdmin ? '사용자 관리 주의사항' : '회원 관리 주의사항'}
+                </p>
                 <ul className="space-y-1 list-disc list-inside text-xs">
-                  <li>슈퍼어드민이 생성한 계정은 자동으로 승인됩니다.</li>
-                  <li>생성된 계정의 임시 비밀번호는 사용자에게 직접 전달하세요.</li>
-                  <li>계정 삭제 대신 비활성화를 권장합니다.</li>
-                  <li>역할 변경 시 권한이 즉시 적용됩니다.</li>
+                  {isSuperAdmin ? (
+                    <>
+                      <li>슈퍼어드민이 생성한 계정은 자동으로 승인됩니다.</li>
+                      <li>생성된 계정의 임시 비밀번호는 사용자에게 직접 전달하세요.</li>
+                      <li>계정 삭제 대신 비활성화를 권장합니다.</li>
+                      <li>역할 변경 시 권한이 즉시 적용됩니다.</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>소속 협회의 회원만 관리할 수 있습니다.</li>
+                      <li>생성된 계정은 승인 절차를 거쳐 활성화됩니다.</li>
+                      <li>회원 정보 변경은 즉시 적용됩니다.</li>
+                      <li>회원 상태 변경 시 해당 회원에게 알림이 전송됩니다.</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

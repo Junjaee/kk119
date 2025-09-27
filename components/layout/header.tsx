@@ -66,11 +66,11 @@ export function Header() {
         {/* Logo Section */}
         {isHydrated && (
           <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl shadow-lg" style={{background: 'linear-gradient(to bottom right, rgb(255, 114, 16), rgb(230, 100, 10))'}}>
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-clip-text text-transparent" style={{background: 'linear-gradient(to right, rgb(255, 114, 16), rgb(230, 100, 10))', WebkitBackgroundClip: 'text'}}>
                 교권119
               </h1>
               <p className="text-xs text-muted-foreground -mt-1">

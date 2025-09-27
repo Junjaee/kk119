@@ -174,14 +174,14 @@ export function Header() {
                   <div className="p-2">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start rounded-lg"
+                      className="w-full justify-start text-left rounded-lg"
                       onClick={() => router.push('/profile')}
                     >
                       프로필 관리
                     </Button>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start rounded-lg"
+                      className="w-full justify-start text-left rounded-lg"
                       onClick={() => router.push('/settings')}
                     >
                       <Settings className="h-4 w-4 mr-3" />
@@ -192,7 +192,7 @@ export function Header() {
                   <div className="p-2 border-t">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg"
+                      className="w-full justify-start text-left text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg"
                       onClick={async () => {
                         try {
                           // 서버에서 세션 정리

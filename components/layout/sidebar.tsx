@@ -198,18 +198,18 @@ export function Sidebar() {
     }
   }, [user]);
 
-  const userRole = user?.role || 'teacher';
-  const items = menuItems[userRole];
+  // Don't show menu items during loading or when user is null
+  const userRole = user?.role || null;
+  const items = userRole ? menuItems[userRole] || [] : [];
 
   console.log('🔍 Sidebar Debug:', {
     isLoading,
     user,
     userRole,
     userRoleFromUser: user?.role,
-    fallbackToTeacher: !user?.role,
+    hasValidRole: !!userRole,
     availableRoles: Object.keys(menuItems),
     itemsCount: items?.length || 0,
-    menuItemsAdmin: menuItems.admin,
     itemsRaw: items
   });
 
@@ -243,7 +243,23 @@ export function Sidebar() {
 
           {/* Enhanced Navigation */}
           <nav className="flex-1 px-4 pt-2 lg:pt-6 space-y-2 scrollbar-modern overflow-y-auto">
-            {items.map((item) => {
+            {isLoading || !user ? (
+              // Loading skeleton
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map((index) => (
+                  <div key={index} className="px-4 py-3 rounded-xl bg-accent/20 animate-pulse">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-accent/30 rounded-lg"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-accent/30 rounded mb-1"></div>
+                        <div className="h-3 bg-accent/20 rounded w-3/4"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              items.map((item) => {
               const Icon = item.icon;
               // More precise active state check to prevent false positives
               const isActive = pathname === item.href ||
@@ -276,16 +292,16 @@ export function Sidebar() {
                           isActive ? 'text-white' : '',
                           item.isUrgent && !isActive && 'urgent-pulse'
                         )}
-                        style={isActive ? { color: '#ffffff' } : {}} />
+                        style={isActive ? { color: '#737373' } : {}} />
                       </div>
                       <div>
-                        <p className="font-medium" style={isActive ? { color: '#ffffff' } : {}}>{item.label}</p>
+                        <p className="font-medium" style={isActive ? { color: '#737373' } : {}}>{item.label}</p>
                         <p
                           className={cn(
                             'text-xs transition-colors font-medium',
                             isActive ? 'text-white' : 'text-muted-foreground'
                           )}
-                          style={isActive ? { color: '#ffffff', opacity: 1 } : {}}
+                          style={isActive ? { color: '#737373', opacity: 1 } : {}}
                         >
                           {item.description}
                         </p>
@@ -317,7 +333,8 @@ export function Sidebar() {
                   </Link>
                 </div>
               );
-            })}
+            })
+            )}
 
           </nav>
 

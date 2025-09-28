@@ -1,226 +1,130 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth, getUserRole, canAccess, isSuperAdmin, isAdminOrHigher } from './lib/auth/auth-utils';
-import { UserRole } from './lib/types/index';
+import { AuthenticationService } from './lib/middleware/authentication-service';
+import { PathClassificationService } from './lib/middleware/path-classification-service';
+import { RedirectService } from './lib/middleware/redirect-service';
 
-// Public paths that don't require authentication
-const publicPaths = [
-  '/',
-  '/login',
-  '/signup',
-  '/forgot-password',
-  '/reset-password',
-  '/privacy',
-  '/terms',
-  '/api/auth/login',
-  '/api/auth/signup',
-  '/api/auth/forgot-password',
-  '/api/auth/reset-password',
-  '/api/health'
-];
-
-// Role-based path configurations
-const rolePaths = {
-  super_admin: [
-    '/super-admin',
-    '/admin/associations',
-    '/admin/users/manage'
-  ],
-  admin: [
-    '/admin',
-    '/admin/members',
-    '/admin/reports'
-  ],
-  lawyer: [
-  ],
-  teacher: [
-    '/reports/new',
-    '/community/new'
-  ]
-};
-
-// Legacy admin paths (backward compatibility)
-const adminPaths = [
-  '/admin'
-];
-
-// Protected paths that require authentication
-const protectedPaths = [
-  '/reports',
-  '/community/new'
-];
-
+/**
+ * Refactored middleware following SOLID principles
+ *
+ * Single Responsibility: Each service handles one concern
+ * Open/Closed: Easy to extend with new auth providers or path rules
+ * Liskov Substitution: Services implement clear interfaces
+ * Interface Segregation: Services expose only needed methods
+ * Dependency Inversion: Depends on abstractions, not concretions
+ */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 🔍 DEBUG: Log all requests
+  // Initialize services (Dependency Injection pattern)
+  const authService = new AuthenticationService();
+  const pathService = new PathClassificationService();
+  const redirectService = new RedirectService();
+
   console.log(`[MIDDLEWARE] Request: ${request.method} ${pathname}`);
 
-  // Get auth token from cookie early
-  const token = request.cookies.get('auth-token')?.value;
+  // 1. Extract authentication token
+  const { token } = authService.extractToken(request);
 
-  // Handle root path redirect for authenticated users
-  if (pathname === '/' && token) {
-    try {
-      const payload = await auth.verifyToken(token);
-      if (payload && payload.role === 'super_admin') {
-        console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /admin`);
-        return NextResponse.redirect(new URL('/admin', request.url));
-      } else if (payload && payload.role === 'admin') {
-        console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /admin/dashboard`);
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      } else if (payload && payload.role === 'lawyer') {
-        console.log(`[MIDDLEWARE] Redirecting ${payload.role} from / to /lawyer`);
-        return NextResponse.redirect(new URL('/lawyer', request.url));
+  // 2. Classify the current path
+  const pathClassification = pathService.classifyPath(pathname);
+
+  // 3. Handle special path scenarios first
+
+  // 3a. Root path redirect for authenticated users
+  if (pathService.isRootPath(pathname) && token) {
+    const authResult = await authService.verifyToken(token);
+    if (authResult.success && authResult.payload) {
+      const redirect = redirectService.determineRootRedirect(authResult.payload.role);
+      if (redirect.shouldRedirect && redirect.targetUrl) {
+        redirectService.logRedirect(
+          authResult.payload.role,
+          pathname,
+          redirect.targetUrl,
+          redirect.reason || 'Root redirect'
+        );
+        return redirectService.createRedirectResponse(request, redirect.targetUrl);
       }
-    } catch (error) {
-      console.log(`[MIDDLEWARE] Token verification failed for root path:`, error);
-      // Continue with normal flow
     }
   }
 
-  // Handle admin path redirect based on role
-  if (pathname === '/admin' && token) {
-    try {
-      const payload = await auth.verifyToken(token);
-      if (payload && payload.role === 'admin') {
-        console.log(`[MIDDLEWARE] Redirecting admin from /admin to /admin/dashboard`);
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+  // 3b. Admin path redirect for regular admins
+  if (pathService.isAdminRoot(pathname) && token) {
+    const authResult = await authService.verifyToken(token);
+    if (authResult.success && authResult.payload) {
+      const redirect = redirectService.determineAdminRedirect(authResult.payload.role);
+      if (redirect.shouldRedirect && redirect.targetUrl) {
+        redirectService.logRedirect(
+          authResult.payload.role,
+          pathname,
+          redirect.targetUrl,
+          redirect.reason || 'Admin redirect'
+        );
+        return redirectService.createRedirectResponse(request, redirect.targetUrl);
       }
-      // super_admin stays at /admin
-    } catch (error) {
-      console.log(`[MIDDLEWARE] Token verification failed for admin path:`, error);
-      // Continue with normal flow
     }
   }
 
-  // Check if path is public
-  const isPublicPath = publicPaths.some(path =>
-    pathname === path || pathname.startsWith(`${path}/`)
-  );
+  // 4. Handle authentication requirements
 
-  // Check if path is protected
-  const isProtectedPath = protectedPaths.some(path =>
-    pathname === path || pathname.startsWith(`${path}/`)
-  );
-
-  // Check if path is admin only
-  const isAdminPath = adminPaths.some(path =>
-    pathname === path || pathname.startsWith(`${path}/`)
-  );
-
-  // Redirect to login if accessing protected path without token
-  if ((isProtectedPath || isAdminPath) && !token) {
+  // 4a. Redirect to login if accessing protected path without token
+  if (pathClassification.requiresAuth && !token) {
     console.log(`[MIDDLEWARE] Redirecting to login from protected path: ${pathname}`);
-    const loginUrl = new URL('/login', request.url);
-    // Store the original URL to redirect after login
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
+    return authService.createLoginRedirect(request, pathname);
   }
 
-  // Handle auth pages with existing token - check for server-client mismatch
-  if ((pathname === '/login' || pathname === '/signup') && token) {
-    try {
-      const payload = await auth.verifyToken(token);
-      if (payload) {
-        // Valid token exists but user is trying to access auth pages
-        // This suggests a server-client auth state mismatch
-        // Clear the orphaned cookie and allow access to auth pages
-        console.log(`[MIDDLEWARE] Server-client auth mismatch detected, clearing orphaned cookie`);
-        const response = NextResponse.next();
-        response.cookies.delete('auth-token');
-        return response;
-      }
-    } catch (error) {
-      console.log(`[MIDDLEWARE] Invalid token found, clearing and allowing access to ${pathname}`);
-      // Invalid token, clear it and continue to auth page
-      const response = NextResponse.next();
-      response.cookies.delete('auth-token');
-      return response;
+  // 4b. Handle auth pages with existing token (server-client mismatch)
+  if (pathService.isAuthPage(pathname) && token) {
+    const authResult = await authService.verifyToken(token);
+    if (authResult.success) {
+      return redirectService.handleAuthPageAccess(
+        request,
+        (response) => authService.clearAuthCookies(response)
+      );
+    } else {
+      return redirectService.handleInvalidToken(
+        request,
+        pathname,
+        (response) => authService.clearAuthCookies(response)
+      );
     }
   }
-  
-  // Role-based access control
+
+  // 5. Role-based access control for authenticated requests
   if (token) {
-    try {
-      // Verify token is valid
-      const payload = await auth.verifyToken(token);
-      if (!payload) {
-        // Invalid token, redirect to login
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('from', pathname);
-        const response = NextResponse.redirect(loginUrl);
-        response.cookies.delete('auth-token');
-        return response;
-      }
+    const authResult = await authService.verifyToken(token);
 
-      // Check role-based access
-      let hasAccess = true;
-      let requiredRole: UserRole | null = null;
-
-      // Check super admin paths
-      if (rolePaths.super_admin.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
-        hasAccess = await isSuperAdmin(token);
-        requiredRole = 'super_admin';
-      }
-      // Check admin paths (admin or higher)
-      else if (rolePaths.admin.some(path => pathname === path || pathname.startsWith(`${path}/`)) ||
-               isAdminPath) {
-        hasAccess = await isAdminOrHigher(token);
-        requiredRole = 'admin';
-      }
-      // Check lawyer paths (lawyer or higher)
-      else if (rolePaths.lawyer.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
-        hasAccess = await canAccess(token, 'lawyer');
-        requiredRole = 'lawyer';
-      }
-      // Check teacher paths (teacher or higher)
-      else if (rolePaths.teacher.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
-        hasAccess = await canAccess(token, 'teacher');
-        requiredRole = 'teacher';
-      }
-
-      // Deny access if role requirement not met
-      if (!hasAccess && requiredRole) {
-        const userRole = await getUserRole(token);
-        console.log(`Access denied: User role '${userRole}' insufficient for path requiring '${requiredRole}'`);
-
-        // Redirect to appropriate dashboard based on user's role
-        let redirectPath = '/';
-        if (userRole === 'super_admin') redirectPath = '/super-admin';
-        else if (userRole === 'admin') redirectPath = '/admin';
-        else if (userRole === 'lawyer') redirectPath = '/reports';
-        else if (userRole === 'teacher') redirectPath = '/reports';
-
-        return NextResponse.redirect(new URL(redirectPath, request.url));
-      }
-
-      // Add user info to headers for downstream components
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-user-id', payload.userId.toString());
-      requestHeaders.set('x-user-role', payload.role);
-      requestHeaders.set('x-user-email', payload.email);
-      if (payload.association_id) {
-        requestHeaders.set('x-user-association', payload.association_id.toString());
-      }
-
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders
-        }
-      });
-    } catch (error) {
-      console.error('Middleware auth error:', error);
-      // Invalid token, clear it and redirect to login
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('from', pathname);
-      const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete('auth-token');
-      return response;
+    if (!authResult.success) {
+      console.log(`[MIDDLEWARE] Invalid token, redirecting to login`);
+      return authService.createLoginRedirect(request, pathname);
     }
+
+    const { payload } = authResult;
+
+    // Check if user has access to the requested path
+    const accessResult = pathService.checkAccess(payload.role, pathname);
+
+    if (!accessResult.hasAccess) {
+      console.log(accessResult.reason);
+      const redirect = redirectService.determineAccessDeniedRedirect(payload.role);
+      return redirectService.createRedirectResponse(
+        request,
+        redirect.targetUrl!,
+        redirect.reason
+      );
+    }
+
+    // Add user info to headers for downstream components
+    const requestHeaders = authService.addUserHeaders(request, payload);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders
+      }
+    });
   }
-  
-  // Continue for public paths without token
+
+  // 6. Continue for public paths without token
   console.log(`[MIDDLEWARE] Allowing request to proceed: ${pathname}`);
   return NextResponse.next();
 }

@@ -267,21 +267,26 @@ export function Sidebar() {
                     <div className="flex items-center space-x-3">
                       <div className={cn(
                         'p-2 rounded-lg transition-all duration-200',
-                        isActive 
-                          ? 'bg-white/20' 
+                        isActive
+                          ? 'bg-white/30'
                           : 'bg-accent/30 group-hover:bg-accent/50'
                       )}>
                         <Icon className={cn(
                           'h-4 w-4 transition-all duration-200',
+                          isActive ? 'text-white' : '',
                           item.isUrgent && !isActive && 'urgent-pulse'
-                        )} />
+                        )}
+                        style={isActive ? { color: '#ffffff' } : {}} />
                       </div>
                       <div>
-                        <p className="font-medium">{item.label}</p>
-                        <p className={cn(
-                          'text-xs transition-colors',
-                          isActive ? 'text-white/80' : 'text-muted-foreground'
-                        )}>
+                        <p className="font-medium" style={isActive ? { color: '#ffffff' } : {}}>{item.label}</p>
+                        <p
+                          className={cn(
+                            'text-xs transition-colors font-medium',
+                            isActive ? 'text-white' : 'text-muted-foreground'
+                          )}
+                          style={isActive ? { color: '#ffffff', opacity: 1 } : {}}
+                        >
                           {item.description}
                         </p>
                       </div>

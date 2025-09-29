@@ -31,7 +31,6 @@ import {
 } from 'lucide-react';
 import { formatDate, formatDateTime, formatRelativeTime } from '@/lib/utils/date';
 import { useStore } from '@/lib/store';
-import { switchUser } from '@/lib/auth/mock-auth';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -52,7 +51,7 @@ interface Consult {
 
 export default function LawyerDashboard() {
   const router = useRouter();
-  const { user, setUser } = useStore();
+  const { user } = useStore();
   const [activeTab, setActiveTab] = useState('available');
   const [availableConsults, setAvailableConsults] = useState<Consult[]>([]);
   const [myConsults, setMyConsults] = useState<Consult[]>([]);
@@ -71,13 +70,28 @@ export default function LawyerDashboard() {
     followUp: 0
   });
 
-  // 변호사 계정으로 전환
+  // 변호사가 아닌 경우 적절한 페이지로 리다이렉트
   useEffect(() => {
-    if (user?.role !== 'lawyer') {
-      const lawyerUser = switchUser('lawyer');
-      setUser(lawyerUser);
+    if (user && user.role && user.role !== 'lawyer') {
+      console.log('🔍 [LAWYER] Redirecting user with role:', user.role);
+      switch (user.role) {
+        case 'super_admin':
+          router.push('/admin');
+          break;
+        case 'admin':
+          router.push('/associadmin');
+          break;
+        case 'teacher':
+          router.push('/teacher');
+          break;
+        default:
+          router.push('/');
+          break;
+      }
+    } else if (user && user.role === 'lawyer') {
+      console.log('🔍 [LAWYER] User is lawyer, staying on page');
     }
-  }, [user?.role, setUser]);
+  }, [user, router]);
 
   // 데이터 페칭
   useEffect(() => {

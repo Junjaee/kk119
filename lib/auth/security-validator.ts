@@ -209,26 +209,34 @@ export class SecurityValidator {
 
   /**
    * Validate token for API endpoints with specific security requirements
+   * ONLY accepts Authorization header tokens - cookies are completely ignored
    */
   async validateAPIToken(
     request: NextRequest,
     securityLevel: 'low' | 'medium' | 'high' | 'critical' = 'medium'
   ): Promise<ValidationResult> {
-    // Get token from various sources
-    let token = request.cookies.get('auth-token')?.value;
+    // Get token ONLY from Authorization header - cookies are completely ignored
+    let token: string | undefined;
+    const tokenSource: string = 'authorization_header';
 
-    if (!token) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
-      }
+    // ONLY Authorization header is accepted
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
     }
+
+    console.log('🔍 [SECURITY-VALIDATOR] Token source (cookies disabled):', {
+      tokenSource: token ? tokenSource : 'none',
+      hasAuthHeader: !!authHeader,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
+      cookiesIgnored: true
+    });
 
     if (!token) {
       return {
         valid: false,
-        error: 'No authentication token provided',
-        securityFlags: ['NO_TOKEN']
+        error: 'No valid Authorization header token provided',
+        securityFlags: ['NO_AUTHORIZATION_TOKEN']
       };
     }
 

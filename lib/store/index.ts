@@ -84,27 +84,17 @@ export const useStore = create<AppStore>()(
       })),
       clearNotifications: () => set({ notifications: [] }),
       
-      // Initialize - check for existing session
+      // Initialize - check for existing session using protected auth-sync
       initialize: async () => {
+        console.log('🔧 [STORE] Initializing user session through auth-sync');
         try {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const response = await fetch('/api/auth/me', {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include'
-            });
-            if (response.ok) {
-              const data = await response.json();
-              set({ user: data.user });
-            } else {
-              localStorage.removeItem('token');
-            }
-          }
+          // CRITICAL FIX: Use auth-sync's protected refreshAuthState instead of direct API call
+          // This ensures logout protection and other race condition safeguards are applied
+          const { authSync } = await import('@/lib/auth/auth-sync');
+          await authSync.refreshAuthState();
+          console.log('✅ [STORE] User session initialized through protected auth-sync');
         } catch (error) {
-          console.error('Failed to initialize user:', error);
+          console.error('❌ [STORE] Failed to initialize user session:', error);
         }
       }
     }),

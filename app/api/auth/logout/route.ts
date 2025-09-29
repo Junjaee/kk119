@@ -23,27 +23,30 @@ export async function POST(request: NextRequest) {
                      request.headers.get('x-real-ip') ||
                      request.ip || 'unknown';
 
-    // Get tokens from multiple sources
-    let accessToken = request.cookies.get('auth-token')?.value;
-    let refreshToken = request.cookies.get('refresh-token')?.value;
+    // Get token ONLY from Authorization header - cookies completely ignored
+    let accessToken: string | undefined;
+    let refreshToken: string | undefined;
 
-    // Fallback to headers
-    if (!accessToken) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        accessToken = authHeader.substring(7);
-      }
+    // ONLY Authorization header is accepted
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      accessToken = authHeader.substring(7);
     }
 
-    // Try to get refresh token from request body if not in cookie
-    if (!refreshToken) {
-      try {
-        const body = await request.json();
-        refreshToken = body.refreshToken;
-      } catch (error) {
-        // Ignore JSON parsing errors
-      }
+    // Try to get refresh token from request body only
+    try {
+      const body = await request.json();
+      refreshToken = body.refreshToken;
+    } catch (error) {
+      // Ignore JSON parsing errors
     }
+
+    console.log('🔍 [LOGOUT] Token source (cookies disabled):', {
+      hasAuthHeader: !!authHeader,
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      cookiesIgnored: true
+    });
 
     let userId: number | undefined;
     let userEmail: string | undefined;

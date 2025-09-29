@@ -15,8 +15,40 @@ async function getUserHandler(request: NextRequest, context: SecureAPIContext): 
   }
 
   try {
+    // ENHANCED DEBUG: Log comprehensive JWT and request details
+    console.log('🔍 [AUTH-ME] === DETAILED DEBUG START ===');
+    console.log('🔍 [AUTH-ME] Request Headers:', {
+      authorization: request.headers.get('authorization')?.substring(0, 50) + '...',
+      cookie: request.headers.get('cookie')?.includes('auth-token') ? 'Has auth-token cookie' : 'No auth-token cookie',
+      userAgent: request.headers.get('user-agent')?.substring(0, 50) + '...'
+    });
+
+    console.log('🔍 [AUTH-ME] JWT Payload from Context:', {
+      userId: user.userId,
+      email: user.email,
+      role: user.role,
+      tokenType: user.tokenType,
+      jti: user.jti,
+      iat: user.iat,
+      exp: user.exp,
+      sessionId: user.sessionId
+    });
+
     // Get fresh user data from database
+    console.log('🔍 [AUTH-ME] Querying database for user ID:', user.userId);
     const dbUser = userDb.findById(user.userId) as any;
+
+    console.log('🔍 [AUTH-ME] DB Query Result:', {
+      queryUserId: user.userId,
+      found: !!dbUser,
+      returnedId: dbUser?.id,
+      returnedEmail: dbUser?.email,
+      returnedName: dbUser?.name,
+      returnedRole: dbUser?.role,
+      returnedIsAdmin: dbUser?.is_admin,
+      matches: dbUser?.id === user.userId
+    });
+    console.log('🔍 [AUTH-ME] === DETAILED DEBUG END ===');
     if (!dbUser) {
       log.security('User Not Found in Database', 'medium', `User ID: ${user.userId}`, {
         requestId,

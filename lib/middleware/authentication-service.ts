@@ -17,21 +17,44 @@ export class AuthenticationService {
   /**
    * Extract authentication token from request
    * Following Single Responsibility Principle
+   *
+   * CRITICAL FIX: Allow cookie authentication for browser navigation but prioritize Authorization header for API calls
+   * This ensures browser navigation works while keeping API calls secure with header-only authentication
    */
   public extractToken(request: NextRequest): TokenExtractionResult {
-    // Try cookie first
-    const cookieToken = request.cookies.get(AUTH_CONSTANTS.COOKIE_NAMES.AUTH_TOKEN)?.value;
-    if (cookieToken) {
-      return { token: cookieToken, source: 'cookie' };
+    console.log(`[AUTH-SERVICE] Extracting token from ${request.method} ${request.nextUrl.pathname}`);
+
+    // For API routes, only use Authorization header (security-validator behavior)
+    const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+
+    if (isApiRoute) {
+      // API routes: Authorization header only
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith(AUTH_CONSTANTS.BEARER_PREFIX)) {
+        const headerToken = authHeader.substring(AUTH_CONSTANTS.BEARER_PREFIX_LENGTH);
+        console.log(`[AUTH-SERVICE] API route - found token in Authorization header: ${headerToken.substring(0, 20)}...`);
+        return { token: headerToken, source: 'header' };
+      }
+      console.log(`[AUTH-SERVICE] API route - no Authorization header found`);
+      return { token: null, source: null };
     }
 
-    // Try authorization header
+    // For browser navigation: Try Authorization header first, then cookies
     const authHeader = request.headers.get('authorization');
     if (authHeader?.startsWith(AUTH_CONSTANTS.BEARER_PREFIX)) {
       const headerToken = authHeader.substring(AUTH_CONSTANTS.BEARER_PREFIX_LENGTH);
+      console.log(`[AUTH-SERVICE] Browser navigation - found token in Authorization header: ${headerToken.substring(0, 20)}...`);
       return { token: headerToken, source: 'header' };
     }
 
+    // Fallback to cookie for browser navigation
+    const cookieToken = request.cookies.get(AUTH_CONSTANTS.COOKIE_NAMES.AUTH_TOKEN)?.value;
+    if (cookieToken) {
+      console.log(`[AUTH-SERVICE] Browser navigation - found token in cookie: ${cookieToken.substring(0, 20)}...`);
+      return { token: cookieToken, source: 'cookie' };
+    }
+
+    console.log(`[AUTH-SERVICE] No token found in request`);
     return { token: null, source: null };
   }
 

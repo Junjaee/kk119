@@ -18,26 +18,28 @@ import {
   Settings,
   Shield,
   BarChart3,
-  Bell
+  Bell,
+  Building,
+  UserCheck
 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils/date';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-// Mock data for admin dashboard
-const systemStats = {
-  total_users: 234,
-  active_users: 178,
-  total_lawyers: 12,
-  total_reports: 567,
-  pending_reports: 23,
-  completed_reports: 489,
-  average_response_time: '22시간',
-  satisfaction_rate: 4.7,
-  daily_reports: 8,
-  weekly_reports: 42,
-  monthly_reports: 156
+// Mock data for association admin dashboard
+const associationStats = {
+  total_teachers: 89,
+  active_teachers: 67,
+  total_lawyers: 3,
+  total_reports: 123,
+  pending_reports: 8,
+  completed_reports: 98,
+  average_response_time: '20시간',
+  satisfaction_rate: 4.6,
+  daily_reports: 3,
+  weekly_reports: 18,
+  monthly_reports: 67
 };
 
 const recentActivities = [
@@ -60,7 +62,7 @@ const recentActivities = [
   {
     id: '3',
     type: 'user',
-    action: '신규 회원 가입',
+    action: '교사 회원 가입',
     user: '익명교사456',
     time: '2025-08-28T09:00:00Z',
     icon: Users
@@ -69,26 +71,18 @@ const recentActivities = [
     id: '4',
     type: 'report',
     action: '신고 상태 변경 (완료)',
-    user: '시스템',
+    user: '관리자',
     time: '2025-08-28T08:45:00Z',
     icon: CheckCircle
-  },
-  {
-    id: '5',
-    type: 'lawyer',
-    action: '변호사 계정 생성',
-    user: '관리자',
-    time: '2025-08-27T16:00:00Z',
-    icon: Shield
   }
 ];
 
-const lawyerStats = [
+const assignedLawyers = [
   {
     id: 'lawyer-1',
     name: '김변호사',
     specialty: '교육법',
-    handled_cases: 45,
+    handled_cases: 23,
     average_response: '18시간',
     satisfaction: 4.8,
     status: 'active'
@@ -97,18 +91,18 @@ const lawyerStats = [
     id: 'lawyer-2',
     name: '이변호사',
     specialty: '학교폭력',
-    handled_cases: 38,
-    average_response: '24시간',
-    satisfaction: 4.6,
+    handled_cases: 19,
+    average_response: '22시간',
+    satisfaction: 4.5,
     status: 'active'
   },
   {
     id: 'lawyer-3',
     name: '박변호사',
     specialty: '민사소송',
-    handled_cases: 29,
-    average_response: '20시간',
-    satisfaction: 4.7,
+    handled_cases: 15,
+    average_response: '25시간',
+    satisfaction: 4.4,
     status: 'inactive'
   }
 ];
@@ -116,22 +110,22 @@ const lawyerStats = [
 // Chart data (simplified)
 const chartData = {
   labels: ['월', '화', '수', '목', '금', '토', '일'],
-  reports: [12, 15, 8, 10, 14, 5, 3],
-  consults: [8, 10, 6, 8, 11, 3, 2]
+  reports: [5, 7, 3, 4, 6, 2, 1],
+  consults: [3, 5, 2, 3, 4, 1, 1]
 };
 
-export default function AdminDashboard() {
+export default function AssociationAdminPage() {
   const { user } = useStore();
   const router = useRouter();
 
-  // Redirect non-super admins to their respective pages (only after user is loaded)
+  // Redirect non-association admins to their respective pages (only after user is loaded)
   useEffect(() => {
     // Wait until user is fully loaded before redirecting
-    if (user && user.role && user.role !== 'super_admin') {
-      console.log('🔍 [ADMIN] Redirecting user with role:', user.role);
+    if (user && user.role && user.role !== 'admin') {
+      console.log('🔍 [ASSOCIADMIN] Redirecting user with role:', user.role);
       switch (user.role) {
-        case 'admin':
-          router.push('/associadmin');
+        case 'super_admin':
+          router.push('/admin');
           break;
         case 'teacher':
           router.push('/teacher');
@@ -143,14 +137,14 @@ export default function AdminDashboard() {
           router.push('/');
           break;
       }
-    } else if (user && user.role === 'super_admin') {
-      console.log('🔍 [ADMIN] User is super admin, staying on page');
+    } else if (user && user.role === 'admin') {
+      console.log('🔍 [ASSOCIADMIN] User is association admin, staying on page');
     }
   }, [user, router]);
 
-  // Show loading while user is being loaded or if user is not super admin
+  // Show loading while user is being loaded or if user is not association admin
   if (!user) {
-    console.log('🔍 [ADMIN] User is null, showing loading');
+    console.log('🔍 [ASSOCIADMIN] User is null, showing loading');
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -163,8 +157,8 @@ export default function AdminDashboard() {
     );
   }
 
-  if (user.role !== 'super_admin') {
-    console.log('🔍 [ADMIN] User role is not super_admin:', user.role);
+  if (user.role !== 'admin') {
+    console.log('🔍 [ASSOCIADMIN] User role is not admin:', user.role);
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -183,21 +177,22 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">
-              슈퍼관리자 대시보드
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Building className="h-8 w-8 text-primary" />
+              협회관리자 대시보드
             </h1>
             <p className="text-muted-foreground mt-2">
-              안녕하세요, {user.name}님! 교권119 시스템 전체를 관리합니다.
+              안녕하세요, {user.name}님! 협회 소속 교사들의 교권 보호를 지원합니다.
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              보고서 다운로드
+              월간 보고서
             </Button>
             <Button>
               <Settings className="h-4 w-4 mr-2" />
-              시스템 설정
+              협회 설정
             </Button>
           </div>
         </div>
@@ -206,13 +201,13 @@ export default function AdminDashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">전체 사용자</CardTitle>
+              <CardTitle className="text-sm font-medium">협회 교사</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{systemStats.total_users}</div>
+              <div className="text-2xl font-bold">{associationStats.total_teachers}</div>
               <p className="text-xs text-muted-foreground">
-                활성: {systemStats.active_users}명
+                활성: {associationStats.active_teachers}명
               </p>
             </CardContent>
           </Card>
@@ -224,10 +219,10 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {Math.round((systemStats.completed_reports / systemStats.total_reports) * 100)}%
+                {Math.round((associationStats.completed_reports / associationStats.total_reports) * 100)}%
               </div>
               <p className="text-xs text-muted-foreground">
-                {systemStats.completed_reports}/{systemStats.total_reports} 완료
+                {associationStats.completed_reports}/{associationStats.total_reports} 완료
               </p>
             </CardContent>
           </Card>
@@ -238,7 +233,7 @@ export default function AdminDashboard() {
               <Clock className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{systemStats.average_response_time}</div>
+              <div className="text-2xl font-bold">{associationStats.average_response_time}</div>
               <p className="text-xs text-muted-foreground">
                 목표: 24시간 이내
               </p>
@@ -251,9 +246,9 @@ export default function AdminDashboard() {
               <Activity className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{systemStats.satisfaction_rate}/5.0</div>
+              <div className="text-2xl font-bold">{associationStats.satisfaction_rate}/5.0</div>
               <p className="text-xs text-muted-foreground">
-                평균 사용자 만족도
+                협회 평균 만족도
               </p>
             </CardContent>
           </Card>
@@ -262,9 +257,9 @@ export default function AdminDashboard() {
         {/* Report Statistics */}
         <Card>
           <CardHeader>
-            <CardTitle>신고 통계</CardTitle>
+            <CardTitle>협회 신고 통계</CardTitle>
             <CardDescription>
-              일주일간 신고 및 상담 현황
+              일주일간 협회 내 신고 및 상담 현황
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -274,13 +269,13 @@ export default function AdminDashboard() {
                 {chartData.labels.map((label, index) => (
                   <div key={label} className="flex-1 flex flex-col items-center gap-2">
                     <div className="w-full flex flex-col items-center gap-1">
-                      <div 
+                      <div
                         className="w-full bg-primary/20 rounded-t"
-                        style={{ height: `${chartData.reports[index] * 8}px` }}
+                        style={{ height: `${chartData.reports[index] * 12}px` }}
                       />
-                      <div 
+                      <div
                         className="w-full bg-primary rounded-t"
-                        style={{ height: `${chartData.consults[index] * 8}px` }}
+                        style={{ height: `${chartData.consults[index] * 12}px` }}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground">{label}</span>
@@ -302,20 +297,20 @@ export default function AdminDashboard() {
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Lawyer Performance */}
+          {/* Assigned Lawyers */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                변호사 현황
-                <Badge>{lawyerStats.length}명</Badge>
+                배정 변호사 현황
+                <Badge>{assignedLawyers.length}명</Badge>
               </CardTitle>
               <CardDescription>
-                변호사별 활동 통계
+                협회에 배정된 변호사들의 활동 통계
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {lawyerStats.map((lawyer) => (
+                {assignedLawyers.map((lawyer) => (
                   <div key={lawyer.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -345,9 +340,9 @@ export default function AdminDashboard() {
           {/* Recent Activities */}
           <Card>
             <CardHeader>
-              <CardTitle>최근 활동</CardTitle>
+              <CardTitle>최근 협회 활동</CardTitle>
               <CardDescription>
-                시스템 전체 활동 로그
+                협회 내 최근 활동 현황
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -379,17 +374,17 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>빠른 작업</CardTitle>
+            <CardTitle>협회 관리 기능</CardTitle>
             <CardDescription>
-              자주 사용하는 관리 기능
+              자주 사용하는 협회 관리 기능들
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-6">
-              <Link href="/admin/user-management">
+              <Link href="/admin/memberships">
                 <Button variant="outline" className="justify-start w-full">
-                  <Users className="h-4 w-4 mr-2" />
-                  사용자 관리
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  회원 관리
                 </Button>
               </Link>
               <Link href="/admin/lawyers">
@@ -418,35 +413,35 @@ export default function AdminDashboard() {
               </Link>
               <Button variant="outline" className="justify-start">
                 <BarChart3 className="h-4 w-4 mr-2" />
-                통계 보고서
+                협회 통계
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* System Info */}
+        {/* Association Info */}
         <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
           <CardContent className="pt-6">
             <div className="flex space-x-3">
-              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <Building className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-900 dark:text-blue-100">
-                <p className="font-semibold mb-2">시스템 상태</p>
+                <p className="font-semibold mb-2">협회 현황</p>
                 <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <p className="text-xs opacity-80">서버 상태</p>
-                    <p className="font-medium">정상 운영중</p>
+                    <p className="text-xs opacity-80">소속 학교</p>
+                    <p className="font-medium">12개교</p>
                   </div>
                   <div>
-                    <p className="text-xs opacity-80">데이터베이스</p>
-                    <p className="font-medium">23% 사용중</p>
+                    <p className="text-xs opacity-80">미처리 신고</p>
+                    <p className="font-medium">{associationStats.pending_reports}건</p>
                   </div>
                   <div>
-                    <p className="text-xs opacity-80">스토리지</p>
-                    <p className="font-medium">1.2GB / 5GB</p>
+                    <p className="text-xs opacity-80">이번 달 신고</p>
+                    <p className="font-medium">{associationStats.monthly_reports}건</p>
                   </div>
                   <div>
-                    <p className="text-xs opacity-80">마지막 백업</p>
-                    <p className="font-medium">2시간 전</p>
+                    <p className="text-xs opacity-80">마지막 업데이트</p>
+                    <p className="font-medium">1시간 전</p>
                   </div>
                 </div>
               </div>

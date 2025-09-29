@@ -62,7 +62,6 @@ const recentReports = [
   }
 ];
 
-
 const popularPosts = [
   {
     id: '1',
@@ -90,28 +89,18 @@ const popularPosts = [
   }
 ];
 
-const upcomingEvents = [
-  {
-    id: '1',
-    title: '교권보호 온라인 세미나',
-    date: '2025-08-30',
-    time: '14:00',
-    type: 'seminar'
-  }
-];
-
-export default function HomePage() {
+export default function TeacherPage() {
   const { user } = useStore();
   const router = useRouter();
   const [showAllReports, setShowAllReports] = useState(false);
   const [currentReportPage, setCurrentReportPage] = useState(0);
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const reportsPerPage = 5;
 
-  // Redirect users to their respective role-specific pages
+  // Redirect non-teachers to their respective pages (only after user is loaded)
   useEffect(() => {
-    if (user) {
-      setIsRedirecting(true);
+    // Wait until user is fully loaded before redirecting
+    if (user && user.role && user.role !== 'teacher') {
+      console.log('🔍 [TEACHER] Redirecting user with role:', user.role);
       switch (user.role) {
         case 'super_admin':
           router.push('/admin');
@@ -122,56 +111,44 @@ export default function HomePage() {
         case 'lawyer':
           router.push('/lawyer');
           break;
-        case 'teacher':
-          router.push('/teacher');
-          break;
         default:
-          setIsRedirecting(false); // Stay on home page for unknown roles
+          router.push('/');
           break;
       }
+    } else if (user && user.role === 'teacher') {
+      console.log('🔍 [TEACHER] User is teacher, staying on page');
     }
   }, [user, router]);
 
-  // Show loading screen while redirecting users to their role-specific pages
-  if (isRedirecting) {
-    const dashboardType = user?.role === 'teacher' ? '교사' :
-                         user?.role === 'lawyer' ? '변호사' :
-                         user?.role === 'admin' ? '협회관리자' :
-                         user?.role === 'super_admin' ? '슈퍼관리자' : '사용자';
+  // Show loading while user is being loaded or if user is not teacher
+  if (!user) {
+    console.log('🔍 [TEACHER] User is null, showing loading');
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">{dashboardType} 전용 페이지로 이동 중...</p>
+            <p className="text-muted-foreground">사용자 정보 로딩 중...</p>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  // This page is now mainly for non-logged in users or fallback
-  if (!user) {
+  if (user.role !== 'teacher') {
+    console.log('🔍 [TEACHER] User role is not teacher:', user.role);
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">교권119</h1>
-            <p className="text-xl text-muted-foreground mb-8">교사의 권익을 보호합니다</p>
-            <div className="space-x-4">
-              <Link href="/login">
-                <Button size="lg">로그인</Button>
-              </Link>
-              <Link href="/signup">
-                <Button variant="outline" size="lg">회원가입</Button>
-              </Link>
-            </div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">역할 확인 중...</p>
           </div>
         </div>
       </DashboardLayout>
     );
   }
-  
+
   const getStatusBadgeClass = (status: string) => {
     const statusClasses: Record<string, string> = {
       received: 'status-received',
@@ -179,7 +156,7 @@ export default function HomePage() {
       consulting: 'status-consulting',
       completed: 'status-completed',
     };
-    
+
     return statusClasses[status] || 'status-received';
   };
 
@@ -190,7 +167,7 @@ export default function HomePage() {
       consulting: '상담진행',
       completed: '해결완료',
     };
-    
+
     return labels[status] || status;
   };
 
@@ -223,6 +200,11 @@ export default function HomePage() {
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-fade-in">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-primary-600">교사 대시보드</h1>
+          <p className="text-muted-foreground">안녕하세요, {user.name}님! 교권 보호를 위해 함께하겠습니다.</p>
+        </div>
 
         {/* My Reports - Top Priority Section */}
         <div className="card-modern">
@@ -260,7 +242,6 @@ export default function HomePage() {
                         {getStatusLabel(report.status)}
                       </div>
                     </div>
-
 
                     {/* 구분선 (마지막 항목이 아닌 경우) */}
                     {index < displayedReports.length - 1 && (
@@ -411,7 +392,6 @@ export default function HomePage() {
               </div>
             </CardContent>
           </div>
-
 
           {/* Recent Resources */}
           <div className="card-modern">

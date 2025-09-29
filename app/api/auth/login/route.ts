@@ -9,6 +9,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
+    console.log('🔍 Login Debug - Request body:', { email, password: password ? '***' : 'missing' });
+
     // Validation
     if (!email || !password) {
       return NextResponse.json(
@@ -98,14 +100,16 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Set HTTP-only cookie with JWT token
+    // HYBRID AUTH: Set cookie for browser navigation while APIs use Authorization headers
     response.cookies.set('auth-token', jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/'
     });
+
+    console.log('🍪 [LOGIN] Cookie set for browser navigation, APIs still use Authorization headers');
 
     return response;
 

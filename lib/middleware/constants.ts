@@ -28,7 +28,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 export const DEFAULT_ROLE_REDIRECTS: Record<UserRole, string> = {
   teacher: '/reports',
   lawyer: '/lawyer',
-  admin: '/admin/dashboard',
+  admin: '/associadmin',
   super_admin: '/admin'
 } as const;
 
@@ -84,6 +84,6 @@ export const SPECIAL_PATHS = {
   LOGIN: '/login',
   SIGNUP: '/signup',
   ADMIN: '/admin',
-  ADMIN_DASHBOARD: '/admin/dashboard',
+  ADMIN_DASHBOARD: '/associadmin',
   LAWYER: '/lawyer'
 } as const;

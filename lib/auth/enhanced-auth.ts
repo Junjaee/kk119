@@ -219,6 +219,12 @@ export class EnhancedAuth {
    */
   async verifyAccessToken(token: string): Promise<TokenVerificationResult> {
     try {
+      // ENHANCED DEBUG: Log token verification start
+      console.log('🔍 [ENHANCED-AUTH] Token verification start:', {
+        tokenPreview: token.substring(0, 30) + '...',
+        tokenLength: token.length
+      });
+
       // Check if token is blacklisted
       if (this.isTokenBlacklisted(token)) {
         log.security('Blacklisted Token Access Attempt', 'medium', `Token: ${token.substring(0, 20)}...`);
@@ -231,6 +237,17 @@ export class EnhancedAuth {
       });
 
       const enhancedPayload = payload as EnhancedJWTPayload;
+
+      // ENHANCED DEBUG: Log parsed JWT payload
+      console.log('🔍 [ENHANCED-AUTH] JWT payload parsed:', {
+        userId: enhancedPayload.userId,
+        email: enhancedPayload.email,
+        role: enhancedPayload.role,
+        jti: enhancedPayload.jti,
+        iat: enhancedPayload.iat,
+        exp: enhancedPayload.exp,
+        sessionId: enhancedPayload.sessionId
+      });
 
       // Validate token type
       if (enhancedPayload.tokenType !== 'access') {

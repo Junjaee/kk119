@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStore } from '@/lib/store';
+import { authSync } from '@/lib/auth/auth-sync';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       setError('이메일과 비밀번호를 입력해주세요.');
       return;
@@ -56,6 +57,9 @@ export default function LoginPage() {
 
     setIsLoading(true);
     setError('');
+
+    // Start login process to prevent auth-sync race conditions
+    authSync.startLogin();
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -74,8 +78,20 @@ export default function LoginPage() {
       console.log('🔍 Login Success - User Data:', data.user);
       console.log('🔍 Login Success - User Role:', data.user.role);
 
-      // Store token
+      // CRITICAL: Clear ALL previous authentication state first (but skip server-side cleanup to avoid invalidating new token)
+      console.log('🧹 Clearing all previous auth state before storing new data...');
+      authSync.clearAllAuthState(true); // Skip server-side cleanup during login
+
+      // CRITICAL FIX: Explicitly clear Zustand persistent storage to prevent stale user data
+      console.log('🧹 Explicitly clearing Zustand persistent storage...');
+      localStorage.removeItem('kyokwon119-storage');
+
+      // Small delay to ensure cleanup completes
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Store new token
       if (data.token) {
+        console.log('💾 Storing new token for user:', data.user.email);
         localStorage.setItem('token', data.token);
 
         // Store in localStorage if remember me is checked
@@ -86,8 +102,8 @@ export default function LoginPage() {
         }
       }
 
-      // Update global state
-      setUser({
+      // Update global state with new user data
+      const newUser = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
@@ -96,6 +112,30 @@ export default function LoginPage() {
         role: data.user.role,
         isAdmin: data.user.isAdmin,
         isVerified: data.user.isVerified
+      };
+
+      console.log('👤 Setting new user in store:', newUser);
+      setUser(newUser);
+
+      // CRITICAL FIX: Clear Zustand storage AGAIN after setting new user to prevent rehydration conflicts
+      console.log('🧹 Final cleanup: Clearing Zustand storage after user state update...');
+      localStorage.removeItem('kyokwon119-storage');
+
+      // Also sync the user state through auth-sync to ensure consistency
+      authSync.syncUserState({
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        school: data.user.school,
+        position: data.user.position,
+        phone: data.user.phone,
+        role: data.user.role,
+        isAdmin: data.user.isAdmin,
+        isVerified: data.user.isVerified,
+        association_id: data.user.association_id,
+        created_at: data.user.created_at || data.user.createdAt,
+        updated_at: data.user.updated_at || data.user.updatedAt,
+        last_login: data.user.last_login || data.user.lastLogin
       });
 
       toast.success(`환영합니다, ${data.user.name}님!`);
@@ -106,24 +146,28 @@ export default function LoginPage() {
 
       console.log('🔍 Determining redirect for role:', data.user.role);
 
-      // Prioritize role-based redirects for specific roles
+      // 각 역할별 독립 페이지로 리다이렉트 (변호사 패턴 완전 적용)
       switch (data.user.role) {
         case 'super_admin':
-          redirectUrl = '/admin';
+          redirectUrl = '/admin';  // 슈퍼관리자 전용 페이지
           console.log('🔍 Redirect: super_admin -> /admin');
           break;
         case 'admin':
-          redirectUrl = '/admin';
-          console.log('🔍 Redirect: admin -> /admin');
+          redirectUrl = '/associadmin';  // 협회관리자 전용 페이지
+          console.log('🔍 Redirect: admin -> /associadmin');
           break;
         case 'lawyer':
-          redirectUrl = '/lawyer';
+          redirectUrl = '/lawyer';  // 변호사 전용 페이지 (기존 유지)
           console.log('🔍 Redirect: lawyer -> /lawyer');
           break;
+        case 'teacher':
+          redirectUrl = '/teacher';  // 교사 전용 페이지
+          console.log('🔍 Redirect: teacher -> /teacher');
+          break;
         default:
-          // For teachers and other roles, use from URL or session storage or default
-          redirectUrl = fromUrl || sessionStorage.getItem('redirectAfterLogin') || '/';
-          console.log('🔍 Redirect: default ->', redirectUrl);
+          // 기타 역할은 홈으로
+          redirectUrl = '/';
+          console.log('🔍 Redirect: default -> /');
           break;
       }
 
@@ -141,6 +185,8 @@ export default function LoginPage() {
       setError(error.message);
       toast.error(error.message);
     } finally {
+      // End login process to allow auth-sync operations to resume
+      authSync.endLogin();
       setIsLoading(false);
     }
   };

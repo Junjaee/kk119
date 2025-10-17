@@ -2,6 +2,7 @@
 
 import { useStore } from '@/lib/store';
 import { User } from '@/lib/types';
+import { AUTH_STORAGE_KEYS, LEGACY_KEYS, UserRole } from '@/lib/auth/storage-keys';
 
 interface AuthSyncManager {
   syncUserState: (user: User | null) => void;
@@ -10,6 +11,9 @@ interface AuthSyncManager {
   syncTokens: (token?: string) => void;
   isTokenValid: (token: string) => boolean;
   shouldRefreshToken: (token: string) => boolean;
+  setTokenForRole: (role: UserRole, token: string) => void;
+  getTokenForRole: (role: UserRole) => string | null;
+  getCurrentRole: () => UserRole | null;
 }
 
 /**
@@ -22,6 +26,7 @@ export class AuthSync implements AuthSyncManager {
   private isLoggingIn: boolean = false;
   private loginCompletedAt: number | null = null;
   private logoutCompletedAt: number | null = null;
+  private currentRole: UserRole | null = null;
 
   static getInstance(): AuthSync {
     if (!AuthSync.instance) {
@@ -31,10 +36,47 @@ export class AuthSync implements AuthSyncManager {
   }
 
   /**
+   * Set token for specific role
+   * @CODE:AUTH-001-SET-TOKEN | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
+   */
+  setTokenForRole(role: UserRole, token: string): void {
+    console.log(`🔑 [AUTH-SYNC] Setting token for role: ${role}`);
+    const keys = AUTH_STORAGE_KEYS[role];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(keys.token, token);
+      this.currentRole = role;
+    }
+  }
+
+  /**
+   * Get token for specific role
+   * @CODE:AUTH-001-GET-TOKEN | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
+   */
+  getTokenForRole(role: UserRole): string | null {
+    if (typeof window === 'undefined') return null;
+    const keys = AUTH_STORAGE_KEYS[role];
+    return localStorage.getItem(keys.token);
+  }
+
+  /**
+   * Get current role
+   * @CODE:AUTH-001-CURRENT-ROLE | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
+   */
+  getCurrentRole(): UserRole | null {
+    return this.currentRole;
+  }
+
+  /**
    * Synchronize user state across all authentication stores
    */
   syncUserState(user: User | null): void {
     console.log('🔄 [AUTH-SYNC] Syncing user state:', user ? { id: user.id, email: user.email, role: user.role } : null);
+    console.log('🔄 [AUTH-SYNC] CRITICAL DEBUG - syncUserState called during login?', {
+      isLoggingIn: this.isLoggingIn,
+      loginCompletedAt: this.loginCompletedAt,
+      logoutCompletedAt: this.logoutCompletedAt,
+      currentToken: typeof window !== 'undefined' ? localStorage.getItem('token')?.substring(0, 20) + '...' : 'N/A'
+    });
 
     // Update Zustand store
     const { setUser } = useStore.getState();
@@ -65,9 +107,10 @@ export class AuthSync implements AuthSyncManager {
 
   /**
    * Clear all authentication state from all storage locations
+   * @CODE:AUTH-001-CLEAR-ALL | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
    */
   clearAllAuthState(skipServerSideCleanup = false): void {
-    console.log('🗑️ [AUTH-SYNC] Clearing all auth state', skipServerSideCleanup ? '(skipping server-side cleanup)' : '');
+    console.log('🗑️ [AUTH-SYNC] Clearing all auth state for ALL roles', skipServerSideCleanup ? '(skipping server-side cleanup)' : '');
 
     // CRITICAL FIX: Only track logout completion if this is NOT called during login process
     // During login, skipServerSideCleanup=true, so we don't want to reset logout protection
@@ -79,39 +122,38 @@ export class AuthSync implements AuthSyncManager {
     }
 
     try {
-      // Clear localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('rememberedEmail');
+      // Clear tokens for ALL roles (role-based isolation)
+      Object.values(AUTH_STORAGE_KEYS).forEach(({ token, storage }) => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(token);
+          localStorage.removeItem(storage);
+        }
+      });
 
-      // Clear Zustand persist storage
-      localStorage.removeItem('kyokwon119-storage');
+      // Clear legacy keys
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(LEGACY_KEYS.token);
+        localStorage.removeItem(LEGACY_KEYS.storage);
+        localStorage.removeItem(LEGACY_KEYS.rememberedEmail);
+      }
+
+      console.log('🗑️ [AUTH-SYNC] Cleared all role-based and legacy tokens');
 
       // Clear session storage
-      sessionStorage.clear();
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear();
+      }
+
+      // Reset current role
+      this.currentRole = null;
 
       // Clear client-side cookies directly (multiple attempts for thorough cleanup)
       if (typeof document !== 'undefined') {
-        // Clear auth-token cookie with different domain/path combinations
-        const hostname = window.location.hostname;
-        const cookiesToClear = [
-          `auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${hostname}`,
-          `auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`,
-          `auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${hostname}`,
-          `auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`,
-          `auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure`,
-          `auth-token=; Max-Age=0; path=/;`,
-          `auth-token=; Max-Age=0; path=/; domain=${hostname}`,
-        ];
-
-        cookiesToClear.forEach(cookie => {
-          document.cookie = cookie;
-        });
-
-        console.log('🍪 [AUTH-SYNC] Client-side cookies cleared with multiple strategies');
+        this.clearAllCookies();
       }
 
       // Clear cookies by making logout request (only if not skipping server-side cleanup)
-      if (!skipServerSideCleanup) {
+      if (!skipServerSideCleanup && typeof fetch !== 'undefined') {
         fetch('/api/auth/logout', { method: 'POST' }).catch(err =>
           console.warn('Failed to clear server-side session:', err)
         );
@@ -124,6 +166,30 @@ export class AuthSync implements AuthSyncManager {
   }
 
   /**
+   * Clear all cookies with multiple strategies
+   * @CODE:AUTH-001-CLEAR-COOKIES | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
+   */
+  private clearAllCookies(): void {
+    if (typeof document === 'undefined') return;
+
+    const hostname = window.location.hostname;
+    const cookieNames = ['auth-token', 'session'];
+    const domains = [hostname, `.${hostname}`, ''];
+    const paths = ['/', '/api', '/admin', '/teacher', '/lawyer'];
+
+    cookieNames.forEach(name => {
+      domains.forEach(domain => {
+        paths.forEach(path => {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; domain=${domain}`;
+          document.cookie = `${name}=; Max-Age=0; path=${path}; domain=${domain}`;
+        });
+      });
+    });
+
+    console.log('🍪 [AUTH-SYNC] Client-side cookies cleared with multiple strategies');
+  }
+
+  /**
    * Refresh authentication state from server
    */
   async refreshAuthState(): Promise<void> {
@@ -133,10 +199,10 @@ export class AuthSync implements AuthSyncManager {
       return;
     }
 
-    // CRITICAL FIX: Extended delay after login completion to prevent race conditions
-    // Increased from 2s to 10s to ensure cookies are properly processed
+    // CRITICAL FIX: Prevent refresh immediately after login to avoid token contamination
+    // The login process sets the correct token, so we should trust it and not refresh immediately
     if (this.loginCompletedAt && Date.now() - this.loginCompletedAt < 10000) {
-      console.log('🔄 [AUTH-SYNC] Skipping refresh - login recently completed (extended protection)');
+      console.log('🔄 [AUTH-SYNC] Skipping refresh - preventing token contamination after login (10s delay)');
       return;
     }
 
@@ -163,14 +229,44 @@ export class AuthSync implements AuthSyncManager {
     console.log('🔄 [AUTH-SYNC] Refreshing auth state from server');
 
     try {
+      // Check if server has signaled auth reset via middleware
+      if (typeof document !== 'undefined') {
+        const authReset = document.querySelector('meta[name="x-auth-reset"]')?.getAttribute('content');
+        if (authReset === 'true') {
+          console.log('🔄 [AUTH-SYNC] Server signaled auth reset, clearing all state');
+          this.clearAllAuthState();
+          return;
+        }
+      }
+
       // Get token from localStorage to send in Authorization header
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-      console.log('🔍 [AUTH-SYNC] Refresh token details:', {
+      // CRITICAL DEBUG: Log full token details to track cross-contamination
+      console.log('🔍 [AUTH-SYNC] DETAILED token analysis:', {
         hasLocalStorageToken: !!token,
         tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
+        tokenSuffix: token ? '...' + token.substring(token.length - 10) : 'none',
+        fullTokenLength: token ? token.length : 0,
+        timestamp: new Date().toISOString(),
         cookies: typeof document !== 'undefined' ? document.cookie.split(';').filter(c => c.includes('auth-token')) : 'N/A'
       });
+
+      // CRITICAL DEBUG: Try to decode token to see which user it belongs to
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('🔍 [AUTH-SYNC] DECODED TOKEN DATA:', {
+            userId: payload.userId,
+            email: payload.email,
+            role: payload.role,
+            exp: payload.exp,
+            tokenAge: payload.exp ? (payload.exp - Math.floor(Date.now() / 1000)) + ' seconds until expiry' : 'no expiry'
+          });
+        } catch (decodeError) {
+          console.error('🔍 [AUTH-SYNC] Failed to decode token:', decodeError);
+        }
+      }
 
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -198,6 +294,14 @@ export class AuthSync implements AuthSyncManager {
       console.log('🔍 [AUTH-SYNC] Using ONLY localStorage token - cookies completely disabled');
 
       const response = await fetch('/api/auth/me', fetchOptions);
+
+      // Check if middleware has signaled auth reset
+      const authResetHeader = response.headers.get('X-Auth-Reset');
+      if (authResetHeader === 'true') {
+        console.log('🔄 [AUTH-SYNC] Server signaled auth reset via response header, clearing all state');
+        this.clearAllAuthState();
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();

@@ -2,269 +2,564 @@
 id: AUTH-002
 version: 0.0.1
 status: draft
-title: 2단계 인증 (2FA/TOTP) 시스템 - 인수 기준
+created: 2025-10-17
+updated: 2025-10-17
 ---
 
-# SPEC-AUTH-002: 2단계 인증 (2FA/TOTP) 시스템 - 인수 기준
+# SPEC-AUTH-002 수락 기준 (Acceptance Criteria)
 
 ## 개요
 
-2단계 인증 (2FA/TOTP) 시스템의 상세한 인수 기준 및 테스트 시나리오입니다.
-Given-When-Then 형식의 BDD 시나리오로 작성되었습니다.
+본 문서는 SPEC-AUTH-002 "서버 측 역할 검증 강화"의 상세한 수락 기준을 정의합니다. 모든 시나리오는 Given-When-Then 형식으로 작성되었습니다.
 
 ---
 
-## 핵심 기능 인수 기준
+## AC-001: JWT 역할과 DB 역할 일치 검증
 
-### AC-001: 2FA 설정 (정상 플로우)
+### Given-When-Then
 
-**Given** (전제 조건):
-- 사용자가 로그인되어 있고 2FA가 비활성화된 상태이다
-- 사용자가 설정 페이지 `/settings/2fa`에 접속했다
+**Given**: 사용자가 특정 역할로 로그인하여 JWT를 받았고,
+**When**: 보호된 API 엔드포인트에 요청을 보내면,
+**Then**: 시스템은 JWT의 역할과 DB의 역할을 대조하여 일치하는 경우에만 요청을 처리해야 한다.
 
-**When** (실행):
-- 사용자가 "2FA 활성화" 버튼을 클릭한다
-- 비밀번호를 입력하여 본인 확인을 완료한다
-- QR 코드가 표시된다
-- Google Authenticator로 QR 코드를 스캔한다
-- 백업 코드 10개가 표시된다
-- 백업 코드를 다운로드/인쇄한다
-- Google Authenticator 앱에서 생성된 6자리 코드를 입력한다
-- "확인" 버튼을 클릭한다
+### 검증 기준
 
-**Then** (결과):
-- 시스템은 "2FA가 성공적으로 활성화되었습니다." 메시지를 표시한다
-- 데이터베이스 `totp_secrets` 테이블에 암호화된 secret이 저장된다
-- `is_active` 필드가 1로 설정된다
-- 데이터베이스 `backup_codes` 테이블에 10개의 백업 코드 해시가 저장된다
-- 사용자는 다음 로그인 시 TOTP 입력이 요구된다
+1. **역할 일치 시 요청 성공**
+   ```typescript
+   // JWT: { userId: 1, role: 'teacher' }
+   // DB:  { id: 1, role: 'teacher' }
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${teacherToken}` }
+   });
+   expect(response.status).toBe(200);
+   ```
 
----
+2. **역할 불일치 시 요청 거부**
+   ```typescript
+   // JWT: { userId: 1, role: 'admin' }
+   // DB:  { id: 1, role: 'teacher' } (관리자가 역할 변경함)
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${oldAdminToken}` }
+   });
+   expect(response.status).toBe(401);
+   expect(await response.json()).toEqual({
+     error: expect.stringContaining('Role mismatch'),
+   });
+   ```
 
-### AC-002: 2FA 로그인 (TOTP 사용)
+3. **역할 불일치 시 X-Auth-Reset 헤더 포함**
+   ```typescript
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${mismatchToken}` }
+   });
+   expect(response.headers.get('X-Auth-Reset')).toBe('true');
+   ```
 
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 사용자가 로그아웃된 상태이다
-- Google Authenticator 앱에서 6자리 코드를 확인할 수 있다
+### 테스트 시나리오
 
-**When** (실행):
-- 사용자가 아이디/비밀번호로 로그인한다
-- TOTP 입력 화면이 표시된다
-- Google Authenticator 앱에서 생성된 6자리 코드를 입력한다
-- "확인" 버튼을 클릭한다
+```typescript
+describe('AC-001: JWT 역할과 DB 역할 일치 검증', () => {
+  test('Teacher JWT + Teacher DB → 요청 성공', async () => {
+    const token = createJWT({ userId: 1, role: 'teacher' });
+    await setDBUserRole(1, 'teacher');
 
-**Then** (결과):
-- 시스템은 TOTP 코드를 검증한다
-- JWT 토큰이 발급된다
-- 사용자는 대시보드로 리다이렉트된다
-- 로그인이 성공한다
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
 
----
+    expect(response.status).toBe(200);
+  });
 
-### AC-003: 2FA 로그인 (백업 코드 사용)
+  test('Teacher JWT + Lawyer DB → 요청 거부', async () => {
+    const token = createJWT({ userId: 1, role: 'teacher' });
+    await setDBUserRole(1, 'lawyer'); // 역할 변경됨
 
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 사용자가 TOTP 앱을 사용할 수 없는 상황이다 (분실, 삭제 등)
-- 사용자가 백업 코드를 보관하고 있다
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
 
-**When** (실행):
-- 사용자가 아이디/비밀번호로 로그인한다
-- TOTP 입력 화면에서 "백업 코드 사용" 링크를 클릭한다
-- 백업 코드 중 하나 (예: `12345678`)를 입력한다
-- "확인" 버튼을 클릭한다
+    expect(response.status).toBe(401);
+    expect(response.headers.get('X-Auth-Reset')).toBe('true');
+  });
 
-**Then** (결과):
-- 시스템은 백업 코드를 검증한다
-- 해당 백업 코드의 `used_at` 필드가 현재 시간으로 설정된다
-- JWT 토큰이 발급된다
-- 사용자는 대시보드로 리다이렉트된다
-- 시스템은 "남은 백업 코드: 9개" 메시지를 표시한다
-- 로그인이 성공한다
+  test('역할 불일치 시 보안 로그 기록', async () => {
+    const logSpy = jest.spyOn(console, 'error');
+    const token = createJWT({ userId: 1, role: 'admin' });
+    await setDBUserRole(1, 'teacher');
 
----
+    await fetch('/api/admin/users', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
 
-### AC-004: TOTP 검증 실패 및 계정 잠금
-
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 사용자가 아이디/비밀번호로 로그인하여 TOTP 입력 화면에 있다
-
-**When** (실행):
-- 사용자가 잘못된 TOTP 코드를 5회 연속 입력한다
-
-**Then** (결과):
-- 첫 4회 실패 시: "잘못된 코드입니다. 다시 시도하세요." 메시지 표시
-- 5회 실패 시:
-  - 시스템은 계정을 30분 동안 잠근다 (AUTH-004 연동)
-  - "보안상의 이유로 계정이 30분 동안 잠금되었습니다." 메시지 표시
-  - 잠금 이메일이 발송된다
-  - 로그에 "5회 TOTP 실패로 계정 잠금" 기록
-- 30분 후 자동 해제되거나 관리자가 수동 해제할 수 있다
-
----
-
-### AC-005: 백업 코드 재사용 방지
-
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 사용자가 이전에 백업 코드 `12345678`을 사용하여 로그인했다
-- 해당 백업 코드의 `used_at` 필드가 설정되어 있다
-
-**When** (실행):
-- 사용자가 다시 로그인하여 TOTP 입력 화면에 도달한다
-- 동일한 백업 코드 `12345678`을 입력한다
-
-**Then** (결과):
-- 시스템은 "잘못된 백업 코드입니다." 에러 메시지를 표시한다
-- 로그인이 거부된다
-- 로그에 "사용된 백업 코드 재사용 시도" 기록
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[AUTH-GUARD] Role mismatch detected'),
+      expect.objectContaining({
+        jwtRole: 'admin',
+        dbRole: 'teacher',
+      })
+    );
+  });
+});
+```
 
 ---
 
-### AC-006: 2FA 비활성화
+## AC-002: 역할별 라우트 가드 적용
 
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 사용자가 로그인되어 설정 페이지 `/settings/2fa`에 접속했다
+### Given-When-Then
 
-**When** (실행):
-- 사용자가 "2FA 비활성화" 버튼을 클릭한다
-- 비밀번호를 입력하여 본인 확인을 완료한다
-- "비활성화 확인" 버튼을 클릭한다
+**Given**: 각 API 엔드포인트에 허용 역할이 정의되어 있고,
+**When**: 특정 역할의 JWT로 API에 접근하면,
+**Then**: 허용 역할 목록에 포함된 경우에만 접근을 허용하고 그렇지 않으면 403 Forbidden을 반환해야 한다.
 
-**Then** (결과):
-- 시스템은 "2FA가 비활성화되었습니다." 메시지를 표시한다
-- 데이터베이스 `totp_secrets` 테이블에서 해당 사용자의 레코드가 삭제된다
-- 데이터베이스 `backup_codes` 테이블에서 해당 사용자의 모든 백업 코드가 삭제된다
-- 비활성화 알림 이메일이 발송된다
-- 다음 로그인 시 TOTP 입력이 요구되지 않는다
+### 검증 기준
 
----
+1. **허용 역할로 접근 시 성공**
+   ```typescript
+   // /api/admin/users: allowedRoles = ['admin', 'super_admin']
+   const adminToken = createJWT({ userId: 1, role: 'admin' });
+   const response = await fetch('/api/admin/users', {
+     headers: { 'Authorization': `Bearer ${adminToken}` },
+   });
+   expect(response.status).toBe(200);
+   ```
 
-### AC-007: 백업 코드 경고 (3개 이하 남음)
+2. **거부 역할로 접근 시 실패**
+   ```typescript
+   // /api/admin/users: allowedRoles = ['admin', 'super_admin']
+   const teacherToken = createJWT({ userId: 2, role: 'teacher' });
+   const response = await fetch('/api/admin/users', {
+     headers: { 'Authorization': `Bearer ${teacherToken}` },
+   });
+   expect(response.status).toBe(403);
+   expect(await response.json()).toEqual({
+     error: expect.stringContaining('Forbidden'),
+   });
+   ```
 
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 사용자가 이미 7개의 백업 코드를 사용했다 (남은 개수: 3개)
+### API별 허용 역할 검증 매트릭스
 
-**When** (실행):
-- 사용자가 백업 코드를 사용하여 로그인한다
+| API 엔드포인트 | Teacher | Lawyer | Admin | Super Admin |
+|---------------|---------|--------|-------|-------------|
+| `/api/auth/me` | ✅ | ✅ | ✅ | ✅ |
+| `/api/reports` (GET) | ✅ | ✅ | ✅ | ✅ |
+| `/api/reports` (POST) | ✅ | ❌ | ❌ | ❌ |
+| `/api/admin/users` | ❌ | ❌ | ✅ | ✅ |
+| `/api/lawyer/consultations` | ❌ | ✅ | ❌ | ❌ |
 
-**Then** (결과):
-- 시스템은 로그인을 허용한다
-- 시스템은 경고 메시지를 표시한다: "⚠️ 백업 코드가 3개 이하로 남았습니다. 새 백업 코드를 재생성하세요."
-- 백업 코드 재생성 링크가 표시된다
+### 테스트 시나리오
 
----
+```typescript
+describe('AC-002: 역할별 라우트 가드 적용', () => {
+  const testMatrix = [
+    { endpoint: '/api/reports', method: 'GET', allowedRoles: ['teacher', 'lawyer', 'admin', 'super_admin'] },
+    { endpoint: '/api/reports', method: 'POST', allowedRoles: ['teacher'] },
+    { endpoint: '/api/admin/users', method: 'GET', allowedRoles: ['admin', 'super_admin'] },
+    { endpoint: '/api/lawyer/consultations', method: 'GET', allowedRoles: ['lawyer'] },
+  ];
 
-## 비기능적 요구사항 인수 기준
+  const allRoles = ['teacher', 'lawyer', 'admin', 'super_admin'];
 
-### NFR-001: 보안 - Secret 암호화
+  testMatrix.forEach(({ endpoint, method, allowedRoles }) => {
+    test(`${endpoint} (${method}): 허용 역할만 접근 가능`, async () => {
+      for (const role of allRoles) {
+        const token = createJWT({ userId: 1, role });
+        await setDBUserRole(1, role);
 
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화했다
+        const response = await fetch(endpoint, {
+          method,
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-**When** (실행):
-- 데이터베이스 `totp_secrets` 테이블을 조회한다
-
-**Then** (결과):
-- `secret_encrypted` 필드는 암호화된 문자열이다
-- 평문 secret이 노출되지 않는다
-- AES-256-GCM 암호화 알고리즘이 사용된다
-- 암호화 키는 환경 변수로 관리된다
-
----
-
-### NFR-002: 보안 - TOTP 시간 창
-
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 현재 시간은 12:00:00이다
-- 현재 유효한 TOTP 코드는 `123456`이다
-
-**When** (실행):
-- 12:00:29에 코드 `123456`을 입력한다 (유효)
-- 12:00:31에 이전 시간 창의 코드를 입력한다 (±30초 이내)
-- 12:01:01에 코드 `123456`을 입력한다 (±30초 초과)
-
-**Then** (결과):
-- 12:00:29 입력: 검증 성공 (현재 시간 창)
-- 12:00:31 입력: 검증 성공 (±30초 허용)
-- 12:01:01 입력: 검증 실패 (시간 창 초과)
-
----
-
-### NFR-003: 보안 - Replay Attack 방지
-
-**Given** (전제 조건):
-- 사용자가 2FA를 활성화한 상태이다
-- 사용자가 TOTP 코드 `123456`으로 로그인에 성공했다
-
-**When** (실행):
-- 동일한 TOTP 코드 `123456`을 다시 입력한다 (30초 이내)
-
-**Then** (결과):
-- 시스템은 "잘못된 코드입니다." 에러 메시지를 표시한다
-- 동일 코드의 재사용이 차단된다
-- 로그에 "TOTP 재사용 시도" 기록
+        if (allowedRoles.includes(role)) {
+          expect(response.status).not.toBe(403);
+        } else {
+          expect(response.status).toBe(403);
+        }
+      }
+    });
+  });
+});
+```
 
 ---
 
-### NFR-004: 성능 - TOTP 검증 응답 시간
+## AC-003: JWT 서명 및 만료 검증
 
-**Given** (전제 조건):
-- 2FA 시스템이 정상 동작 중이다
+### Given-When-Then
 
-**When** (실행):
-- 100개의 TOTP 검증 요청을 동시에 전송한다
+**Given**: 클라이언트가 JWT를 전송하고,
+**When**: 서버가 JWT를 검증하면,
+**Then**: JWT 서명이 유효하고 만료되지 않은 경우에만 인증을 허용해야 한다.
 
-**Then** (결과):
-- 95%의 요청이 500ms 이내에 응답한다
-- 데이터베이스 조회가 최적화되어 있다 (인덱스 사용)
-- Secret 복호화가 효율적으로 수행된다
+### 검증 기준
+
+1. **유효한 JWT 허용**
+   ```typescript
+   const validToken = jwt.sign(
+     { userId: 1, role: 'teacher', exp: Math.floor(Date.now() / 1000) + 3600 },
+     process.env.JWT_SECRET!
+   );
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${validToken}` },
+   });
+   expect(response.status).toBe(200);
+   ```
+
+2. **서명 불일치 JWT 거부**
+   ```typescript
+   const invalidToken = jwt.sign(
+     { userId: 1, role: 'teacher' },
+     'wrong_secret' // 잘못된 시크릿
+   );
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${invalidToken}` },
+   });
+   expect(response.status).toBe(401);
+   ```
+
+3. **만료된 JWT 거부**
+   ```typescript
+   const expiredToken = jwt.sign(
+     { userId: 1, role: 'teacher', exp: Math.floor(Date.now() / 1000) - 3600 }, // 1시간 전 만료
+     process.env.JWT_SECRET!
+   );
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${expiredToken}` },
+   });
+   expect(response.status).toBe(401);
+   expect(await response.json()).toEqual({
+     error: expect.stringContaining('expired'),
+   });
+   ```
+
+4. **필수 필드 누락 JWT 거부**
+   ```typescript
+   const incompleteToken = jwt.sign(
+     { userId: 1 }, // role 필드 누락
+     process.env.JWT_SECRET!
+   );
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${incompleteToken}` },
+   });
+   expect(response.status).toBe(401);
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-003: JWT 서명 및 만료 검증', () => {
+  test('유효한 JWT → 인증 성공', async () => {
+    const token = createValidJWT({ userId: 1, role: 'teacher' });
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(200);
+  });
+
+  test('서명 불일치 JWT → 401 Unauthorized', async () => {
+    const token = jwt.sign({ userId: 1, role: 'teacher' }, 'wrong_secret');
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(401);
+  });
+
+  test('만료된 JWT → 401 Unauthorized', async () => {
+    const token = createExpiredJWT({ userId: 1, role: 'teacher' });
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(401);
+  });
+
+  test('필수 필드 누락 JWT → 401 Unauthorized', async () => {
+    const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(401);
+  });
+});
+```
 
 ---
 
-## 품질 게이트 기준
+## AC-004: DB 사용자 조회 및 검증
 
-### 테스트 커버리지
-- [ ] 단위 테스트 커버리지 80% 이상
-- [ ] 통합 테스트 커버리지 70% 이상
-- [ ] E2E 테스트 시나리오 7개 이상 통과
+### Given-When-Then
 
-### 보안 체크리스트
-- [ ] TOTP secret 암호화 저장 (AES-256-GCM)
-- [ ] 백업 코드 해시 저장 (평문 저장하지 않음)
-- [ ] ±30초 시간 창 허용 (RFC 6238 표준)
-- [ ] Replay attack 방지 (동일 코드 재사용 차단)
-- [ ] 5회 실패 시 계정 잠금 (AUTH-004 연동)
-- [ ] 2FA 설정/해제 시 비밀번호 재확인
-- [ ] QR 코드 표시 후 메모리에서 즉시 삭제
+**Given**: JWT에 포함된 userId가 있고,
+**When**: 서버가 DB에서 사용자를 조회하면,
+**Then**: 사용자가 존재하고 활성화된 경우에만 인증을 허용해야 한다.
 
-### 운영 체크리스트
-- [ ] TOTP 검증 로그 기록 (성공, 실패)
-- [ ] 백업 코드 사용 로그 기록
-- [ ] 2FA 활성화/비활성화 이메일 알림
-- [ ] 백업 코드 3개 이하 경고 메시지
-- [ ] Google Authenticator 호환성 테스트
-- [ ] API 문서 작성 완료
-- [ ] 사용자 가이드 작성 완료 (QR 스캔 방법, 백업 코드 보관)
+### 검증 기준
+
+1. **사용자 존재 시 인증 성공**
+   ```typescript
+   const token = createJWT({ userId: 1, role: 'teacher' });
+   await createDBUser({ id: 1, role: 'teacher', isActive: true });
+
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${token}` },
+   });
+   expect(response.status).toBe(200);
+   ```
+
+2. **사용자 미존재 시 인증 실패**
+   ```typescript
+   const token = createJWT({ userId: 999, role: 'teacher' }); // DB에 없는 ID
+
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${token}` },
+   });
+   expect(response.status).toBe(401);
+   expect(await response.json()).toEqual({
+     error: expect.stringContaining('User not found'),
+   });
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-004: DB 사용자 조회 및 검증', () => {
+  test('사용자 존재 + 역할 일치 → 인증 성공', async () => {
+    const user = await createDBUser({ id: 1, role: 'teacher' });
+    const token = createJWT({ userId: user.id, role: user.role });
+
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(200);
+  });
+
+  test('사용자 미존재 → 401 Unauthorized', async () => {
+    const token = createJWT({ userId: 999, role: 'teacher' });
+
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(401);
+  });
+
+  test('DB 조회 실패 시 에러 처리', async () => {
+    const token = createJWT({ userId: 1, role: 'teacher' });
+
+    // DB 조회 실패 시뮬레이션
+    jest.spyOn(db, 'getUserById').mockRejectedValueOnce(new Error('DB connection failed'));
+
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(500);
+  });
+});
+```
+
+---
+
+## AC-005: 역할 변경 시나리오
+
+### Given-When-Then
+
+**Given**: 사용자가 A 역할로 로그인하여 JWT를 받았고,
+**When**: 관리자가 사용자의 역할을 B로 변경한 후 사용자가 다시 API를 요청하면,
+**Then**: JWT 역할(A)과 DB 역할(B) 불일치로 인해 인증이 실패하고 세션이 종료되어야 한다.
+
+### 검증 기준
+
+1. **역할 변경 전: 인증 성공**
+   ```typescript
+   const user = await createDBUser({ id: 1, role: 'teacher' });
+   const token = createJWT({ userId: 1, role: 'teacher' });
+
+   const response1 = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${token}` },
+   });
+   expect(response1.status).toBe(200);
+   ```
+
+2. **역할 변경 후: 인증 실패**
+   ```typescript
+   // 관리자가 역할 변경
+   await updateDBUserRole(1, 'lawyer');
+
+   // 동일한 토큰으로 재요청
+   const response2 = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${token}` },
+   });
+   expect(response2.status).toBe(401);
+   expect(response2.headers.get('X-Auth-Reset')).toBe('true');
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-005: 역할 변경 시나리오', () => {
+  test('Teacher → Lawyer 역할 변경 후 기존 JWT 무효화', async () => {
+    // 1. Teacher로 로그인
+    const user = await createDBUser({ id: 1, role: 'teacher' });
+    const token = createJWT({ userId: 1, role: 'teacher' });
+
+    // 2. 첫 번째 요청: 성공
+    const response1 = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response1.status).toBe(200);
+
+    // 3. 관리자가 역할 변경
+    await updateDBUserRole(1, 'lawyer');
+
+    // 4. 두 번째 요청: 역할 불일치로 실패
+    const response2 = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response2.status).toBe(401);
+    expect(response2.headers.get('X-Auth-Reset')).toBe('true');
+
+    // 5. 재로그인 후 새 JWT로 성공
+    const newToken = createJWT({ userId: 1, role: 'lawyer' });
+    const response3 = await fetch('/api/lawyer/consultations', {
+      headers: { 'Authorization': `Bearer ${newToken}` },
+    });
+    expect(response3.status).toBe(200);
+  });
+});
+```
+
+---
+
+## AC-006: 에러 응답 표준화
+
+### Given-When-Then
+
+**Given**: 인증/권한 검증이 실패하고,
+**When**: 서버가 에러 응답을 반환하면,
+**Then**: 일관된 형식의 에러 메시지와 적절한 상태 코드를 포함해야 한다.
+
+### 검증 기준
+
+1. **401 Unauthorized** (인증 실패)
+   ```typescript
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': 'Bearer invalid_token' },
+   });
+   expect(response.status).toBe(401);
+   expect(await response.json()).toMatchObject({
+     error: expect.any(String),
+     code: 'AUTH_INVALID_TOKEN',
+   });
+   ```
+
+2. **403 Forbidden** (권한 부족)
+   ```typescript
+   const teacherToken = createJWT({ userId: 1, role: 'teacher' });
+   const response = await fetch('/api/admin/users', {
+     headers: { 'Authorization': `Bearer ${teacherToken}` },
+   });
+   expect(response.status).toBe(403);
+   expect(await response.json()).toMatchObject({
+     error: expect.stringContaining('Forbidden'),
+     code: 'AUTH_FORBIDDEN',
+   });
+   ```
+
+3. **역할 불일치** (즉시 세션 종료)
+   ```typescript
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${mismatchToken}` },
+   });
+   expect(response.status).toBe(401);
+   expect(await response.json()).toMatchObject({
+     error: expect.stringContaining('Role mismatch'),
+     code: 'AUTH_ROLE_MISMATCH',
+   });
+   expect(response.headers.get('X-Auth-Reset')).toBe('true');
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-006: 에러 응답 표준화', () => {
+  test('무효 JWT → 401 + AUTH_INVALID_TOKEN', async () => {
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': 'Bearer invalid_jwt' },
+    });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({
+      code: 'AUTH_INVALID_TOKEN',
+    });
+  });
+
+  test('권한 부족 → 403 + AUTH_FORBIDDEN', async () => {
+    const teacherToken = createValidJWT({ userId: 1, role: 'teacher' });
+    const response = await fetch('/api/admin/users', {
+      headers: { 'Authorization': `Bearer ${teacherToken}` },
+    });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'AUTH_FORBIDDEN',
+    });
+  });
+
+  test('역할 불일치 → 401 + AUTH_ROLE_MISMATCH + X-Auth-Reset', async () => {
+    const token = createJWT({ userId: 1, role: 'admin' });
+    await setDBUserRole(1, 'teacher');
+
+    const response = await fetch('/api/reports', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({
+      code: 'AUTH_ROLE_MISMATCH',
+    });
+    expect(response.headers.get('X-Auth-Reset')).toBe('true');
+  });
+});
+```
 
 ---
 
 ## 완료 조건 (Definition of Done)
 
-- [ ] 모든 인수 기준 (AC-001 ~ AC-007) 통과
-- [ ] 모든 비기능적 요구사항 (NFR-001 ~ NFR-004) 통과
-- [ ] 품질 게이트 기준 100% 충족
-- [ ] E2E 테스트 시나리오 실행 및 스크린샷 기록
-- [ ] Google Authenticator 실제 테스트 완료
-- [ ] 코드 리뷰 완료 (최소 1명 승인)
-- [ ] 보안 체크리스트 검토 완료
-- [ ] 문서화 완료 (API 문서, 사용자 가이드, 운영 가이드)
+### 기능 완료
+- [ ] AC-001: JWT 역할과 DB 역할 일치 검증 - 통과
+- [ ] AC-002: 역할별 라우트 가드 적용 - 통과
+- [ ] AC-003: JWT 서명 및 만료 검증 - 통과
+- [ ] AC-004: DB 사용자 조회 및 검증 - 통과
+- [ ] AC-005: 역할 변경 시나리오 - 통과
+- [ ] AC-006: 에러 응답 표준화 - 통과
+
+### 품질 게이트
+- [ ] 단위 테스트 커버리지 ≥ 95%
+- [ ] 통합 테스트 모두 통과
+- [ ] E2E 테스트 모두 통과
+- [ ] TypeScript 타입 에러 0건
+- [ ] ESLint 에러 0건
+
+### 성능 기준
+- [ ] DB 역할 조회 시간 < 100ms
+- [ ] API 응답 지연 < 50ms (역할 검증으로 인한)
+- [ ] 메모리 누수 0건
+
+### 보안 기준
+- [ ] JWT 서명 검증 100% 통과
+- [ ] 역할 불일치 감지율 100%
+- [ ] 무효 JWT 거부율 100%
+- [ ] 보안 로그 기록률 100% (역할 불일치 시)
+
+### 문서화
+- [ ] JWTVerifier API 문서 작성 완료
+- [ ] AuthGuard 사용 가이드 작성 완료
+- [ ] 에러 코드 사전 작성 완료
+- [ ] 보안 로그 포맷 문서화 완료
+
+### 코드 리뷰
+- [ ] 2명 이상의 리뷰어 승인
+- [ ] 모든 리뷰 코멘트 해결
+- [ ] SPEC 문서와 코드 일치 확인
 
 ---
 
-**문서 끝**
+**작성자**: @spec-builder
+**최종 수정일**: 2025-10-17

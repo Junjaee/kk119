@@ -1,8 +1,8 @@
 {
   "projectName": "kk119",
-  "mode": "team",
+  "mode": "personal",
   "locale": "ko",
-  "language": "python",
+  "language": "typescript",
   "moai_adk_version": "0.3.3",
   "optimized": false
 }

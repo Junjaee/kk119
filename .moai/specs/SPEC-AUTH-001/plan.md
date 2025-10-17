@@ -2,353 +2,449 @@
 id: AUTH-001
 version: 0.0.1
 status: draft
-title: 비밀번호 재설정 및 복구 시스템 - 구현 계획
+created: 2025-10-17
+updated: 2025-10-17
 ---
 
-# SPEC-AUTH-001: 비밀번호 재설정 및 복구 시스템 - 구현 계획
+# SPEC-AUTH-001 구현 계획
 
-## 개요
+## 목표
 
-비밀번호 재설정 및 복구 시스템의 구현 계획서입니다.
-이메일 기반 토큰 발급, 15분 만료, 비밀번호 히스토리 관리를 포함합니다.
-
----
-
-## 구현 우선순위
-
-### 1차 목표: 핵심 비밀번호 재설정 기능
-- 데이터베이스 스키마 생성 (password_reset_tokens, password_history)
-- 토큰 생성 및 이메일 발송 API (`POST /api/auth/password-reset/request`)
-- 토큰 검증 API (`GET /api/auth/password-reset/verify`)
-- 비밀번호 변경 API (`POST /api/auth/password-reset/confirm`)
-- 비밀번호 히스토리 체크 로직
-
-### 2차 목표: UI 및 사용자 경험
-- 비밀번호 재설정 요청 페이지 (`/auth/password-reset`)
-- 토큰 검증 및 비밀번호 변경 페이지 (`/auth/password-reset/confirm?token=...`)
-- 이메일 템플릿 구현 (HTML + 텍스트)
-- 에러 메시지 및 성공 메시지 UI
-
-### 3차 목표: 보안 강화 및 운영
-- 타이밍 공격 방지 (이메일 존재 여부 노출 방지)
-- 로그 기록 시스템 (재설정 시도, 성공, 실패)
-- 세션 무효화 (비밀번호 변경 시 모든 JWT 토큰 만료 처리)
-- 모니터링 및 알림
+4개 역할(Teacher, Lawyer, Admin, Super Admin)의 토큰과 권한을 완전히 격리하여 역할 전환 시 이전 역할의 토큰 오염을 방지한다.
 
 ---
 
-## 기술적 접근 방법
+## 우선순위별 마일스톤
 
-### 아키텍처 설계
+### 1차 목표: 역할별 저장소 키 정의 및 구조 설계
 
-```
-Client (Browser)
-    ↓
-Next.js App Router
-    ↓
-API Routes (/api/auth/password-reset/*)
-    ↓
-Services Layer
-    ├─ PasswordResetService (토큰 생성, 검증, 사용 처리)
-    ├─ EmailService (이메일 전송)
-    └─ PasswordHistoryService (히스토리 관리)
-    ↓
-Database (SQLite)
-    ├─ password_reset_tokens
-    └─ password_history
-```
+**우선순위**: Critical
 
-### 핵심 모듈 구조
+**목표**:
+- 각 역할별로 독립된 localStorage 키 구조 정의
+- 타입 안전성을 보장하는 TypeScript 타입 정의
+- 레거시 키와의 호환성 고려
 
-#### 1. PasswordResetService (`lib/auth/password-reset-service.ts`)
+**산출물**:
+- `lib/auth/storage-keys.ts` 신규 생성
+- `AUTH_STORAGE_KEYS` 상수 정의
+- `UserRole` 타입 정의
+
+**기술적 접근**:
 ```typescript
-interface PasswordResetService {
-  // 토큰 생성 및 이메일 발송
-  requestReset(email: string): Promise<void>
+// lib/auth/storage-keys.ts
+export const AUTH_STORAGE_KEYS = {
+  teacher: { token: 'token_teacher', storage: 'storage_teacher' },
+  lawyer: { token: 'token_lawyer', storage: 'storage_lawyer' },
+  admin: { token: 'token_admin', storage: 'storage_admin' },
+  super_admin: { token: 'token_super_admin', storage: 'storage_super_admin' },
+} as const;
 
-  // 토큰 검증
-  verifyToken(token: string): Promise<{ valid: boolean; userId?: number; email?: string }>
+export type UserRole = keyof typeof AUTH_STORAGE_KEYS;
+export type AuthStorageKeys = typeof AUTH_STORAGE_KEYS[UserRole];
+```
 
-  // 비밀번호 변경
-  confirmReset(token: string, newPassword: string): Promise<void>
+**의존성**:
+- 없음 (독립적으로 진행 가능)
 
-  // 만료된 토큰 정리 (Cron Job)
-  cleanupExpiredTokens(): Promise<number>
+---
+
+### 2차 목표: AuthSync 클래스 개선 (완전한 초기화)
+
+**우선순위**: Critical
+
+**목표**:
+- `clearAllAuthState()` 함수 개선: 모든 역할의 토큰 제거
+- `clearAllCookies()` 함수 구현: 다중 전략 쿠키 삭제
+- 레거시 키 정리 로직 추가
+
+**산출물**:
+- `lib/auth/auth-sync.ts` 수정
+- `clearAllAuthState()` 함수 개선
+- `clearAllCookies()` private 메서드 추가
+
+**기술적 접근**:
+```typescript
+clearAllAuthState(skipServerSideCleanup = false): void {
+  // 1. 모든 역할의 토큰 제거
+  Object.values(AUTH_STORAGE_KEYS).forEach(({ token, storage }) => {
+    localStorage.removeItem(token);
+    localStorage.removeItem(storage);
+  });
+
+  // 2. 레거시 키 제거
+  localStorage.removeItem('token');
+  localStorage.removeItem('kyokwon119-storage');
+
+  // 3. 쿠키 삭제
+  this.clearAllCookies();
+
+  // 4. 서버 세션 정리
+  if (!skipServerSideCleanup) {
+    fetch('/api/auth/logout', { method: 'POST' });
+  }
 }
 ```
 
-**주요 로직**:
-- **토큰 생성**: `crypto.randomBytes(32).toString('hex')`
-- **만료 시간**: `new Date(Date.now() + 15 * 60 * 1000)` (15분 후)
-- **이메일 존재 여부 체크**: 타이밍 공격 방지를 위해 항상 동일한 응답 시간 유지
+**의존성**:
+- 1차 목표 완료 후 진행
 
-#### 2. PasswordHistoryService (`lib/auth/password-history-service.ts`)
+---
+
+### 3차 목표: 역할별 토큰 관리 함수 구현
+
+**우선순위**: High
+
+**목표**:
+- 현재 역할에 맞는 토큰 가져오기/저장하기 함수 구현
+- 역할 불일치 시 자동 로그아웃 처리
+
+**산출물**:
+- `getTokenForRole()` private 메서드
+- `setTokenForRole()` public 메서드
+- `getCurrentRole()` public 메서드
+
+**기술적 접근**:
 ```typescript
-interface PasswordHistoryService {
-  // 비밀번호 히스토리 추가
-  addToHistory(userId: number, passwordHash: string): Promise<void>
+private currentRole: UserRole | null = null;
 
-  // 최근 3개 비밀번호와 비교
-  isPasswordReused(userId: number, newPassword: string): Promise<boolean>
+getTokenForRole(role: UserRole): string | null {
+  const keys = AUTH_STORAGE_KEYS[role];
+  return localStorage.getItem(keys.token);
+}
 
-  // 오래된 히스토리 정리 (최대 3개 유지)
-  cleanupOldHistory(userId: number): Promise<void>
+setTokenForRole(role: UserRole, token: string): void {
+  const keys = AUTH_STORAGE_KEYS[role];
+  localStorage.setItem(keys.token, token);
+  this.currentRole = role;
+}
+
+getCurrentRole(): UserRole | null {
+  return this.currentRole;
 }
 ```
 
-**주요 로직**:
-- **히스토리 조회**: `SELECT password_hash FROM password_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 3`
-- **재사용 체크**: bcrypt.compare()로 각 히스토리와 비교
-- **히스토리 정리**: 3개 초과 시 오래된 순으로 삭제
+**의존성**:
+- 1차 목표 완료 후 진행
 
-#### 3. EmailService (`lib/auth/email-service.ts`)
+---
+
+### 4차 목표: 로그인 플로우 통합
+
+**우선순위**: High
+
+**목표**:
+- 로그인 시 이전 역할의 모든 흔적 제거
+- 새 역할의 토큰을 역할별 키에 저장
+- 로그인 타이밍 보호 로직 강화
+
+**산출물**:
+- `app/login/page.tsx` 수정
+- `lib/hooks/useAuth.ts` 수정
+
+**기술적 접근**:
 ```typescript
-interface EmailService {
-  // 재설정 이메일 발송
-  sendPasswordResetEmail(email: string, token: string): Promise<void>
+// app/login/page.tsx
+const handleLogin = async (email, password) => {
+  // 1. 로그인 프로세스 시작
+  authSync.startLogin();
 
-  // 변경 완료 이메일 발송
-  sendPasswordChangedEmail(email: string): Promise<void>
-}
-```
+  // 2. 이전 역할 완전 정리
+  authSync.clearAllAuthState(true); // skipServerSideCleanup=true
 
-**주요 로직**:
-- **SMTP 설정**: Nodemailer 또는 SendGrid API 사용
-- **이메일 템플릿**: HTML + 텍스트 버전 제공
-- **재설정 링크**: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/password-reset/confirm?token=${token}`
-
-### 데이터베이스 마이그레이션
-
-#### Step 1: 테이블 생성 스크립트
-```sql
--- scripts/db/create-password-reset-tables.sql
-
--- 비밀번호 재설정 토큰 테이블
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  token TEXT NOT NULL UNIQUE,
-  expires_at DATETIME NOT NULL,
-  used_at DATETIME,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_token ON password_reset_tokens(token);
-CREATE INDEX IF NOT EXISTS idx_user_id ON password_reset_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_expires_at ON password_reset_tokens(expires_at);
-
--- 비밀번호 히스토리 테이블
-CREATE TABLE IF NOT EXISTS password_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  password_hash TEXT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_id_created ON password_history(user_id, created_at DESC);
-```
-
-#### Step 2: 마이그레이션 실행
-```bash
-# SQLite에 직접 실행
-sqlite3 data/kyokwon119.db < scripts/db/create-password-reset-tables.sql
-```
-
-### API 구현
-
-#### POST /api/auth/password-reset/request
-```typescript
-// app/api/auth/password-reset/request/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { PasswordResetService } from '@/lib/auth/password-reset-service'
-
-export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json()
+    // 3. 로그인 API 호출
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    // 이메일 형식 검증
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      return NextResponse.json(
-        { success: false, error: 'INVALID_EMAIL' },
-        { status: 400 }
-      )
-    }
+    const data = await response.json();
 
-    // 재설정 요청 처리 (이메일 존재 여부 무관 동일 응답)
-    await PasswordResetService.requestReset(email)
+    // 4. 역할별 토큰 저장
+    authSync.setTokenForRole(data.user.role, data.token);
 
-    return NextResponse.json({
-      success: true,
-      message: '비밀번호 재설정 이메일이 전송되었습니다. (이메일이 존재하는 경우)'
-    })
+    // 5. 사용자 상태 동기화
+    authSync.syncUserState(data.user);
+
+    // 6. 로그인 완료
+    authSync.endLogin();
+
+    // 7. 역할별 페이지로 리다이렉트
+    router.push(getDefaultPageForRole(data.user.role));
   } catch (error) {
-    console.error('Password reset request error:', error)
-    return NextResponse.json(
-      { success: false, error: 'INTERNAL_ERROR' },
-      { status: 500 }
-    )
+    authSync.endLogin();
+    console.error('Login failed:', error);
   }
-}
+};
 ```
 
-#### GET /api/auth/password-reset/verify
+**의존성**:
+- 2차, 3차 목표 완료 후 진행
+
+---
+
+### 5차 목표: 로그아웃 플로우 통합
+
+**우선순위**: High
+
+**목표**:
+- 로그아웃 시 모든 역할의 토큰 제거
+- 로그아웃 후 15초간 자동 재로그인 차단
+- 서버 세션 정리 확인
+
+**산출물**:
+- `lib/hooks/useAuth.ts` 수정
+- 로그아웃 후 차단 로직 강화
+
+**기술적 접근**:
 ```typescript
-// app/api/auth/password-reset/verify/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { PasswordResetService } from '@/lib/auth/password-reset-service'
-
-export async function GET(req: NextRequest) {
+const handleLogout = async () => {
   try {
-    const token = req.nextUrl.searchParams.get('token')
+    // 1. 모든 역할 토큰 제거
+    authSync.clearAllAuthState(false); // skipServerSideCleanup=false
 
-    if (!token) {
-      return NextResponse.json(
-        { valid: false, error: 'TOKEN_MISSING' },
-        { status: 400 }
-      )
-    }
+    // 2. Zustand 스토어 리셋
+    useStore.getState().logout();
 
-    const result = await PasswordResetService.verifyToken(token)
-
-    if (result.valid) {
-      return NextResponse.json({
-        valid: true,
-        email: result.email?.replace(/(.{1}).+(@.+)/, '$1***$2') // 이메일 마스킹
-      })
-    }
-
-    return NextResponse.json(
-      { valid: false, error: result.error },
-      { status: 400 }
-    )
+    // 3. 로그인 페이지로 리다이렉트
+    router.push('/login');
   } catch (error) {
-    console.error('Token verification error:', error)
-    return NextResponse.json(
-      { valid: false, error: 'INTERNAL_ERROR' },
-      { status: 500 }
-    )
+    console.error('Logout failed:', error);
   }
-}
+};
 ```
 
-#### POST /api/auth/password-reset/confirm
+**의존성**:
+- 2차 목표 완료 후 진행
+
+---
+
+### 6차 목표: API 요청 시 역할별 토큰 사용
+
+**우선순위**: Medium
+
+**목표**:
+- API 요청 시 현재 역할에 맞는 토큰만 사용
+- 역할 불일치 시 자동 로그아웃
+
+**산출물**:
+- `lib/utils/api-client.ts` 수정 (또는 신규 생성)
+
+**기술적 접근**:
 ```typescript
-// app/api/auth/password-reset/confirm/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { PasswordResetService } from '@/lib/auth/password-reset-service'
+export async function apiRequest(url: string, options: RequestInit = {}) {
+  const authSync = AuthSync.getInstance();
+  const currentRole = authSync.getCurrentRole();
 
-export async function POST(req: NextRequest) {
-  try {
-    const { token, newPassword } = await req.json()
-
-    // 비밀번호 강도 검증
-    if (!isPasswordStrong(newPassword)) {
-      return NextResponse.json(
-        { success: false, error: 'PASSWORD_WEAK' },
-        { status: 400 }
-      )
-    }
-
-    await PasswordResetService.confirmReset(token, newPassword)
-
-    return NextResponse.json({
-      success: true,
-      message: '비밀번호가 성공적으로 변경되었습니다.'
-    })
-  } catch (error: any) {
-    console.error('Password reset confirm error:', error)
-
-    if (error.message === 'PASSWORD_REUSED') {
-      return NextResponse.json(
-        { success: false, error: 'PASSWORD_REUSED' },
-        { status: 400 }
-      )
-    }
-
-    return NextResponse.json(
-      { success: false, error: 'INTERNAL_ERROR' },
-      { status: 500 }
-    )
+  if (!currentRole) {
+    throw new Error('No authenticated role');
   }
-}
 
-function isPasswordStrong(password: string): boolean {
-  // 최소 8자, 영문 대/소문자, 숫자, 특수문자 중 3종 이상
-  const criteria = [
-    /[a-z]/.test(password),
-    /[A-Z]/.test(password),
-    /[0-9]/.test(password),
-    /[^a-zA-Z0-9]/.test(password)
-  ].filter(Boolean).length
+  const token = authSync.getTokenForRole(currentRole);
 
-  return password.length >= 8 && criteria >= 3
+  if (!token) {
+    authSync.clearAllAuthState();
+    throw new Error('Invalid token for role');
+  }
+
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`,
+  };
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (response.status === 401) {
+    authSync.clearAllAuthState();
+    throw new Error('Unauthorized');
+  }
+
+  return response;
 }
 ```
+
+**의존성**:
+- 3차 목표 완료 후 진행
+
+---
+
+## 기술적 설계 방향
+
+### 아키텍처 원칙
+
+1. **격리 원칙 (Isolation)**
+   - 각 역할은 독립된 저장소 키를 사용
+   - 역할 간 저장소 공유 금지
+
+2. **완전성 원칙 (Completeness)**
+   - 로그아웃 시 부분 정리가 아닌 완전한 정리
+   - 모든 저장소(localStorage, sessionStorage, cookies) 동시 정리
+
+3. **안전성 우선 (Safety First)**
+   - 불확실한 상태에서는 로그아웃 처리
+   - 역할 불일치 발견 시 즉시 세션 종료
+
+### 에러 처리 전략
+
+1. **토큰 불일치 감지**
+   ```typescript
+   if (decodedToken.role !== currentRole) {
+     console.error('Token role mismatch detected');
+     authSync.clearAllAuthState();
+     router.push('/login');
+   }
+   ```
+
+2. **저장소 접근 실패**
+   ```typescript
+   try {
+     localStorage.setItem(key, value);
+   } catch (error) {
+     console.error('Storage quota exceeded or disabled');
+     // Fallback to sessionStorage or cookies
+   }
+   ```
+
+3. **쿠키 삭제 실패**
+   - 다중 전략으로 모든 경로/도메인 조합 시도
+   - 실패하더라도 나머지 정리 작업 계속 진행
 
 ---
 
 ## 리스크 및 대응 방안
 
-### 리스크 1: 이메일 전송 실패
-- **영향도**: HIGH
-- **대응**:
-  - 재시도 메커니즘 구현 (최대 3회)
-  - 이메일 큐 시스템 도입 (향후 확장)
-  - 실패 로그 기록 및 모니터링 알림
+### 리스크 1: 기존 사용자 토큰 무효화
 
-### 리스크 2: 토큰 노출 (중간자 공격)
-- **영향도**: CRITICAL
-- **대응**:
-  - HTTPS 필수 사용
-  - 토큰 유효 시간 단축 (15분)
-  - 1회용 토큰 정책 (사용 후 즉시 무효화)
+**발생 확률**: 높음
 
-### 리스크 3: 비밀번호 히스토리 무한 증가
-- **영향도**: MEDIUM
-- **대응**:
-  - 최대 3개만 보관하는 정리 로직 구현
-  - 주기적인 DB 정리 Cron Job
+**영향도**: 높음
 
-### 리스크 4: 타이밍 공격 (이메일 존재 여부 노출)
-- **영향도**: MEDIUM
-- **대응**:
-  - 항상 동일한 응답 시간 유지 (존재하지 않는 이메일도 동일 처리 시간)
-  - 응답 메시지 통일
+**대응 방안**:
+1. 마이그레이션 로직 추가
+   ```typescript
+   // lib/auth/migration.ts
+   export function migrateTokenToRoleBased() {
+     const legacyToken = localStorage.getItem('token');
+     if (!legacyToken) return;
 
----
+     const decoded = jwt.decode(legacyToken);
+     const role = decoded.role as UserRole;
 
-## 테스트 전략
+     authSync.setTokenForRole(role, legacyToken);
+     localStorage.removeItem('token');
+   }
+   ```
 
-### 단위 테스트 (Unit Tests)
-- PasswordResetService.requestReset()
-- PasswordResetService.verifyToken()
-- PasswordResetService.confirmReset()
-- PasswordHistoryService.isPasswordReused()
-- EmailService.sendPasswordResetEmail()
+2. 공지사항: "보안 강화를 위해 재로그인이 필요합니다"
 
-### 통합 테스트 (Integration Tests)
-- API 엔드포인트 전체 흐름 테스트
-- 데이터베이스 트랜잭션 테스트
-- 이메일 전송 모킹 테스트
+### 리스크 2: 브라우저 호환성 문제
 
-### E2E 테스트 (Playwright)
-- 사용자가 비밀번호 재설정 요청 → 이메일 수신 → 토큰 클릭 → 비밀번호 변경 전체 플로우
+**발생 확률**: 낮음
 
----
+**영향도**: 중간
 
-## 완료 기준 (Definition of Done)
+**대응 방안**:
+- 쿠키 fallback 전략
+- IndexedDB 대체 저장소 검토
 
-- [ ] 데이터베이스 테이블 생성 완료
-- [ ] 3개 API 엔드포인트 구현 완료
-- [ ] 비밀번호 히스토리 3개 재사용 방지 로직 구현
-- [ ] 이메일 템플릿 구현 및 전송 테스트
-- [ ] 단위 테스트 커버리지 80% 이상
-- [ ] E2E 테스트 시나리오 3개 이상 통과
-- [ ] 보안 체크리스트 100% 준수 (HTTPS, 토큰 만료, 세션 무효화)
-- [ ] 문서화 완료 (API 문서, 사용자 가이드)
+### 리스크 3: 타이밍 race condition
+
+**발생 확률**: 중간
+
+**영향도**: 중간
+
+**대응 방안**:
+- 로그인/로그아웃 시 명시적 플래그 사용 (`isLoggingIn`, `logoutCompletedAt`)
+- 15초 지연 로직 유지 (로그아웃 후 자동 재로그인 차단)
 
 ---
 
-**문서 끝**
+## 테스트 계획
+
+### 단위 테스트
+
+**파일**: `__tests__/auth/auth-sync.test.ts`
+
+**테스트 케이스**:
+1. `clearAllAuthState()` - 모든 역할 토큰 제거 확인
+2. `setTokenForRole()` - 역할별 키에 저장 확인
+3. `getTokenForRole()` - 현재 역할 토큰 반환 확인
+4. `clearAllCookies()` - 모든 쿠키 삭제 확인
+
+### 통합 테스트
+
+**파일**: `__tests__/auth/role-switching.test.ts`
+
+**테스트 시나리오**:
+1. Teacher 로그인 → 로그아웃 → Lawyer 로그인
+   - Teacher 토큰 미검출 확인
+   - Lawyer 토큰만 존재 확인
+2. Admin 로그인 → 브라우저 새로고침
+   - Admin 토큰 유지 확인
+3. Lawyer 로그인 → 동시에 다른 탭에서 Teacher 로그인
+   - 마지막 로그인 역할만 유효 확인
+
+### E2E 테스트
+
+**도구**: Playwright
+
+**시나리오**:
+1. 역할별 로그인 플로우 검증 (4개 역할)
+2. 역할 전환 플로우 검증 (4x4 조합)
+3. 로그아웃 후 localStorage/cookies 완전 제거 확인
+
+---
+
+## 성공 지표
+
+### 기능 지표
+- [ ] 역할별 독립된 localStorage 키 사용률: 100%
+- [ ] 로그아웃 시 토큰 제거율: 100% (모든 역할)
+- [ ] 역할 전환 성공률: 100%
+
+### 성능 지표
+- [ ] 로그아웃 처리 시간 < 500ms
+- [ ] 역할 전환 처리 시간 < 1초
+- [ ] 메모리 누수: 0건
+
+### 품질 지표
+- [ ] 테스트 커버리지 ≥ 90%
+- [ ] TypeScript 타입 에러: 0건
+- [ ] ESLint 에러: 0건
+
+---
+
+## 배포 전 체크리스트
+
+- [ ] 모든 역할(Teacher, Lawyer, Admin, Super Admin)에 대한 저장소 키 정의 완료
+- [ ] `clearAllAuthState()` 모든 역할 토큰 제거 검증
+- [ ] `clearAllCookies()` 다중 전략 쿠키 삭제 검증
+- [ ] 로그인 플로우 통합 완료
+- [ ] 로그아웃 플로우 통합 완료
+- [ ] 단위 테스트 작성 및 통과
+- [ ] E2E 테스트 작성 및 통과
+- [ ] 코드 리뷰 완료
+- [ ] 기존 사용자 마이그레이션 로직 추가 (선택)
+
+---
+
+## 문서화 계획
+
+1. **개발자 문서**
+   - `docs/auth/token-isolation.md`: 역할별 토큰 격리 원칙 설명
+   - `docs/auth/storage-keys.md`: 저장소 키 구조 문서화
+
+2. **API 문서**
+   - `AuthSync` 클래스 JSDoc 주석 작성
+   - 공개 메서드 사용 예시 추가
+
+3. **사용자 가이드**
+   - 보안 강화 안내 공지 작성
+   - 재로그인 필요 시 안내 문구
+
+---
+
+**작성자**: @spec-builder
+**최종 수정일**: 2025-10-17

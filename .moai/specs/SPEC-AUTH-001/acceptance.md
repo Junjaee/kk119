@@ -2,258 +2,535 @@
 id: AUTH-001
 version: 0.0.1
 status: draft
-title: 비밀번호 재설정 및 복구 시스템 - 인수 기준
+created: 2025-10-17
+updated: 2025-10-17
 ---
 
-# SPEC-AUTH-001: 비밀번호 재설정 및 복구 시스템 - 인수 기준
+# SPEC-AUTH-001 수락 기준 (Acceptance Criteria)
 
 ## 개요
 
-비밀번호 재설정 및 복구 시스템의 상세한 인수 기준 및 테스트 시나리오입니다.
-Given-When-Then 형식의 BDD 시나리오로 작성되었습니다.
+본 문서는 SPEC-AUTH-001 "역할별 토큰 격리 시스템"의 상세한 수락 기준을 정의합니다. 모든 시나리오는 Given-When-Then 형식으로 작성되었습니다.
 
 ---
 
-## 핵심 기능 인수 기준
+## AC-001: 역할별 독립된 저장소 키 사용
 
-### AC-001: 비밀번호 재설정 요청 (정상 플로우)
+### Given-When-Then
 
-**Given** (전제 조건):
-- 사용자가 시스템에 등록되어 있고 이메일 주소가 `test@example.com`이다
-- 비밀번호 재설정 페이지 `/auth/password-reset`에 접속한 상태이다
+**Given**: 4개 역할(Teacher, Lawyer, Admin, Super Admin)이 정의되어 있고,
+**When**: 각 역할로 로그인하면,
+**Then**: 각 역할별로 독립된 localStorage 키에 토큰이 저장되어야 한다.
 
-**When** (실행):
-- 사용자가 이메일 주소 `test@example.com`을 입력한다
-- "비밀번호 재설정 요청" 버튼을 클릭한다
+### 검증 기준
 
-**Then** (결과):
-- 시스템은 "비밀번호 재설정 이메일이 전송되었습니다." 메시지를 표시한다
-- 사용자는 15분 이내에 재설정 이메일을 수신한다
-- 이메일에는 유효한 재설정 링크가 포함되어 있다
-- 데이터베이스 `password_reset_tokens` 테이블에 토큰이 생성되어 있다
-- 토큰의 `expires_at`은 현재 시간 + 15분이다
+1. **Teacher 로그인**
+   ```typescript
+   expect(localStorage.getItem('token_teacher')).toBeTruthy();
+   expect(localStorage.getItem('token_lawyer')).toBeNull();
+   expect(localStorage.getItem('token_admin')).toBeNull();
+   expect(localStorage.getItem('token_super_admin')).toBeNull();
+   ```
 
----
+2. **Lawyer 로그인**
+   ```typescript
+   expect(localStorage.getItem('token_lawyer')).toBeTruthy();
+   expect(localStorage.getItem('token_teacher')).toBeNull();
+   expect(localStorage.getItem('token_admin')).toBeNull();
+   expect(localStorage.getItem('token_super_admin')).toBeNull();
+   ```
 
-### AC-002: 비밀번호 재설정 요청 (존재하지 않는 이메일)
+3. **Admin 로그인**
+   ```typescript
+   expect(localStorage.getItem('token_admin')).toBeTruthy();
+   expect(localStorage.getItem('token_teacher')).toBeNull();
+   expect(localStorage.getItem('token_lawyer')).toBeNull();
+   expect(localStorage.getItem('token_super_admin')).toBeNull();
+   ```
 
-**Given** (전제 조건):
-- 사용자가 비밀번호 재설정 페이지에 접속한 상태이다
-- 이메일 주소 `nonexistent@example.com`은 시스템에 등록되지 않았다
+4. **Super Admin 로그인**
+   ```typescript
+   expect(localStorage.getItem('token_super_admin')).toBeTruthy();
+   expect(localStorage.getItem('token_teacher')).toBeNull();
+   expect(localStorage.getItem('token_lawyer')).toBeNull();
+   expect(localStorage.getItem('token_admin')).toBeNull();
+   ```
 
-**When** (실행):
-- 사용자가 이메일 주소 `nonexistent@example.com`을 입력한다
-- "비밀번호 재설정 요청" 버튼을 클릭한다
+### 테스트 시나리오
 
-**Then** (결과):
-- 시스템은 "비밀번호 재설정 이메일이 전송되었습니다." 메시지를 표시한다 (존재 여부 노출 방지)
-- 실제로는 이메일이 전송되지 않는다
-- 데이터베이스에 토큰이 생성되지 않는다
-- 응답 시간은 존재하는 이메일과 동일하다 (타이밍 공격 방지)
+```typescript
+describe('AC-001: 역할별 독립된 저장소 키 사용', () => {
+  test('Teacher 로그인 시 teacher 키만 사용', async () => {
+    await login('teacher@example.com', 'password');
+    expect(localStorage.getItem('token_teacher')).toBeTruthy();
+    expect(getAllRoleTokens().filter(t => t !== null).length).toBe(1);
+  });
 
----
-
-### AC-003: 토큰 검증 및 비밀번호 변경 (정상 플로우)
-
-**Given** (전제 조건):
-- 사용자가 비밀번호 재설정 이메일을 수신했다
-- 이메일의 재설정 링크를 클릭하여 `/auth/password-reset/confirm?token=abc123...` 페이지에 접속했다
-- 토큰이 유효하고 만료되지 않았다 (15분 이내)
-
-**When** (실행):
-- 사용자가 새 비밀번호 `NewP@ssw0rd123`을 입력한다
-- 비밀번호 확인 필드에 동일한 비밀번호를 입력한다
-- "비밀번호 변경" 버튼을 클릭한다
-
-**Then** (결과):
-- 시스템은 "비밀번호가 성공적으로 변경되었습니다." 메시지를 표시한다
-- 데이터베이스 `users` 테이블의 비밀번호 해시가 업데이트된다
-- 토큰의 `used_at` 필드가 현재 시간으로 설정된다
-- 모든 활성 세션이 무효화된다 (JWT 토큰 만료 처리)
-- 변경 완료 이메일이 사용자에게 발송된다
-- 로그인 페이지로 리다이렉트된다
-
----
-
-### AC-004: 비밀번호 재사용 방지
-
-**Given** (전제 조건):
-- 사용자가 과거에 비밀번호를 3번 변경했다:
-  1. `OldP@ssw0rd1` (가장 오래됨)
-  2. `OldP@ssw0rd2`
-  3. `OldP@ssw0rd3` (현재 비밀번호)
-- 비밀번호 히스토리 테이블에 최근 3개의 비밀번호 해시가 저장되어 있다
-- 사용자가 유효한 재설정 토큰으로 비밀번호 변경 페이지에 접속했다
-
-**When** (실행):
-- 사용자가 새 비밀번호로 `OldP@ssw0rd2`를 입력한다 (최근 3개 중 하나)
-- "비밀번호 변경" 버튼을 클릭한다
-
-**Then** (결과):
-- 시스템은 에러 메시지를 표시한다: "최근 사용한 비밀번호는 재사용할 수 없습니다."
-- 비밀번호가 변경되지 않는다
-- 토큰은 여전히 유효한 상태로 유지된다
-- 사용자는 다른 비밀번호를 입력할 수 있다
+  test('역할 전환 시 이전 역할 키는 제거됨', async () => {
+    await login('teacher@example.com', 'password');
+    await logout();
+    await login('lawyer@example.com', 'password');
+    expect(localStorage.getItem('token_teacher')).toBeNull();
+    expect(localStorage.getItem('token_lawyer')).toBeTruthy();
+  });
+});
+```
 
 ---
 
-### AC-005: 토큰 만료 처리
+## AC-002: 로그아웃 시 모든 역할 토큰 제거
 
-**Given** (전제 조건):
-- 사용자가 비밀번호 재설정 이메일을 수신했다
-- 토큰이 생성된 지 16분이 경과했다 (15분 만료 시간 초과)
+### Given-When-Then
 
-**When** (실행):
-- 사용자가 이메일의 재설정 링크를 클릭한다
+**Given**: 사용자가 특정 역할로 로그인된 상태이고,
+**When**: 로그아웃 버튼을 클릭하면,
+**Then**: 모든 역할의 토큰과 저장소가 완전히 제거되어야 한다.
 
-**Then** (결과):
-- 시스템은 에러 메시지를 표시한다: "재설정 링크가 만료되었습니다. 다시 요청해주세요."
-- 비밀번호 변경 폼이 표시되지 않는다
-- "새 재설정 요청하기" 버튼이 표시된다
-- 토큰은 사용할 수 없는 상태로 유지된다
+### 검증 기준
 
----
+1. **모든 역할 토큰 제거**
+   ```typescript
+   expect(localStorage.getItem('token_teacher')).toBeNull();
+   expect(localStorage.getItem('token_lawyer')).toBeNull();
+   expect(localStorage.getItem('token_admin')).toBeNull();
+   expect(localStorage.getItem('token_super_admin')).toBeNull();
+   ```
 
-### AC-006: 토큰 재사용 방지
+2. **모든 역할 저장소 제거**
+   ```typescript
+   expect(localStorage.getItem('storage_teacher')).toBeNull();
+   expect(localStorage.getItem('storage_lawyer')).toBeNull();
+   expect(localStorage.getItem('storage_admin')).toBeNull();
+   expect(localStorage.getItem('storage_super_admin')).toBeNull();
+   ```
 
-**Given** (전제 조건):
-- 사용자가 토큰 `abc123...`으로 비밀번호를 이미 변경했다
-- 토큰의 `used_at` 필드가 설정되어 있다
+3. **레거시 키 제거**
+   ```typescript
+   expect(localStorage.getItem('token')).toBeNull();
+   expect(localStorage.getItem('kyokwon119-storage')).toBeNull();
+   expect(localStorage.getItem('rememberedEmail')).toBeNull();
+   ```
 
-**When** (실행):
-- 사용자가 동일한 토큰 링크를 다시 클릭한다
+4. **세션 저장소 초기화**
+   ```typescript
+   expect(sessionStorage.length).toBe(0);
+   ```
 
-**Then** (결과):
-- 시스템은 에러 메시지를 표시한다: "이미 사용된 재설정 링크입니다."
-- 비밀번호 변경 폼이 표시되지 않는다
-- 보안 경고가 로그에 기록된다 (토큰 재사용 시도)
+5. **쿠키 제거**
+   ```typescript
+   expect(document.cookie).not.toContain('auth-token');
+   ```
 
----
+### 테스트 시나리오
 
-### AC-007: 비밀번호 강도 검증
+```typescript
+describe('AC-002: 로그아웃 시 모든 역할 토큰 제거', () => {
+  test('Teacher 로그아웃 시 모든 저장소 제거', async () => {
+    await login('teacher@example.com', 'password');
+    await logout();
 
-**Given** (전제 조건):
-- 사용자가 유효한 재설정 토큰으로 비밀번호 변경 페이지에 접속했다
+    // 모든 역할 토큰 제거 확인
+    const allTokens = Object.values(AUTH_STORAGE_KEYS).map(
+      ({ token }) => localStorage.getItem(token)
+    );
+    expect(allTokens.every(t => t === null)).toBe(true);
 
-**When** (실행):
-- 사용자가 약한 비밀번호를 입력한다:
-  - 예시 1: `12345678` (숫자만)
-  - 예시 2: `password` (문자만, 8자 미만)
-  - 예시 3: `Pass123` (8자 미만)
+    // 세션 저장소 초기화 확인
+    expect(sessionStorage.length).toBe(0);
+  });
 
-**Then** (결과):
-- 시스템은 에러 메시지를 표시한다: "비밀번호는 최소 8자 이상이며, 영문 대/소문자, 숫자, 특수문자 중 3종 이상을 포함해야 합니다."
-- 비밀번호가 변경되지 않는다
-- 사용자는 다시 입력할 수 있다
+  test('로그아웃 후 자동 재로그인 차단 (15초)', async () => {
+    await login('teacher@example.com', 'password');
+    await logout();
 
-**강한 비밀번호 예시** (통과):
-- `P@ssw0rd123` (대문자, 소문자, 숫자, 특수문자 4종)
-- `MyP@ss2024` (대문자, 소문자, 숫자, 특수문자 4종)
+    // 즉시 새로고침 시도
+    authSync.refreshAuthState();
 
----
-
-## 비기능적 요구사항 인수 기준
-
-### NFR-001: 보안 - 이메일 노출 방지
-
-**Given** (전제 조건):
-- 두 개의 요청이 동시에 발생한다:
-  1. 존재하는 이메일 `existing@example.com`
-  2. 존재하지 않는 이메일 `nonexistent@example.com`
-
-**When** (실행):
-- 두 요청을 동시에 전송한다
-
-**Then** (결과):
-- 두 요청 모두 동일한 성공 메시지를 반환한다
-- 두 요청의 응답 시간 차이가 100ms 이내이다 (타이밍 공격 방지)
-- 응답 내용으로 이메일 존재 여부를 알 수 없다
-
----
-
-### NFR-002: 성능 - API 응답 시간
-
-**Given** (전제 조건):
-- 비밀번호 재설정 API가 정상 동작 중이다
-
-**When** (실행):
-- 100개의 재설정 요청을 동시에 전송한다
-
-**Then** (결과):
-- 95%의 요청이 2초 이내에 응답한다
-- 이메일 전송 큐가 정상 동작한다
-- 데이터베이스 연결 풀이 고갈되지 않는다
+    // 15초 이내에는 새로고침 차단됨
+    expect(useStore.getState().user).toBeNull();
+  });
+});
+```
 
 ---
 
-### NFR-003: 보안 - HTTPS 필수
+## AC-003: 역할 전환 시 이전 역할 완전 제거
 
-**Given** (전제 조건):
-- 프로덕션 환경에서 비밀번호 재설정 시스템이 배포되어 있다
+### Given-When-Then
 
-**When** (실행):
-- HTTP 프로토콜로 재설정 페이지에 접근 시도한다 (`http://example.com/auth/password-reset`)
+**Given**: 사용자가 A 역할로 로그인된 상태이고,
+**When**: 로그아웃 후 B 역할로 로그인하면,
+**Then**: A 역할의 모든 흔적(토큰, 저장소, 쿠키)이 제거되고 B 역할의 토큰만 존재해야 한다.
 
-**Then** (결과):
-- 시스템은 자동으로 HTTPS로 리다이렉트한다 (`https://example.com/auth/password-reset`)
-- HTTP로는 재설정 API를 호출할 수 없다
+### 검증 기준
+
+1. **Teacher → Lawyer 전환**
+   ```typescript
+   // Before
+   expect(localStorage.getItem('token_teacher')).toBeTruthy();
+
+   // After logout → login as lawyer
+   expect(localStorage.getItem('token_teacher')).toBeNull();
+   expect(localStorage.getItem('token_lawyer')).toBeTruthy();
+   ```
+
+2. **Admin → Super Admin 전환**
+   ```typescript
+   // Before
+   expect(localStorage.getItem('token_admin')).toBeTruthy();
+
+   // After logout → login as super_admin
+   expect(localStorage.getItem('token_admin')).toBeNull();
+   expect(localStorage.getItem('token_super_admin')).toBeTruthy();
+   ```
+
+3. **Zustand 스토어 리셋**
+   ```typescript
+   // Before
+   expect(useStore.getState().user?.role).toBe('teacher');
+
+   // After logout → login as lawyer
+   expect(useStore.getState().user?.role).toBe('lawyer');
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-003: 역할 전환 시 이전 역할 완전 제거', () => {
+  test('Teacher → Lawyer 전환 시 Teacher 토큰 미검출', async () => {
+    // Teacher 로그인
+    await login('teacher@example.com', 'password');
+    expect(localStorage.getItem('token_teacher')).toBeTruthy();
+
+    // 로그아웃
+    await logout();
+
+    // Lawyer 로그인
+    await login('lawyer@example.com', 'password');
+    expect(localStorage.getItem('token_teacher')).toBeNull();
+    expect(localStorage.getItem('token_lawyer')).toBeTruthy();
+  });
+
+  test('4개 역할 순환 전환 시 현재 역할만 유지', async () => {
+    const roles = ['teacher', 'lawyer', 'admin', 'super_admin'];
+
+    for (const role of roles) {
+      await login(`${role}@example.com`, 'password');
+
+      // 현재 역할의 토큰만 존재
+      const currentToken = localStorage.getItem(`token_${role}`);
+      expect(currentToken).toBeTruthy();
+
+      // 다른 역할의 토큰은 모두 null
+      const otherRoles = roles.filter(r => r !== role);
+      otherRoles.forEach(r => {
+        expect(localStorage.getItem(`token_${r}`)).toBeNull();
+      });
+
+      await logout();
+    }
+  });
+});
+```
 
 ---
 
-### NFR-004: 보안 - 세션 무효화
+## AC-004: 로그인 시 이전 역할 흔적 제거
 
-**Given** (전제 조건):
-- 사용자가 3개의 디바이스에서 로그인되어 있다:
-  1. Chrome (Windows)
-  2. Safari (macOS)
-  3. Mobile (Android)
-- 각 디바이스는 유효한 JWT 토큰을 가지고 있다
+### Given-When-Then
 
-**When** (실행):
-- 사용자가 비밀번호를 변경한다
+**Given**: 이전 로그인 세션의 토큰이 잔존하는 상태이고,
+**When**: 새로운 역할로 로그인하면,
+**Then**: 로그인 프로세스가 시작되기 전에 모든 이전 역할의 흔적이 제거되어야 한다.
 
-**Then** (결과):
-- 모든 디바이스의 JWT 토큰이 무효화된다
-- 각 디바이스에서 API 요청 시 401 Unauthorized 응답을 받는다
-- 사용자는 모든 디바이스에서 재로그인해야 한다
+### 검증 기준
+
+1. **로그인 전 자동 정리**
+   ```typescript
+   // 로그인 전 상태 (이전 세션 잔존)
+   localStorage.setItem('token_teacher', 'old_token');
+
+   // 로그인 시작
+   await login('lawyer@example.com', 'password');
+
+   // 이전 토큰 제거 확인
+   expect(localStorage.getItem('token_teacher')).toBeNull();
+   expect(localStorage.getItem('token_lawyer')).toBeTruthy();
+   ```
+
+2. **로그인 프로세스 보호**
+   ```typescript
+   // 로그인 시작
+   authSync.startLogin();
+   expect(authSync.isLoggingIn).toBe(true);
+
+   // 로그인 중에는 자동 새로고침 차단
+   authSync.refreshAuthState();
+   // refreshAuthState는 즉시 반환되어야 함
+
+   // 로그인 완료
+   authSync.endLogin();
+   expect(authSync.isLoggingIn).toBe(false);
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-004: 로그인 시 이전 역할 흔적 제거', () => {
+  test('로그인 전 clearAllAuthState 호출', async () => {
+    // 이전 세션 시뮬레이션
+    localStorage.setItem('token_teacher', 'old_teacher_token');
+    localStorage.setItem('token_lawyer', 'old_lawyer_token');
+
+    // Spy on clearAllAuthState
+    const clearSpy = jest.spyOn(authSync, 'clearAllAuthState');
+
+    // 로그인
+    await login('admin@example.com', 'password');
+
+    // clearAllAuthState가 호출되었는지 확인
+    expect(clearSpy).toHaveBeenCalledWith(true); // skipServerSideCleanup=true
+
+    // 이전 토큰 제거 확인
+    expect(localStorage.getItem('token_teacher')).toBeNull();
+    expect(localStorage.getItem('token_lawyer')).toBeNull();
+  });
+
+  test('로그인 중 자동 새로고침 차단', async () => {
+    authSync.startLogin();
+
+    // 로그인 중에 refreshAuthState 호출 시도
+    const refreshPromise = authSync.refreshAuthState();
+
+    // Promise가 즉시 반환되어야 함 (실제 새로고침 실행 안 함)
+    await expect(refreshPromise).resolves.toBeUndefined();
+
+    authSync.endLogin();
+  });
+});
+```
 
 ---
 
-## 품질 게이트 기준
+## AC-005: API 요청 시 역할별 토큰 사용
 
-### 테스트 커버리지
-- [ ] 단위 테스트 커버리지 80% 이상
-- [ ] 통합 테스트 커버리지 70% 이상
-- [ ] E2E 테스트 시나리오 7개 이상 통과
+### Given-When-Then
 
-### 보안 체크리스트
-- [ ] HTTPS 필수 사용 (프로덕션)
-- [ ] 토큰 유효 시간 15분 이하
-- [ ] 1회용 토큰 정책 (사용 후 즉시 무효화)
-- [ ] 이메일 존재 여부 노출 방지 (타이밍 공격 방지)
-- [ ] 비밀번호 히스토리 3개 재사용 방지
-- [ ] 비밀번호 강도 검증 (최소 8자, 3종 이상)
-- [ ] 세션 무효화 (비밀번호 변경 시 모든 JWT 만료)
+**Given**: 사용자가 특정 역할로 로그인된 상태이고,
+**When**: API 요청을 보내면,
+**Then**: 현재 역할에 맞는 토큰만 Authorization 헤더에 포함되어야 한다.
 
-### 운영 체크리스트
-- [ ] 로그 기록 시스템 구현 (재설정 시도, 성공, 실패)
-- [ ] 이메일 전송 실패 모니터링
-- [ ] 만료된 토큰 정리 Cron Job 구현
-- [ ] API 문서 작성 완료
-- [ ] 사용자 가이드 작성 완료
+### 검증 기준
+
+1. **역할별 토큰 헤더 확인**
+   ```typescript
+   // Teacher 로그인
+   await login('teacher@example.com', 'password');
+   const teacherToken = localStorage.getItem('token_teacher');
+
+   // API 요청
+   const response = await fetch('/api/reports', {
+     headers: { 'Authorization': `Bearer ${teacherToken}` }
+   });
+
+   // 올바른 토큰 사용 확인
+   expect(response.ok).toBe(true);
+   ```
+
+2. **역할 불일치 시 자동 로그아웃**
+   ```typescript
+   // Teacher 로그인 후 수동으로 토큰 변경 (비정상 상황 시뮬레이션)
+   await login('teacher@example.com', 'password');
+   localStorage.setItem('token_teacher', 'invalid_token');
+
+   // API 요청
+   await fetch('/api/auth/me');
+
+   // 자동 로그아웃 확인
+   expect(useStore.getState().user).toBeNull();
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-005: API 요청 시 역할별 토큰 사용', () => {
+  test('Teacher 로그인 시 teacher 토큰으로 API 요청', async () => {
+    await login('teacher@example.com', 'password');
+    const teacherToken = localStorage.getItem('token_teacher');
+
+    // Mock fetch
+    const fetchSpy = jest.spyOn(global, 'fetch');
+
+    // API 요청
+    await apiRequest('/api/reports', { method: 'GET' });
+
+    // Authorization 헤더 확인
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'Authorization': `Bearer ${teacherToken}`
+        })
+      })
+    );
+  });
+
+  test('역할 불일치 시 자동 로그아웃', async () => {
+    await login('teacher@example.com', 'password');
+
+    // 비정상적으로 토큰 변경
+    localStorage.setItem('token_teacher', 'invalid_jwt_token');
+
+    // API 요청 시 401 에러 발생
+    await expect(apiRequest('/api/auth/me')).rejects.toThrow('Unauthorized');
+
+    // 자동 로그아웃 확인
+    expect(useStore.getState().user).toBeNull();
+  });
+});
+```
+
+---
+
+## AC-006: 브라우저 새로고침 후 토큰 유지
+
+### Given-When-Then
+
+**Given**: 사용자가 특정 역할로 로그인된 상태이고,
+**When**: 브라우저를 새로고침하면,
+**Then**: 현재 역할의 토큰과 사용자 상태가 유지되어야 한다.
+
+### 검증 기준
+
+1. **새로고침 후 토큰 유지**
+   ```typescript
+   await login('lawyer@example.com', 'password');
+   const lawyerToken = localStorage.getItem('token_lawyer');
+
+   // 페이지 새로고침 시뮬레이션
+   window.location.reload();
+
+   // 토큰 유지 확인
+   expect(localStorage.getItem('token_lawyer')).toBe(lawyerToken);
+   ```
+
+2. **새로고침 후 사용자 상태 복원**
+   ```typescript
+   await login('admin@example.com', 'password');
+
+   // 페이지 새로고침 시뮬레이션
+   window.location.reload();
+
+   // 사용자 상태 복원 확인
+   expect(useStore.getState().user?.role).toBe('admin');
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-006: 브라우저 새로고침 후 토큰 유지', () => {
+  test('Lawyer 로그인 후 새로고침 시 상태 유지', async () => {
+    await login('lawyer@example.com', 'password');
+    const originalUser = useStore.getState().user;
+
+    // 새로고침 시뮬레이션 (Zustand persist에서 복원)
+    const persistedState = localStorage.getItem('kyokwon119-storage');
+    expect(persistedState).toBeTruthy();
+
+    // 스토어 리로드
+    useStore.persist.rehydrate();
+
+    // 사용자 상태 복원 확인
+    expect(useStore.getState().user?.id).toBe(originalUser?.id);
+    expect(useStore.getState().user?.role).toBe('lawyer');
+  });
+});
+```
+
+---
+
+## AC-007: 쿠키 완전 삭제
+
+### Given-When-Then
+
+**Given**: 사용자가 로그인된 상태이고 여러 쿠키가 설정되어 있으며,
+**When**: 로그아웃하면,
+**Then**: 모든 도메인/경로 조합의 쿠키가 제거되어야 한다.
+
+### 검증 기준
+
+1. **다중 전략 쿠키 삭제**
+   ```typescript
+   // 로그인 시 쿠키 설정
+   document.cookie = 'auth-token=abc123; path=/';
+   document.cookie = 'session=xyz789; path=/admin';
+
+   // 로그아웃
+   await logout();
+
+   // 모든 쿠키 제거 확인
+   expect(document.cookie).not.toContain('auth-token');
+   expect(document.cookie).not.toContain('session');
+   ```
+
+### 테스트 시나리오
+
+```typescript
+describe('AC-007: 쿠키 완전 삭제', () => {
+  test('로그아웃 시 모든 쿠키 제거', async () => {
+    await login('teacher@example.com', 'password');
+
+    // 쿠키 설정 시뮬레이션
+    document.cookie = 'auth-token=test_token; path=/';
+    document.cookie = 'session=test_session; path=/';
+
+    // 로그아웃
+    await logout();
+
+    // 쿠키 제거 확인
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    expect(cookies.find(c => c.startsWith('auth-token'))).toBeUndefined();
+    expect(cookies.find(c => c.startsWith('session'))).toBeUndefined();
+  });
+});
+```
 
 ---
 
 ## 완료 조건 (Definition of Done)
 
-- [ ] 모든 인수 기준 (AC-001 ~ AC-007) 통과
-- [ ] 모든 비기능적 요구사항 (NFR-001 ~ NFR-004) 통과
-- [ ] 품질 게이트 기준 100% 충족
-- [ ] E2E 테스트 시나리오 실행 및 스크린샷 기록
-- [ ] 코드 리뷰 완료 (최소 1명 승인)
-- [ ] 보안 체크리스트 검토 완료
-- [ ] 문서화 완료 (API 문서, 사용자 가이드, 운영 가이드)
+### 기능 완료
+- [ ] AC-001: 역할별 독립된 저장소 키 사용 - 통과
+- [ ] AC-002: 로그아웃 시 모든 역할 토큰 제거 - 통과
+- [ ] AC-003: 역할 전환 시 이전 역할 완전 제거 - 통과
+- [ ] AC-004: 로그인 시 이전 역할 흔적 제거 - 통과
+- [ ] AC-005: API 요청 시 역할별 토큰 사용 - 통과
+- [ ] AC-006: 브라우저 새로고침 후 토큰 유지 - 통과
+- [ ] AC-007: 쿠키 완전 삭제 - 통과
+
+### 품질 게이트
+- [ ] 단위 테스트 커버리지 ≥ 90%
+- [ ] 통합 테스트 모두 통과
+- [ ] E2E 테스트 모두 통과
+- [ ] TypeScript 타입 에러 0건
+- [ ] ESLint 에러 0건
+
+### 성능 기준
+- [ ] 로그아웃 처리 시간 < 500ms
+- [ ] 역할 전환 처리 시간 < 1초
+- [ ] 메모리 누수 0건
+
+### 문서화
+- [ ] JSDoc 주석 작성 완료
+- [ ] 개발자 가이드 문서 작성 완료
+- [ ] API 문서 업데이트 완료
+
+### 코드 리뷰
+- [ ] 2명 이상의 리뷰어 승인
+- [ ] 모든 리뷰 코멘트 해결
+- [ ] SPEC 문서와 코드 일치 확인
 
 ---
 
-**문서 끝**
+**작성자**: @spec-builder
+**최종 수정일**: 2025-10-17

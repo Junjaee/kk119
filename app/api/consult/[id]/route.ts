@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { consultDb, consultReplyDb } from '@/lib/db/consult-db';
-import { verifyToken } from '@/lib/auth/auth-utils';
+import { auth } from '@/lib/auth/auth-utils';
 
 // GET - 상담 상세 조회
 export async function GET(
@@ -77,7 +77,7 @@ export async function PUT(
 
     // 토큰 검증 (실제로는 변호사 권한 확인 필요)
     try {
-      verifyToken(token);
+      await auth.verifyToken(token);
     } catch {
       return NextResponse.json(
         {
@@ -145,7 +145,7 @@ export async function PATCH(
     }
 
     try {
-      verifyToken(token);
+      await auth.verifyToken(token);
     } catch {
       return NextResponse.json(
         {

@@ -37,6 +37,21 @@ export default function LoginPage() {
     password: ''
   });
 
+  // Clear any existing auth state when login page mounts
+  useEffect(() => {
+    console.log('🔄 [LOGIN-PAGE] Mounting - clearing potential stale auth state');
+
+    // Clear any stale auth state that might cause cross-contamination
+    authSync.clearAllAuthState();
+
+    // Clear any persisted email unless explicitly requested to remember
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail && !searchParams.get('keepEmail')) {
+      setFormData(prev => ({ ...prev, email: rememberedEmail }));
+      setRememberMe(true);
+    }
+  }, [searchParams]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -78,8 +93,60 @@ export default function LoginPage() {
       console.log('🔍 Login Success - User Data:', data.user);
       console.log('🔍 Login Success - User Role:', data.user.role);
 
-      // CRITICAL: Clear ALL previous authentication state first (but skip server-side cleanup to avoid invalidating new token)
-      console.log('🧹 Clearing all previous auth state before storing new data...');
+      // CRITICAL FIX: Immediately replace old token before any other operations
+      if (data.token) {
+        const oldToken = localStorage.getItem('token');
+        console.log('🔄 [LOGIN] IMMEDIATE token replacement for user:', data.user.email);
+        console.log('🔄 [LOGIN] Old token details:', {
+          preview: oldToken?.substring(0, 20) + '...',
+          suffix: oldToken ? '...' + oldToken.substring(oldToken.length - 10) : 'none',
+          length: oldToken?.length || 0
+        });
+
+        // CRITICAL DEBUG: Try to decode old token
+        if (oldToken) {
+          try {
+            const oldPayload = JSON.parse(atob(oldToken.split('.')[1]));
+            console.log('🔄 [LOGIN] OLD TOKEN DATA:', {
+              userId: oldPayload.userId,
+              email: oldPayload.email,
+              role: oldPayload.role
+            });
+          } catch (e) {
+            console.log('🔄 [LOGIN] Could not decode old token');
+          }
+        }
+
+        localStorage.setItem('token', data.token);
+
+        console.log('🔄 [LOGIN] New token details:', {
+          preview: data.token.substring(0, 20) + '...',
+          suffix: '...' + data.token.substring(data.token.length - 10),
+          length: data.token.length
+        });
+
+        // CRITICAL DEBUG: Try to decode new token
+        try {
+          const newPayload = JSON.parse(atob(data.token.split('.')[1]));
+          console.log('🔄 [LOGIN] NEW TOKEN DATA:', {
+            userId: newPayload.userId,
+            email: newPayload.email,
+            role: newPayload.role
+          });
+        } catch (e) {
+          console.log('🔄 [LOGIN] Could not decode new token');
+        }
+
+        // Verify token was actually stored
+        const storedToken = localStorage.getItem('token');
+        console.log('🔄 [LOGIN] VERIFICATION - Token stored correctly:', {
+          matches: storedToken === data.token,
+          preview: storedToken?.substring(0, 20) + '...'
+        });
+      }
+
+      // Clear authentication state AFTER token replacement (preserving new token)
+      console.log('🧹 Clearing auth state after token replacement...');
       authSync.clearAllAuthState(true); // Skip server-side cleanup during login
 
       // CRITICAL FIX: Explicitly clear Zustand persistent storage to prevent stale user data
@@ -89,17 +156,11 @@ export default function LoginPage() {
       // Small delay to ensure cleanup completes
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Store new token
-      if (data.token) {
-        console.log('💾 Storing new token for user:', data.user.email);
-        localStorage.setItem('token', data.token);
-
-        // Store in localStorage if remember me is checked
-        if (rememberMe) {
-          localStorage.setItem('rememberedEmail', formData.email);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-        }
+      // Store email if remember me is checked
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
       }
 
       // Update global state with new user data
@@ -137,6 +198,9 @@ export default function LoginPage() {
         updated_at: data.user.updated_at || data.user.updatedAt,
         last_login: data.user.last_login || data.user.lastLogin
       });
+
+      // CRITICAL: End login process to activate refresh protection
+      authSync.endLogin();
 
       toast.success(`환영합니다, ${data.user.name}님!`);
 

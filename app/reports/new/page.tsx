@@ -190,13 +190,13 @@ function NewReportPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Only allow submission from the final step
     if (currentStep !== steps.length - 1) {
       toast.error('마지막 단계에서만 제출이 가능합니다');
       return;
     }
-    
+
     // Validate all steps
     let isValid = true;
     for (let i = 0; i <= 1; i++) {
@@ -215,7 +215,7 @@ function NewReportPageContent() {
     setIsSubmitting(true);
 
     try {
-      // Save report to local database
+      // Save report to local database for offline access
       const reportData = {
         type: formData.type,
         title: formData.title,
@@ -225,23 +225,90 @@ function NewReportPageContent() {
         witnesses: formData.witnesses,
         content: formData.content,
         desired_action: formData.desired_action,
-        fileNames: formData.files.map(file => file.name) // Store only file names
+        fileNames: formData.files.map(file => file.name)
       };
 
+      // Save to local database first
       const savedReport = editId
         ? localDB.updateReport(editId, reportData)
         : localDB.createReport(reportData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
+      // 🔥 CRITICAL FIX: Send to server API for persistent storage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('로그인이 필요합니다');
+        router.push('/login');
+        return;
+      }
+
+      console.log('🚀 [REPORT-SUBMIT] Token detailed analysis:', {
+        tokenExists: !!token,
+        tokenLength: token.length,
+        tokenPreview: token.substring(0, 30) + '...',
+        tokenSuffix: '...' + token.substring(token.length - 10),
+        isJWTFormat: token.split('.').length === 3,
+        timestamp: new Date().toISOString()
+      });
+
+      // Decode token to verify it's valid
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+          throw new Error('Invalid JWT format');
+        }
+        const payload = JSON.parse(atob(parts[1]));
+        console.log('🔍 [REPORT-SUBMIT] Token payload:', {
+          userId: payload.userId,
+          email: payload.email,
+          role: payload.role,
+          exp: payload.exp,
+          currentTime: Math.floor(Date.now() / 1000),
+          isExpired: payload.exp < Math.floor(Date.now() / 1000)
+        });
+      } catch (decodeError) {
+        console.error('❌ [REPORT-SUBMIT] Token decode error:', decodeError);
+        toast.error('토큰이 손상되었습니다. 다시 로그인해주세요.');
+        return;
+      }
+
+      console.log('🚀 [REPORT-SUBMIT] Sending report to server API:', {
+        title: formData.title,
+        report_type: formData.type,
+        incident_date: formData.incident_date
+      });
+
+      // Submit to server API for persistent storage and consultation tracking
+      const apiResponse = await fetch('/api/consult', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          report_type: formData.type,
+          incident_date: formData.incident_date,
+          report_content: `발생 시간: ${formData.incident_time}\n발생 장소: ${formData.location}\n목격자: ${formData.witnesses || '없음'}\n\n상황 설명:\n${formData.content}\n\n희망 조치사항:\n${formData.desired_action || '없음'}`,
+          report_id: savedReport?.id || null
+        })
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        throw new Error(errorData.error || '서버 전송 실패');
+      }
+
+      const apiResult = await apiResponse.json();
+      console.log('✅ [REPORT-SUBMIT] Server API response:', apiResult);
+
       // Clear draft after successful submission
       localStorage.removeItem('reportDraft');
-      
-      toast.success(editId ? '신고 내역이 성공적으로 수정되었습니다' : '신고가 성공적으로 접수되었습니다');
+
+      toast.success(editId ? '신고 내역이 성공적으로 수정되었습니다' : '신고가 성공적으로 접수되어 서버에 저장되었습니다');
       router.push('/reports');
     } catch (error) {
-      toast.error(editId ? '신고 수정 중 오류가 발생했습니다' : '신고 접수 중 오류가 발생했습니다');
+      console.error('❌ [REPORT-SUBMIT] Error:', error);
+      toast.error(editId ? '신고 수정 중 오류가 발생했습니다' : `신고 접수 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     } finally {
       setIsSubmitting(false);
     }

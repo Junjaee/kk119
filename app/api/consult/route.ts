@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { consultDb } from '@/lib/db/consult-db';
-import { verifyToken } from '@/lib/auth/auth-utils';
+import { auth } from '@/lib/auth/auth-utils';
+// Force recompile to fix import error
 
 // GET - 상담 목록 조회
 export async function GET(request: NextRequest) {
@@ -11,8 +12,8 @@ export async function GET(request: NextRequest) {
     let userId: number | undefined;
     if (token) {
       try {
-        const decoded = verifyToken(token);
-        userId = decoded.userId;
+        const decoded = await auth.verifyToken(token);
+        userId = decoded?.userId;
       } catch {
         // 토큰이 유효하지 않아도 공개 상담 목록은 볼 수 있음
       }
@@ -49,10 +50,22 @@ export async function GET(request: NextRequest) {
 // POST - 새 상담 요청 생성
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 [CONSULT-API] POST request received');
+
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const headers = Object.fromEntries(request.headers.entries());
+
+    console.log('🔍 [CONSULT-API] Request headers analysis:', {
+      hasAuthHeader: !!headers.authorization,
+      authHeaderPreview: headers.authorization ? headers.authorization.substring(0, 30) + '...' : 'none',
+      contentType: headers['content-type'],
+      userAgent: headers['user-agent']?.substring(0, 50) + '...',
+      origin: headers.origin
+    });
 
     // 인증 필수
     if (!token) {
+      console.error('❌ [CONSULT-API] No token provided');
       return NextResponse.json(
         {
           success: false,
@@ -62,11 +75,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('🔍 [CONSULT-API] Token analysis:', {
+      tokenExists: !!token,
+      tokenLength: token.length,
+      tokenPreview: token.substring(0, 30) + '...',
+      isJWTFormat: token.split('.').length === 3
+    });
+
     let userId: number;
     try {
-      const decoded = verifyToken(token);
+      console.log('🔍 [CONSULT-API] Attempting token verification...');
+      const decoded = await auth.verifyToken(token);
+      console.log('🔍 [CONSULT-API] Token verification result:', {
+        success: !!decoded,
+        userId: decoded?.userId,
+        email: decoded?.email,
+        role: decoded?.role
+      });
+
+      if (!decoded) {
+        console.error('❌ [CONSULT-API] Token verification failed - no decoded payload');
+        return NextResponse.json(
+          {
+            success: false,
+            error: '유효하지 않은 토큰입니다.'
+          },
+          { status: 401 }
+        );
+      }
       userId = decoded.userId;
-    } catch {
+      console.log('✅ [CONSULT-API] Token verification successful, userId:', userId);
+    } catch (error) {
+      console.error('❌ [CONSULT-API] Token verification error:', error);
       return NextResponse.json(
         {
           success: false,

@@ -181,6 +181,84 @@ export function initDatabase() {
     console.error('❌ Error updating user roles:', error.message);
   }
 
+  // @CODE:REPORT-DB-001: Reports table migration
+  // Create reports table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      report_number TEXT UNIQUE NOT NULL,
+      teacher_id INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      incident_date DATE NOT NULL,
+      location TEXT NOT NULL,
+      witness_count INTEGER,
+      is_emergency BOOLEAN DEFAULT 0,
+      status TEXT DEFAULT 'received',
+      lawyer_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME,
+      FOREIGN KEY (teacher_id) REFERENCES users(id),
+      FOREIGN KEY (lawyer_id) REFERENCES users(id)
+    )
+  `);
+
+  // Create report status history table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS report_status_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      report_id INTEGER NOT NULL,
+      from_status TEXT,
+      to_status TEXT NOT NULL,
+      changed_by INTEGER NOT NULL,
+      changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      note TEXT,
+      FOREIGN KEY (report_id) REFERENCES reports(id),
+      FOREIGN KEY (changed_by) REFERENCES users(id)
+    )
+  `);
+
+  // Create reports indexes
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_reports_teacher ON reports(teacher_id);
+    CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+    CREATE INDEX IF NOT EXISTS idx_reports_created ON reports(created_at);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_reports_number ON reports(report_number);
+    CREATE INDEX IF NOT EXISTS idx_report_history_report ON report_status_history(report_id);
+    CREATE INDEX IF NOT EXISTS idx_report_history_changed_at ON report_status_history(changed_at);
+  `);
+
+  // @CODE:FILE-DB-001 | Chain: SPEC-FILE-001 -> CODE-FILE-001
+  // Files table migration for evidence file management
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS files (
+      id TEXT PRIMARY KEY,
+      original_filename TEXT NOT NULL,
+      stored_filename TEXT UNIQUE NOT NULL,
+      file_path TEXT NOT NULL,
+      file_size INTEGER NOT NULL,
+      mime_type TEXT NOT NULL,
+      file_extension TEXT NOT NULL,
+      uploader_id INTEGER NOT NULL,
+      report_id INTEGER,
+      consult_id INTEGER,
+      uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      deleted_at DATETIME,
+      FOREIGN KEY (uploader_id) REFERENCES users(id),
+      FOREIGN KEY (report_id) REFERENCES reports(id)
+    )
+  `);
+
+  // Create files indexes
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_files_uploader ON files(uploader_id);
+    CREATE INDEX IF NOT EXISTS idx_files_report ON files(report_id);
+    CREATE INDEX IF NOT EXISTS idx_files_consult ON files(consult_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_files_stored_filename ON files(stored_filename);
+  `);
+
   console.log('Database initialized successfully');
 }
 

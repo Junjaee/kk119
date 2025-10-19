@@ -37,30 +37,81 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load reports from local DB
+  // Load reports from server API
   useEffect(() => {
-    const loadReports = () => {
+    const loadReports = async () => {
       try {
+        console.log('🔍 [REPORTS] Loading reports from server API');
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          console.log('🔍 [REPORTS] No token found, loading local data as fallback');
+          // Fallback to local data if no token
+          const allReports = localDB.getAllReports();
+          const sortedReports = allReports.sort((a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setReports(sortedReports);
+          return;
+        }
+
+        console.log('🔍 [REPORTS] Making API request with token');
+        const response = await fetch('/api/consult', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('🔍 [REPORTS] API response status:', response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🔍 [REPORTS] API response data:', data);
+
+          if (data.success && data.data?.consults) {
+            // Transform server data to match client Report interface
+            const serverReports = data.data.consults.map((consult: any) => ({
+              id: consult.id.toString(),
+              title: consult.title,
+              description: consult.report_content,
+              type: consult.report_type,
+              status: consult.report_status === 'pending' ? 'pending' :
+                     consult.status === 'answered' ? 'resolved' : 'in_review',
+              createdAt: consult.created_at,
+              incidentDate: consult.incident_date,
+              priority: 'medium' // Default priority since not in server data
+            }));
+
+            console.log('🔍 [REPORTS] Transformed reports:', serverReports);
+            setReports(serverReports);
+          } else {
+            console.log('🔍 [REPORTS] No consults data in response, using empty array');
+            setReports([]);
+          }
+        } else {
+          console.error('🔍 [REPORTS] API request failed:', response.status);
+          // Fallback to local data on API failure
+          const allReports = localDB.getAllReports();
+          const sortedReports = allReports.sort((a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setReports(sortedReports);
+        }
+      } catch (error) {
+        console.error('🔍 [REPORTS] Error loading reports:', error);
+        // Fallback to local data on error
         const allReports = localDB.getAllReports();
-        // Sort by createdAt descending (newest first)
-        const sortedReports = allReports.sort((a, b) => 
+        const sortedReports = allReports.sort((a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setReports(sortedReports);
-      } catch (error) {
-        console.error('Error loading reports:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadReports();
-    
-    // Initialize with sample data if no reports exist
-    if (localDB.getAllReports().length === 0) {
-      localDB.initWithSampleData();
-      loadReports();
-    }
   }, []);
 
   const getStatusBadge = (status: Report['status']) => {

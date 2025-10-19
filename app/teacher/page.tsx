@@ -34,33 +34,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatRelativeTime } from '@/lib/utils/date';
 
-// Enhanced mock data
-const recentReports = [
-  {
-    id: '1',
-    title: '학부모 민원 관련 건',
-    status: 'consulting',
-    created_at: '2025-08-27T10:00:00Z',
-    type: 'parent',
-    priority: 'high'
-  },
-  {
-    id: '2',
-    title: '학생 폭언 사건',
-    status: 'completed',
-    created_at: '2025-08-26T14:30:00Z',
-    type: 'student',
-    priority: 'medium'
-  },
-  {
-    id: '3',
-    title: '동료 교사 갈등',
-    status: 'reviewing',
-    created_at: '2025-08-25T09:15:00Z',
-    type: 'colleague',
-    priority: 'low'
-  }
-];
+interface Report {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+  report_type: string;
+  priority?: string;
+}
 
 const popularPosts = [
   {
@@ -94,6 +75,9 @@ export default function TeacherPage() {
   const router = useRouter();
   const [showAllReports, setShowAllReports] = useState(false);
   const [currentReportPage, setCurrentReportPage] = useState(0);
+  const [recentReports, setRecentReports] = useState<Report[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
+  const [reportError, setReportError] = useState<string | null>(null);
   const reportsPerPage = 5;
 
   // Redirect non-teachers to their respective pages (only after user is loaded)
@@ -119,6 +103,62 @@ export default function TeacherPage() {
       console.log('🔍 [TEACHER] User is teacher, staying on page');
     }
   }, [user, router]);
+
+  // Fetch user's reports when user is loaded and is a teacher
+  useEffect(() => {
+    const fetchReports = async () => {
+      if (!user || user.role !== 'teacher') return;
+
+      try {
+        setIsLoadingReports(true);
+        setReportError(null);
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setReportError('인증 토큰이 없습니다');
+          return;
+        }
+
+        const response = await fetch('/api/consult', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.data.consults) {
+          // Convert API response to match our interface
+          const reports: Report[] = data.data.consults.map((consult: any) => ({
+            id: consult.id.toString(),
+            title: consult.title,
+            status: consult.report_status || 'pending',
+            created_at: consult.created_at,
+            report_type: consult.report_type,
+            priority: 'medium' // Default priority since API doesn't provide this
+          }));
+
+          setRecentReports(reports);
+          console.log('📋 [TEACHER] Fetched reports:', reports);
+        } else {
+          console.error('📋 [TEACHER] Failed to fetch reports:', data);
+          setReportError(data.error || '신고 내역을 불러올 수 없습니다');
+        }
+      } catch (error) {
+        console.error('📋 [TEACHER] Error fetching reports:', error);
+        setReportError('신고 내역을 불러오는 중 오류가 발생했습니다');
+      } finally {
+        setIsLoadingReports(false);
+      }
+    };
+
+    fetchReports();
+  }, [user]);
 
   // Show loading while user is being loaded or if user is not teacher
   if (!user) {
@@ -151,10 +191,11 @@ export default function TeacherPage() {
 
   const getStatusBadgeClass = (status: string) => {
     const statusClasses: Record<string, string> = {
-      received: 'status-received',
+      pending: 'status-received',
       reviewing: 'status-reviewing',
       consulting: 'status-consulting',
       completed: 'status-completed',
+      received: 'status-received',
     };
 
     return statusClasses[status] || 'status-received';
@@ -162,10 +203,11 @@ export default function TeacherPage() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      received: '접수완료',
+      pending: '접수대기',
       reviewing: '검토중',
       consulting: '상담진행',
       completed: '해결완료',
+      received: '접수완료',
     };
 
     return labels[status] || status;
@@ -222,7 +264,61 @@ export default function TeacherPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {recentReports.length > 0 ? (
+            {isLoadingReports ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">신고 내역을 불러오는 중...</p>
+              </div>
+            ) : reportError ? (
+              <div className="text-center py-12">
+                <AlertTriangle className="h-16 w-16 mx-auto text-red-500 mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-red-600">오류 발생</h3>
+                <p className="text-muted-foreground mb-6">{reportError}</p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReportError(null);
+                    setIsLoadingReports(true);
+                    // Re-trigger the useEffect to fetch reports again
+                    const token = localStorage.getItem('token');
+                    if (token && user) {
+                      fetch('/api/consult', {
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                          'Content-Type': 'application/json'
+                        }
+                      }).then(async (response) => {
+                        if (!response.ok) {
+                          throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+                        if (data.success && data.data.consults) {
+                          const reports: Report[] = data.data.consults.map((consult: any) => ({
+                            id: consult.id.toString(),
+                            title: consult.title,
+                            status: consult.report_status || 'pending',
+                            created_at: consult.created_at,
+                            report_type: consult.report_type,
+                            priority: 'medium'
+                          }));
+                          setRecentReports(reports);
+                        } else {
+                          setReportError(data.error || '신고 내역을 불러올 수 없습니다');
+                        }
+                      }).catch((error) => {
+                        console.error('Error refetching reports:', error);
+                        setReportError('신고 내역을 불러오는 중 오류가 발생했습니다');
+                      }).finally(() => {
+                        setIsLoadingReports(false);
+                      });
+                    }
+                  }}
+                  className="text-sm"
+                >
+                  다시 시도
+                </Button>
+              </div>
+            ) : recentReports.length > 0 ? (
               <div className="space-y-6">
                 {/* 신고 내역 목록 */}
                 {displayedReports.map((report, index) => (

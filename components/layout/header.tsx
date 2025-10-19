@@ -189,13 +189,29 @@ export function Header() {
                       className="w-full justify-start text-left text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg"
                       onClick={async () => {
                         try {
-                          // 서버에서 세션 정리
+                          // CRITICAL FIX: 서버에 토큰과 함께 세션 정리 요청
+                          const token = localStorage.getItem('token');
+                          console.log('🔍 [HEADER] Logout - sending token to server:', token ? 'Yes' : 'No');
+
+                          const headers: HeadersInit = {
+                            'Content-Type': 'application/json',
+                          };
+
+                          // Authorization 헤더에 토큰 포함 (API 라우트는 오직 헤더만 사용)
+                          if (token) {
+                            headers['Authorization'] = `Bearer ${token}`;
+                            console.log('🔍 [HEADER] Including Authorization header for logout');
+                          }
+
                           await fetch('/api/auth/logout', {
                             method: 'POST',
-                            credentials: 'include'
+                            headers,
+                            credentials: 'omit' // 쿠키 완전 비활성화, 오직 Authorization 헤더만 사용
                           });
+
+                          console.log('✅ [HEADER] Server logout completed');
                         } catch (error) {
-                          console.error('Server logout error:', error);
+                          console.error('❌ [HEADER] Server logout error:', error);
                         }
 
                         // 사용자 메뉴 닫기

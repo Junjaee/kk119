@@ -90,8 +90,22 @@ export class RedirectService {
     clearCookies: (response: NextResponse) => NextResponse
   ): NextResponse {
     console.log(`[MIDDLEWARE] Server-client auth mismatch detected, clearing orphaned cookie`);
+
+    // Create response with explicit cache control to prevent auth state caching
     const response = NextResponse.next();
-    return clearCookies(response);
+
+    // Clear authentication cookies
+    const clearedResponse = clearCookies(response);
+
+    // Add headers to ensure client-side auth state is properly reset
+    clearedResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    clearedResponse.headers.set('Pragma', 'no-cache');
+    clearedResponse.headers.set('Expires', '0');
+
+    // Add custom header to signal client that auth state should be reset
+    clearedResponse.headers.set('X-Auth-Reset', 'true');
+
+    return clearedResponse;
   }
 
   /**

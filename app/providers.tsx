@@ -20,20 +20,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const { theme, initialize } = useStore();
 
   useEffect(() => {
-    // Initialize store and refresh auth state
-    const initializeApp = async () => {
-      // First initialize the store
-      initialize();
-
-      // Then refresh auth state from server to sync user info
-      try {
-        await authSync.refreshAuthState();
-      } catch (error) {
-        console.error('Failed to refresh auth state during initialization:', error);
-      }
-    };
-
-    initializeApp();
+    // Initialize store only - auth refresh is handled by store.initialize() and AuthProvider
+    console.log('🚀 [PROVIDERS] Initializing store (auth refresh handled separately)');
+    initialize();
   }, [initialize]);
 
   useEffect(() => {

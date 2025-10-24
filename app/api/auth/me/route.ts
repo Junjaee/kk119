@@ -1,138 +1,69 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/db/database';
-import { authenticatedAPI, SecureAPIContext } from '@/lib/middleware/secure-api-wrapper';
-import { log } from '@/lib/utils/logger';
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import Database from 'better-sqlite3';
+import path from 'path';
 
-async function getUserHandler(request: NextRequest, context: SecureAPIContext): Promise<NextResponse> {
-  const { user, requestId } = context;
+const JWT_SECRET = process.env.JWT_SECRET || 'kyokwon119-secret-key-2024-change-this-in-production';
+const dbPath = path.join(process.cwd(), 'data', 'kyokwon119.db');
 
-  if (!user) {
-    // This shouldn't happen with authenticatedAPI wrapper, but included for type safety
-    return NextResponse.json(
-      { error: '인증 정보를 찾을 수 없습니다.' },
-      { status: 401 }
-    );
-  }
-
+export async function GET(request: Request) {
   try {
-    // ENHANCED DEBUG: Log comprehensive JWT and request details
-    console.log('🔍 [AUTH-ME] === DETAILED DEBUG START ===');
-    console.log('🔍 [AUTH-ME] Request Headers:', {
-      authorization: request.headers.get('authorization')?.substring(0, 50) + '...',
-      cookie: request.headers.get('cookie')?.includes('auth-token') ? 'Has auth-token cookie' : 'No auth-token cookie',
-      userAgent: request.headers.get('user-agent')?.substring(0, 50) + '...'
-    });
+    // Get token from Authorization header or cookies
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '') || cookies().get('auth-token')?.value;
 
-    console.log('🔍 [AUTH-ME] JWT Payload from Context:', {
-      userId: user.userId,
-      email: user.email,
-      role: user.role,
-      tokenType: user.tokenType,
-      jti: user.jti,
-      iat: user.iat,
-      exp: user.exp,
-      sessionId: user.sessionId
-    });
+    if (!token) {
+      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    }
 
-    // Get fresh user data from database
-    console.log('🔍 [AUTH-ME] Querying database for user ID:', user.userId);
-    const dbUser = userDb.findById(user.userId) as any;
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-    console.log('🔍 [AUTH-ME] DB Query Result:', {
-      queryUserId: user.userId,
-      found: !!dbUser,
-      returnedId: dbUser?.id,
-      returnedEmail: dbUser?.email,
-      returnedName: dbUser?.name,
-      returnedRole: dbUser?.role,
-      returnedIsAdmin: dbUser?.is_admin,
-      matches: dbUser?.id === user.userId
-    });
-    console.log('🔍 [AUTH-ME] === DETAILED DEBUG END ===');
-    if (!dbUser) {
-      log.security('User Not Found in Database', 'medium', `User ID: ${user.userId}`, {
-        requestId,
-        userId: user.userId,
-        userEmail: user.email
+    if (!decoded || !decoded.userId) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Get user from database
+    const db = new Database(dbPath);
+
+    try {
+      const user = db.prepare(`
+        SELECT id, email, name, role, phone, association_name, grade, position, is_admin, is_approved, created_at
+        FROM users
+        WHERE id = ?
+      `).get(decoded.userId) as any;
+
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // Return user data
+      return NextResponse.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          phone: user.phone,
+          associationName: user.association_name,
+          grade: user.grade,
+          position: user.position,
+          isAdmin: Boolean(user.is_admin),
+          isApproved: Boolean(user.is_approved),
+          createdAt: user.created_at
+        }
       });
-
-      return NextResponse.json(
-        { error: '사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+    } finally {
+      db.close();
     }
-
-    // Check if user is still verified
-    if (dbUser.is_verified === 0) {
-      log.security('Unverified User Access Attempt', 'medium', `User: ${dbUser.email}`, {
-        requestId,
-        userId: dbUser.id,
-        userEmail: dbUser.email
-      });
-
-      return NextResponse.json(
-        { error: '계정이 인증되지 않았습니다.' },
-        { status: 403 }
-      );
-    }
-
-    // Log successful user info retrieval
-    log.debug('User info retrieved', {
-      requestId,
-      userId: dbUser.id,
-      userRole: dbUser.role,
-      securityFlags: context.securityFlags
-    });
-
-    // Prepare user response data
-    const userData = {
-      id: dbUser.id,
-      email: dbUser.email,
-      name: dbUser.name,
-      school: dbUser.school,
-      position: dbUser.position,
-      phone: dbUser.phone,
-      role: dbUser.role || 'teacher',
-      isAdmin: dbUser.is_admin === 1,
-      isVerified: dbUser.is_verified === 1,
-      createdAt: dbUser.created_at,
-      lastLogin: dbUser.last_login,
-      association_id: dbUser.association_id
-    };
-
-    // Include token security information if there are any flags
-    const response: any = { user: userData };
-
-    if (context.securityFlags && context.securityFlags.length > 0) {
-      response.securityInfo = {
-        flags: context.securityFlags,
-        shouldRefresh: context.validationResult?.shouldRefresh || false
-      };
-    }
-
-    // Add token refresh recommendation if needed
-    if (context.validationResult?.shouldRefresh) {
-      response.tokenInfo = {
-        shouldRefresh: true,
-        message: '토큰을 곧 갱신해야 합니다.'
-      };
-    }
-
-    return NextResponse.json(response);
-
   } catch (error: any) {
-    log.error('Get user info error', error, {
-      requestId,
-      userId: user.userId,
-      stack: error.stack
-    });
+    console.error('[AUTH/ME] Error:', error);
 
-    return NextResponse.json(
-      { error: '사용자 정보를 가져오는 중 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-// Export the secured handler
-export const GET = authenticatedAPI(getUserHandler);

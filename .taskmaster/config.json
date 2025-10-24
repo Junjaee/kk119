@@ -34,5 +34,10 @@
     "azureOpenaiBaseURL": "https://your-endpoint.openai.azure.com/",
     "userId": "1234567890"
   },
-  "claudeCode": {}
+  "claudeCode": {},
+  "grokCli": {
+    "timeout": 120000,
+    "workingDirectory": null,
+    "defaultModel": "grok-4-latest"
+  }
 }

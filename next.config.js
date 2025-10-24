@@ -2,6 +2,9 @@
 const nextConfig = {
   // 성능 최적화 설정
   experimental: {
+    // ARM CPU 최적화
+    cpus: 4, // ARM CPU 코어 활용
+    workerThreads: false, // ARM에서 더 나은 성능
     // Barrel 최적화 완전 비활성화 (webpack 오류 방지)
     // optimizePackageImports: ['@radix-ui/react-icons'],
   },

@@ -1,26 +1,27 @@
 {
   "permissions": {
     "allow": [
-      "Bash(docker stop:*)",
-      "Bash(docker rm:*)",
-      "Bash(docker-compose:*)",
-      "Bash(git add:*)",
-      "Bash(rm:*)",
-      "Bash(task-master expand:*)",
-      "Bash(task-master list:*)",
-      "Bash(task-master:*)",
-      "Bash(Get-Content \"C:\\dev\\kk119\\.taskmaster\\tasks\\tasks.json\")",
-      "Bash(Select-Object -Last 50)",
-      "Bash(npm run dev:*)",
-      "Bash(npm run build:*)",
-      "Bash(curl:*)",
-      "Bash(npm install:*)",
-      "Bash(winget install:*)",
-      "Bash(sqlite3:*)",
-      "Bash(refreshenv)",
-      "Bash(git commit:*)"
+      "Bash(python:*)",
+      "Bash(where:*)",
+      "Bash(pip install:*)",
+      "Read(//c/**)",
+      "Bash(task-master next)",
+      "Bash(task-master list:*)"
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v osascript >/dev/null 2>&1; then osascript -e 'display notification \"Tool: $CLAUDE_TOOL_NAME completed\" with title \"Claude Code\"'; elif command -v notify-send >/dev/null 2>&1; then notify-send 'Claude Code' \"Tool: $CLAUDE_TOOL_NAME completed\"; fi"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -22,6 +22,8 @@ import {
 import toast from 'react-hot-toast';
 import { useStore } from '@/lib/store';
 import { authSync } from '@/lib/auth/auth-sync';
+import { storeToken } from '@/lib/auth/storage';
+import { UserRole } from '@/lib/auth/storage-keys';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -117,7 +119,10 @@ export default function LoginPage() {
           }
         }
 
-        localStorage.setItem('token', data.token);
+        // CRITICAL FIX: Use dual storage mechanism for role-based token persistence
+        const userRole = data.user.role as UserRole;
+        storeToken(userRole, data.token);
+        console.log('🔄 [LOGIN] Token stored using dual storage for role:', userRole);
 
         console.log('🔄 [LOGIN] New token details:', {
           preview: data.token.substring(0, 20) + '...',
@@ -213,12 +218,8 @@ export default function LoginPage() {
       // 각 역할별 독립 페이지로 리다이렉트 (변호사 패턴 완전 적용)
       switch (data.user.role) {
         case 'super_admin':
-          redirectUrl = '/admin';  // 슈퍼관리자 전용 페이지
-          console.log('🔍 Redirect: super_admin -> /admin');
-          break;
-        case 'admin':
-          redirectUrl = '/associadmin';  // 협회관리자 전용 페이지
-          console.log('🔍 Redirect: admin -> /associadmin');
+          redirectUrl = '/super-admin';  // 슈퍼관리자 전용 페이지
+          console.log('🔍 Redirect: super_admin -> /super-admin');
           break;
         case 'lawyer':
           redirectUrl = '/lawyer';  // 변호사 전용 페이지 (기존 유지)
@@ -440,12 +441,7 @@ export default function LoginPage() {
                     <div className="text-gray-500">Lawyer2025!</div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white dark:bg-gray-800 p-2 rounded border">
-                    <div className="font-medium text-purple-700 dark:text-purple-400">협회관리자</div>
-                    <div className="text-gray-600 dark:text-gray-300">association@kk119.com</div>
-                    <div className="text-gray-500">Assoc2025!</div>
-                  </div>
+                <div className="grid grid-cols-1 gap-2">
                   <div className="bg-white dark:bg-gray-800 p-2 rounded border">
                     <div className="font-medium text-red-700 dark:text-red-400">슈퍼관리자</div>
                     <div className="text-gray-600 dark:text-gray-300">super@kk119.com</div>

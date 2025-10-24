@@ -110,7 +110,6 @@ export default function UsersManagement() {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'super_admin': return '슈퍼 어드민';
-      case 'admin': return '관리자';
       case 'lawyer': return '변호사';
       case 'teacher': return '교사';
       default: return role;
@@ -120,7 +119,6 @@ export default function UsersManagement() {
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case 'super_admin': return 'bg-red-100 text-red-800';
-      case 'admin': return 'bg-blue-100 text-blue-800';
       case 'lawyer': return 'bg-green-100 text-green-800';
       case 'teacher': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';

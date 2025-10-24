@@ -38,12 +38,15 @@ export class AuthSync implements AuthSyncManager {
   /**
    * Set token for specific role
    * @CODE:AUTH-001-SET-TOKEN | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
+   * @CODE:AUTH-004-INTEGRATE | Uses dual storage strategy
    */
-  setTokenForRole(role: UserRole, token: string): void {
+  async setTokenForRole(role: UserRole, token: string): Promise<void> {
     console.log(`🔑 [AUTH-SYNC] Setting token for role: ${role}`);
-    const keys = AUTH_STORAGE_KEYS[role];
+
     if (typeof window !== 'undefined') {
-      localStorage.setItem(keys.token, token);
+      // Use new dual storage mechanism
+      const { storeToken } = await import('./storage');
+      storeToken(role, token);
       this.currentRole = role;
     }
   }
@@ -51,11 +54,14 @@ export class AuthSync implements AuthSyncManager {
   /**
    * Get token for specific role
    * @CODE:AUTH-001-GET-TOKEN | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
+   * @CODE:AUTH-004-INTEGRATE | Uses token detection with validation
    */
-  getTokenForRole(role: UserRole): string | null {
+  async getTokenForRole(role: UserRole): Promise<string | null> {
     if (typeof window === 'undefined') return null;
-    const keys = AUTH_STORAGE_KEYS[role];
-    return localStorage.getItem(keys.token);
+
+    // Use new token detection logic
+    const { detectToken } = await import('./token-detector');
+    return detectToken(role);
   }
 
   /**
@@ -108,8 +114,9 @@ export class AuthSync implements AuthSyncManager {
   /**
    * Clear all authentication state from all storage locations
    * @CODE:AUTH-001-CLEAR-ALL | Chain: SPEC-AUTH-001 -> CODE-AUTH-001
+   * @CODE:AUTH-004-INTEGRATE | Uses centralized clearAllTokens function
    */
-  clearAllAuthState(skipServerSideCleanup = false): void {
+  async clearAllAuthState(skipServerSideCleanup = false): Promise<void> {
     console.log('🗑️ [AUTH-SYNC] Clearing all auth state for ALL roles', skipServerSideCleanup ? '(skipping server-side cleanup)' : '');
 
     // CRITICAL FIX: Only track logout completion if this is NOT called during login process
@@ -122,34 +129,17 @@ export class AuthSync implements AuthSyncManager {
     }
 
     try {
-      // Clear tokens for ALL roles (role-based isolation)
-      Object.values(AUTH_STORAGE_KEYS).forEach(({ token, storage }) => {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(token);
-          localStorage.removeItem(storage);
-        }
-      });
-
-      // Clear legacy keys
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(LEGACY_KEYS.token);
-        localStorage.removeItem(LEGACY_KEYS.storage);
-        localStorage.removeItem(LEGACY_KEYS.rememberedEmail);
-      }
-
-      console.log('🗑️ [AUTH-SYNC] Cleared all role-based and legacy tokens');
-
-      // Clear session storage
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.clear();
-      }
+      // Use centralized clearAllTokens function
+      const { clearAllTokens, clearCookies } = await import('./storage');
+      clearAllTokens();
 
       // Reset current role
       this.currentRole = null;
 
-      // Clear client-side cookies directly (multiple attempts for thorough cleanup)
+      // Clear client-side cookies
       if (typeof document !== 'undefined') {
-        this.clearAllCookies();
+        clearCookies();
+        this.clearAllCookies(); // Keep existing cookie clearing for redundancy
       }
 
       // Clear cookies by making logout request (only if not skipping server-side cleanup)
@@ -239,8 +229,22 @@ export class AuthSync implements AuthSyncManager {
         }
       }
 
-      // Get token from localStorage to send in Authorization header
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      // @CODE:AUTH-004-INTEGRATE | Chain: SPEC-AUTH-004 -> CODE-AUTH-004-INTEGRATE
+      // Use new token detection logic with role-based priority
+      let token: string | null = null;
+
+      // Try to detect token for current role first
+      if (this.currentRole) {
+        const { detectToken } = await import('./token-detector');
+        token = detectToken(this.currentRole);
+        console.log('🔄 [AUTH-SYNC] Token detection for role:', this.currentRole, token ? 'found' : 'not found');
+      }
+
+      // Fallback to legacy key if no role is set
+      if (!token && typeof window !== 'undefined') {
+        token = localStorage.getItem('token');
+        console.log('🔄 [AUTH-SYNC] Fallback to legacy token:', token ? 'found' : 'not found');
+      }
 
       // CRITICAL DEBUG: Log full token details to track cross-contamination
       console.log('🔍 [AUTH-SYNC] DETAILED token analysis:', {

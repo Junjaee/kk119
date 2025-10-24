@@ -1,0 +1,12 @@
+{
+  "projectName": "kk119",
+  "mode": "team",
+  "locale": "ko",
+  "language": "python",
+  "moai_adk_version": "0.3.3",
+  "optimized": false,
+  "project": {
+    "moai_adk_version": "0.3.3",
+    "optimized": false
+  }
+}

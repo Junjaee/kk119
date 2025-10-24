@@ -58,6 +58,36 @@ node_modules/
 *.sw?
 # OS specific
 
+*.pyc
+.env/
+*.swp
+# Cache
+# Build artifacts
+venv/
+# Virtual environment
+logs/
+*.egg
+*.temp
+.pytest_cache/
+env/
+.vscode/
+Thumbs.db
+build/
+*.tmp
+*.swo
+# Temporary files
+# Backups
+.tscache/
+.idea/
+dist/
+*.egg-info/
+__pycache__/
+*~
+# IDE
+# OS
+.venv/
+*.pyo
+
 # Task files
 # tasks.json
 # tasks/ 

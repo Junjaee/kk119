@@ -26,15 +26,31 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
-  // Redirect logged-in users to their respective role-specific pages
-  // Only redirect if both user exists AND token exists
+  // Wait for auth-sync to complete initialization before allowing redirects
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthInitialized(true);
+      console.log('✅ [MAIN PAGE] Auth initialization grace period completed');
+    }, 1500); // Wait 1.5 seconds for auth-sync to validate token
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Redirect logged-in users to their respective role-specific pages
+  // Only redirect AFTER auth initialization is complete
+  useEffect(() => {
+    if (!authInitialized) {
+      console.log('⏳ [MAIN PAGE] Waiting for auth initialization...');
+      return;
+    }
+
     const token = localStorage.getItem('token');
 
     if (user && user.role && token) {
@@ -63,8 +79,11 @@ export default function HomePage() {
       console.log('⚠️ [MAIN PAGE] User data exists without token, clearing stale data');
       setUser(null);
       setIsRedirecting(false);
+    } else {
+      console.log('👋 [MAIN PAGE] No valid session, showing login page');
+      setIsRedirecting(false);
     }
-  }, [user, router, setUser]);
+  }, [user, router, setUser, authInitialized]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -152,13 +171,15 @@ export default function HomePage() {
     }
   };
 
-  // Show loading screen while redirecting
-  if (isRedirecting) {
+  // Show loading screen while auth is initializing or redirecting
+  if (!authInitialized || isRedirecting) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">로딩 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            {!authInitialized ? '인증 확인 중...' : '로딩 중...'}
+          </p>
         </div>
       </div>
     );

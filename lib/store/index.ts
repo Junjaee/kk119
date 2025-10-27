@@ -60,7 +60,7 @@ export const useStore = create<AppStore>()(
         // Step 4: 페이지 새로고침으로 모든 메모리 상태 완전 정리
         setTimeout(() => {
           console.log('🔄 Reloading page to ensure complete logout...');
-          window.location.href = '/login'; // 새로고침 대신 직접 로그인 페이지로 이동
+          window.location.href = '/'; // 메인 페이지로 이동하여 로그인/회원가입 버튼 사용 가능하도록
         }, 150);
       },
       

@@ -176,7 +176,9 @@ export const MENU_CONFIG: Record<UserRole, MenuItem[]> = {
  * Following Single Responsibility Principle
  */
 export function getMenuItemsForRole(role: UserRole): MenuItem[] {
-  return MENU_CONFIG[role] || [];
+  const items = MENU_CONFIG[role] || [];
+  console.log('🔍 [MENU-CONFIG] Getting items for role:', role, items);
+  return items;
 }
 
 /**

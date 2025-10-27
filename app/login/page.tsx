@@ -150,12 +150,9 @@ export default function LoginPage() {
         });
       }
 
-      // Clear authentication state AFTER token replacement (preserving new token)
-      console.log('🧹 Clearing auth state after token replacement...');
-      authSync.clearAllAuthState(true); // Skip server-side cleanup during login
-
-      // CRITICAL FIX: Explicitly clear Zustand persistent storage to prevent stale user data
-      console.log('🧹 Explicitly clearing Zustand persistent storage...');
+      // CRITICAL FIX: Don't call clearAllAuthState during login - it removes the token we just stored!
+      // Instead, only clear the Zustand persistent storage to prevent stale user data
+      console.log('🧹 Clearing Zustand persistent storage (NOT clearing tokens)...');
       localStorage.removeItem('kyokwon119-storage');
 
       // Small delay to ensure cleanup completes
@@ -182,10 +179,6 @@ export default function LoginPage() {
 
       console.log('👤 Setting new user in store:', newUser);
       setUser(newUser);
-
-      // CRITICAL FIX: Clear Zustand storage AGAIN after setting new user to prevent rehydration conflicts
-      console.log('🧹 Final cleanup: Clearing Zustand storage after user state update...');
-      localStorage.removeItem('kyokwon119-storage');
 
       // Also sync the user state through auth-sync to ensure consistency
       authSync.syncUserState({

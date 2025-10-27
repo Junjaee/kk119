@@ -39,20 +39,18 @@ export default function LoginPage() {
     password: ''
   });
 
-  // Clear any existing auth state when login page mounts
+  // Initialize login page - DO NOT clear auth state on mount
+  // Clearing auth state here will destroy any tokens that were just stored
   useEffect(() => {
-    console.log('🔄 [LOGIN-PAGE] Mounting - clearing potential stale auth state');
+    console.log('🔄 [LOGIN-PAGE] Mounting...');
 
-    // Clear any stale auth state that might cause cross-contamination
-    authSync.clearAllAuthState();
-
-    // Clear any persisted email unless explicitly requested to remember
+    // Load any remembered email
     const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail && !searchParams.get('keepEmail')) {
+    if (rememberedEmail) {
       setFormData(prev => ({ ...prev, email: rememberedEmail }));
       setRememberMe(true);
     }
-  }, [searchParams]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -180,22 +178,10 @@ export default function LoginPage() {
       console.log('👤 Setting new user in store:', newUser);
       setUser(newUser);
 
-      // Also sync the user state through auth-sync to ensure consistency
-      authSync.syncUserState({
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        school: data.user.school,
-        position: data.user.position,
-        phone: data.user.phone,
-        role: data.user.role,
-        isAdmin: data.user.isAdmin,
-        isVerified: data.user.isVerified,
-        association_id: data.user.association_id,
-        created_at: data.user.created_at || data.user.createdAt,
-        updated_at: data.user.updated_at || data.user.updatedAt,
-        last_login: data.user.last_login || data.user.lastLogin
-      });
+      // CRITICAL: DO NOT sync user state through authSync during login!
+      // authSync.syncUserState will check if user is null and clear auth state
+      // Instead, just call endLogin to stop the login protection
+      // The user is already set in the store above, so we're done
 
       // CRITICAL: End login process to activate refresh protection
       authSync.endLogin();

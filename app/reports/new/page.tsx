@@ -41,33 +41,33 @@ import { localDB } from '@/lib/services/localDB';
 const StepIndicator = ({ currentStep, steps }: { currentStep: number; steps: string[] }) => {
   return (
     <div className="relative">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4">
         {steps.map((step, index) => (
           <div key={index} className="flex-1 relative">
             <div className="flex items-center">
               <div className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300",
-                index < currentStep 
-                  ? "bg-green-500 text-white" 
+                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300",
+                index < currentStep
+                  ? "bg-green-500 text-white"
                   : index === currentStep
                     ? "bg-primary text-white animate-pulse"
                     : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
               )}>
-                {index < currentStep ? <CheckCircle2 className="h-6 w-6" /> : index + 1}
+                {index < currentStep ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
               </div>
               {index < steps.length - 1 && (
                 <div className={cn(
-                  "flex-1 h-1 mx-2 transition-all duration-300",
-                  index < currentStep 
-                    ? "bg-green-500" 
+                  "flex-1 h-0.5 mx-2 transition-all duration-300",
+                  index < currentStep
+                    ? "bg-green-500"
                     : "bg-gray-200 dark:bg-gray-700"
                 )} />
               )}
             </div>
             <p className={cn(
-              "text-xs mt-2 font-medium transition-colors",
-              index <= currentStep 
-                ? "text-foreground" 
+              "text-xs mt-1 font-medium transition-colors",
+              index <= currentStep
+                ? "text-foreground"
                 : "text-muted-foreground"
             )}>
               {step}

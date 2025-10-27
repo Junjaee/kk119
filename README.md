@@ -265,23 +265,23 @@ node scripts/seed-mock-consults.js
 
 **교권119** - 교사의 권익 보호를 위한 종합 플랫폼 🏫⚖️
 <!-- TASKMASTER_EXPORT_START -->
-> 🎯 **Taskmaster Export** - 2025-10-27 07:47:16 UTC
+> 🎯 **Taskmaster Export** - 2025-10-27 07:50:23 UTC
 > 📋 Export: with subtasks • Status filter: none
 > 🔗 Powered by [Task Master](https://task-master.dev?utm_source=github-readme&utm_medium=readme-export&utm_campaign=kk119&utm_content=task-export-link)
 
 | Project Dashboard |  |
 | :-                |:-|
-| Task Progress     | ███████████████████░ 96% |
-| Done | 22 |
-| In Progress | 1 |
+| Task Progress     | ████████████████████ 100% |
+| Done | 23 |
+| In Progress | 0 |
 | Pending | 0 |
 | Deferred | 0 |
 | Cancelled | 0 |
 |-|-|
-| Subtask Progress | ███████████░░░░░░░░░ 57% |
-| Completed | 62 |
+| Subtask Progress | ████████████░░░░░░░░ 58% |
+| Completed | 63 |
 | In Progress | 0 |
-| Pending | 46 |
+| Pending | 45 |
 
 
 | ID | Title | Status | Priority | Dependencies | Complexity |
@@ -411,13 +411,14 @@ node scripts/seed-mock-consults.js
 | 32.5 | RLS(Row Level Security) 정책 구현 | ✓&nbsp;done | -            | 4 | N/A |
 | 32.1 | Supabase 프로젝트 설정 및 환경 구성 | ✓&nbsp;done | -            | None | N/A |
 | 32.2 | SQLite 스키마를 PostgreSQL 스키마로 변환 및 마이그레이션 | ✓&nbsp;done | -            | 1 | N/A |
-| 33 | 커뮤니티와 교권자료실 글쓰기 실제 DB 저장 구현 | ►&nbsp;in-progress | medium | 32 | N/A |
+| 33 | 커뮤니티와 교권자료실 글쓰기 실제 DB 저장 구현 | ✓&nbsp;done | medium | 32 | N/A |
 | 33.1 | 커뮤니티 글쓰기 API 연동 구현 | ✓&nbsp;done | -            | None | N/A |
 | 33.2 | Supabase communityDb 함수 구현 | ✓&nbsp;done | -            | None | N/A |
 | 33.3 | 커뮤니티 Supabase Storage 이미지 업로드 구현 | ✓&nbsp;done | -            | 2 | N/A |
 | 33.4 | 교권자료실 Supabase 전환 | ✓&nbsp;done | -            | 2 | N/A |
-| 33.5 | 커뮤니티 목록/상세 조회 Supabase 연동 | ○&nbsp;pending | -            | 2 | N/A |
+| 33.5 | 커뮤니티 목록/상세 조회 Supabase 연동 | ✓&nbsp;done | -            | 2 | N/A |
 
 > 📋 **End of Taskmaster Export** - Tasks are synced from your project using the `sync-readme` command.
 <!-- TASKMASTER_EXPORT_END -->
+
 

@@ -33,9 +33,12 @@ export default function HomePage() {
   });
 
   // Redirect logged-in users to their respective role-specific pages
+  // Only redirect if both user exists AND token exists
   useEffect(() => {
-    if (user && user.role) {
-      console.log('👤 [MAIN PAGE] User detected, redirecting to role-specific page:', user.role);
+    const token = localStorage.getItem('token');
+
+    if (user && user.role && token) {
+      console.log('👤 [MAIN PAGE] User detected with valid token, redirecting to role-specific page:', user.role);
       setIsRedirecting(true);
 
       let targetPath = '/';
@@ -55,8 +58,13 @@ export default function HomePage() {
       }
 
       router.replace(targetPath);
+    } else if (user && !token) {
+      // User data exists but no token - clear stale user data
+      console.log('⚠️ [MAIN PAGE] User data exists without token, clearing stale data');
+      setUser(null);
+      setIsRedirecting(false);
     }
-  }, [user, router]);
+  }, [user, router, setUser]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

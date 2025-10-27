@@ -640,6 +640,321 @@ export const resourceDb = {
   }
 };
 
+/**
+ * Community operations - Supabase implementation
+ */
+export const communityDb = {
+  /**
+   * Create new community post
+   */
+  create: async (postData: {
+    id: string;
+    title: string;
+    content: string;
+    author: string;
+    author_id: string;
+    category: string;
+  }) => {
+    const { data, error } = await supabase
+      .from('community_posts')
+      .insert({
+        id: postData.id,
+        title: postData.title,
+        content: postData.content,
+        author: postData.author,
+        author_id: postData.author_id,
+        category: postData.category,
+        likes: 0,
+        liked_by: []
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating community post:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Find all community posts with filters
+   */
+  findAll: async (filters?: { category?: string; search?: string; limit?: number; offset?: number }) => {
+    let query = supabase
+      .from('community_posts')
+      .select('*');
+
+    if (filters?.category && filters.category !== 'all') {
+      query = query.eq('category', filters.category);
+    }
+
+    if (filters?.search) {
+      query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+
+    if (filters?.offset) {
+      query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error finding community posts:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Find post by ID
+   */
+  findById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('community_posts')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error finding community post:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  /**
+   * Update post
+   */
+  update: async (id: string, postData: {
+    title?: string;
+    content?: string;
+    category?: string;
+  }) => {
+    const updates: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (postData.title !== undefined) updates.title = postData.title;
+    if (postData.content !== undefined) updates.content = postData.content;
+    if (postData.category !== undefined) updates.category = postData.category;
+
+    const { data, error } = await supabase
+      .from('community_posts')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating community post:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Delete post
+   */
+  delete: async (id: string, authorId: string) => {
+    const { error } = await supabase
+      .from('community_posts')
+      .delete()
+      .eq('id', id)
+      .eq('author_id', authorId);
+
+    if (error) {
+      console.error('Error deleting community post:', error);
+      throw error;
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * Toggle like on post
+   */
+  toggleLike: async (postId: string, userId: string) => {
+    // First, get the current post
+    const { data: post, error: fetchError } = await supabase
+      .from('community_posts')
+      .select('likes, liked_by')
+      .eq('id', postId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching post for like:', fetchError);
+      throw fetchError;
+    }
+
+    const likedBy = post.liked_by || [];
+    const hasLiked = likedBy.includes(userId);
+
+    const { data, error } = await supabase
+      .from('community_posts')
+      .update({
+        likes: hasLiked ? post.likes - 1 : post.likes + 1,
+        liked_by: hasLiked
+          ? likedBy.filter((id: string) => id !== userId)
+          : [...likedBy, userId],
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', postId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error toggling like:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Get post count by category
+   */
+  getCountByCategory: async () => {
+    const { data, error } = await supabase
+      .from('community_posts')
+      .select('category');
+
+    if (error) {
+      console.error('Error getting post count:', error);
+      return {};
+    }
+
+    const counts: Record<string, number> = {};
+    data.forEach((post: any) => {
+      counts[post.category] = (counts[post.category] || 0) + 1;
+    });
+
+    return counts;
+  }
+};
+
+/**
+ * Community comments operations - Supabase implementation
+ */
+export const communityCommentDb = {
+  /**
+   * Create new comment
+   */
+  create: async (commentData: {
+    id: string;
+    post_id: string;
+    content: string;
+    author: string;
+    author_id: string;
+    parent_comment_id?: string;
+  }) => {
+    const { data, error } = await supabase
+      .from('community_comments')
+      .insert({
+        id: commentData.id,
+        post_id: commentData.post_id,
+        content: commentData.content,
+        author: commentData.author,
+        author_id: commentData.author_id,
+        parent_comment_id: commentData.parent_comment_id || null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating comment:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Find comments by post ID
+   */
+  findByPostId: async (postId: string) => {
+    const { data, error } = await supabase
+      .from('community_comments')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error finding comments:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Update comment
+   */
+  update: async (id: string, content: string) => {
+    const { data, error } = await supabase
+      .from('community_comments')
+      .update({
+        content,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating comment:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Delete comment
+   */
+  delete: async (id: string, authorId: string) => {
+    const { error } = await supabase
+      .from('community_comments')
+      .delete()
+      .eq('id', id)
+      .eq('author_id', authorId);
+
+    if (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * Get comment count for post
+   */
+  getCountByPostId: async (postId: string) => {
+    const { count, error } = await supabase
+      .from('community_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+
+    if (error) {
+      console.error('Error getting comment count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  }
+};
+
 // Export Supabase client for direct use if needed
 export { supabase };
 export default supabase;

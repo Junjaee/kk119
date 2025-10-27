@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resourceDb, sessionDb } from '@/lib/db/database';
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const allowedFileTypes = [
   'application/pdf',
@@ -73,30 +76,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'resources');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
+    // Generate unique filename with original extension
+    const fileExtension = file.name.split('.').pop() || 'bin';
+    const uniqueFilename = `${Date.now()}-${randomUUID()}.${fileExtension}`;
+    const storagePath = `resources/${uniqueFilename}`;
 
-    // Generate unique filename
-    const fileExtension = path.extname(file.name);
-    const uniqueFilename = `${randomUUID()}${fileExtension}`;
-    const filePath = path.join(uploadsDir, uniqueFilename);
-    const relativeFilePath = `/uploads/resources/${uniqueFilename}`;
-
-    // Save file to disk
+    // Upload file to Supabase Storage
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
 
-    // Save to database
-    const resource = resourceDb.create({
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('resources')
+      .upload(storagePath, buffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      return NextResponse.json(
+        { error: `파일 업로드 실패: ${uploadError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Get public URL (for reference, but we'll use signed URLs for downloads)
+    const { data: { publicUrl } } = supabase.storage
+      .from('resources')
+      .getPublicUrl(storagePath);
+
+    // Save to database using resourceDb
+    const resource = await resourceDb.create({
       title: title.trim(),
-      description: description?.trim() || null,
+      description: description?.trim() || undefined,
       category: category,
       fileName: file.name,
-      filePath: relativeFilePath,
+      filePath: storagePath, // Store the storage path instead of local path
       fileSize: file.size,
       fileType: file.type,
       uploadedBy: user.id
@@ -109,7 +125,8 @@ export async function POST(request: NextRequest) {
           id: resource.id,
           title: resource.title,
           category: resource.category,
-          fileName: resource.fileName
+          fileName: resource.file_name,
+          filePath: resource.file_path
         }
       },
       { status: 201 }
@@ -118,7 +135,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { error: '업로드 중 오류가 발생했습니다.' },
+      { error: `업로드 중 오류가 발생했습니다: ${error.message}` },
       { status: 500 }
     );
   }

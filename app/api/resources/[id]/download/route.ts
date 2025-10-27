@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resourceDb } from '@/lib/db/database';
-import { readFile } from 'fs/promises';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(
   request: NextRequest,
@@ -17,8 +21,8 @@ export async function GET(
       );
     }
 
-    // Find resource
-    const resource = resourceDb.findById(resourceId);
+    // Find resource from database
+    const resource = await resourceDb.findById(resourceId);
     if (!resource) {
       return NextResponse.json(
         { error: '자료를 찾을 수 없습니다.' },
@@ -26,39 +30,29 @@ export async function GET(
       );
     }
 
-    // Get file path
-    const filePath = path.join(process.cwd(), 'public', resource.file_path);
+    // Increment download count
+    await resourceDb.incrementDownloadCount(resourceId);
 
-    try {
-      // Read file
-      const fileBuffer = await readFile(filePath);
+    // Generate signed URL from Supabase Storage (valid for 1 hour)
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from('resources')
+      .createSignedUrl(resource.file_path, 3600);
 
-      // Increment download count
-      resourceDb.incrementDownloadCount(resourceId);
-
-      // Set appropriate headers
-      const headers = new Headers();
-      headers.set('Content-Type', resource.file_type);
-      headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(resource.file_name)}"`);
-      headers.set('Content-Length', resource.file_size.toString());
-
-      return new NextResponse(fileBuffer, {
-        status: 200,
-        headers
-      });
-
-    } catch (fileError) {
-      console.error('File read error:', fileError);
+    if (signedUrlError || !signedUrlData) {
+      console.error('Signed URL error:', signedUrlError);
       return NextResponse.json(
-        { error: '파일을 읽을 수 없습니다.' },
+        { error: '다운로드 링크 생성에 실패했습니다.' },
         { status: 500 }
       );
     }
 
+    // Redirect to signed URL for secure download
+    return NextResponse.redirect(signedUrlData.signedUrl);
+
   } catch (error: any) {
     console.error('Download error:', error);
     return NextResponse.json(
-      { error: '다운로드 중 오류가 발생했습니다.' },
+      { error: `다운로드 중 오류가 발생했습니다: ${error.message}` },
       { status: 500 }
     );
   }

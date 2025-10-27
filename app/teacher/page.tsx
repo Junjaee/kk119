@@ -71,14 +71,98 @@ const popularPosts = [
 ];
 
 export default function TeacherPage() {
-  const { user } = useStore();
+  const { user, setUser } = useStore();
   const router = useRouter();
   const [showAllReports, setShowAllReports] = useState(false);
   const [currentReportPage, setCurrentReportPage] = useState(0);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
   const [isLoadingReports, setIsLoadingReports] = useState(true);
   const [reportError, setReportError] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const reportsPerPage = 5;
+
+  // CRITICAL FIX: Initialize user information independently if store is empty
+  // This handles the case where redirects happen before store hydration
+  useEffect(() => {
+    const initializeUserInfo = async () => {
+      console.log('🔍 [TEACHER] Checking user initialization...');
+
+      // If user is already in store, skip manual initialization
+      if (user) {
+        console.log('🔍 [TEACHER] User already in store:', { id: user.id, email: user.email, role: user.role });
+        setIsInitializing(false);
+        return;
+      }
+
+      // Check for token in localStorage
+      const token = localStorage.getItem('token');
+      console.log('🔍 [TEACHER] Token in localStorage:', !!token);
+
+      if (!token) {
+        console.log('🔍 [TEACHER] No token found, redirecting to login');
+        setIsInitializing(false);
+        router.push('/login');
+        return;
+      }
+
+      // Token exists but user is null - fetch user info directly
+      try {
+        console.log('🔍 [TEACHER] Fetching user info from /api/auth/me');
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'omit'
+        });
+
+        console.log('🔍 [TEACHER] /api/auth/me response status:', response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🔍 [TEACHER] User data received:', data.user);
+
+          if (data.user) {
+            const fetchedUser = {
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.name,
+              role: data.user.role,
+              association_id: data.user.association_id,
+              school: data.user.school,
+              position: data.user.position,
+              phone: data.user.phone,
+              isAdmin: data.user.isAdmin,
+              isVerified: data.user.isVerified,
+              created_at: data.user.created_at || data.user.createdAt,
+              updated_at: data.user.updated_at || data.user.updatedAt,
+              last_login: data.user.last_login || data.user.lastLogin
+            };
+
+            console.log('🔍 [TEACHER] Setting user in store:', { id: fetchedUser.id, email: fetchedUser.email, role: fetchedUser.role });
+            setUser(fetchedUser);
+            setIsInitializing(false);
+          }
+        } else if (response.status === 401) {
+          console.log('⚠️ [TEACHER] Token expired or invalid, redirecting to login');
+          localStorage.removeItem('token');
+          localStorage.removeItem('kyokwon119-storage');
+          setIsInitializing(false);
+          router.push('/login');
+        } else {
+          console.error('⚠️ [TEACHER] Unexpected response status:', response.status);
+          setIsInitializing(false);
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('❌ [TEACHER] Error fetching user info:', error);
+        setIsInitializing(false);
+        router.push('/login');
+      }
+    };
+
+    initializeUserInfo();
+  }, []); // Only run once on mount
 
   // Redirect non-teachers to their respective pages (only after user is loaded)
   useEffect(() => {
@@ -157,9 +241,9 @@ export default function TeacherPage() {
     fetchReports();
   }, [user]);
 
-  // Show loading while user is being loaded or if user is not teacher
-  if (!user) {
-    console.log('🔍 [TEACHER] User is null, showing loading');
+  // Show loading while initializing
+  if (isInitializing || !user) {
+    console.log('🔍 [TEACHER] Loading - isInitializing:', isInitializing, 'user:', !!user);
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -172,6 +256,7 @@ export default function TeacherPage() {
     );
   }
 
+  // Show loading if user role is not teacher (redirect in progress)
   if (user.role !== 'teacher') {
     console.log('🔍 [TEACHER] User role is not teacher:', user.role);
     return (

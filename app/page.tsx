@@ -165,18 +165,18 @@ export default function HomePage() {
           <div>
             <Link href="/" className="flex items-center space-x-2 text-white">
               <Shield className="h-8 w-8" />
-              <span className="text-2xl font-bold">개혁신당</span>
+              <span className="text-2xl font-bold">교권119</span>
             </Link>
           </div>
 
           <div className="text-white">
             <div className="text-4xl mb-8">"</div>
             <p className="text-2xl leading-relaxed mb-8">
-              개혁신당 온라인 공천심사 시스템으로 공정하고 투명한 공천 과정을 경험하세요. 모든 과정이 체계적으로 관리되어 더욱 효율적이고 신뢰할 수 있습니다.
+              교권119는 교사의 권리를 보호하고 교권 침해로부터 안전한 교육 환경을 만들기 위해 노력합니다. 전문 변호사와 함께 신속하고 체계적인 법률 상담을 받으세요.
             </p>
             <div>
-              <p className="font-semibold">개혁신당 공천관리위원회</p>
-              <p className="text-sm opacity-90">2028 지방선거 준비위원회</p>
+              <p className="font-semibold">교권119 운영위원회</p>
+              <p className="text-sm opacity-90">교사의 권리, 우리가 지킵니다</p>
             </div>
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function HomePage() {
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-2">로그인</h1>
               <p className="text-gray-600">
-                이메일로 개혁신당 시스템에 로그인하세요
+                이메일로 교권119 시스템에 로그인하세요
               </p>
             </div>
 
@@ -209,7 +209,7 @@ export default function HomePage() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="candidate@reform.kr"
+                    placeholder="teacher@school.ac.kr"
                     value={formData.email}
                     onChange={handleChange}
                     disabled={isLoading}
@@ -290,7 +290,7 @@ export default function HomePage() {
 
               {/* Footer Links */}
               <div className="text-center text-xs text-gray-500 pt-4">
-                로그인함으로써 개혁신당의{' '}
+                로그인함으로써 교권119의{' '}
                 <Link href="/terms" className="text-orange-500 hover:underline">
                   이용약관
                 </Link>

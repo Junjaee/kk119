@@ -30,24 +30,31 @@ export default function HomePage() {
     });
   };
 
-  // Redirect users to their respective role-specific pages
+  // Redirect logged-in users to their respective role-specific pages
+  // This only happens if they somehow end up on the main page while logged in
   useEffect(() => {
-    if (user) {
+    if (user && user.role) {
+      console.log('👤 [MAIN PAGE] User detected, redirecting to role-specific page:', user.role);
       setIsRedirecting(true);
+
+      let targetPath = '/';
       switch (user.role) {
         case 'super_admin':
-          router.push('/super-admin');
+          targetPath = '/super-admin';
           break;
         case 'lawyer':
-          router.push('/lawyer');
+          targetPath = '/lawyer';
           break;
         case 'teacher':
-          router.push('/teacher');
+          targetPath = '/teacher';
           break;
         default:
           setIsRedirecting(false);
-          break;
+          return;
       }
+
+      // Use replace instead of push to prevent back button issues
+      router.replace(targetPath);
     }
   }, [user, router]);
 

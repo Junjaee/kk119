@@ -219,11 +219,9 @@ export default function LoginPage() {
 
       console.log('🔍 Final redirectUrl:', redirectUrl);
 
-      // Use setTimeout to ensure state is updated before redirect
-      setTimeout(() => {
-        console.log('🔄 Executing redirect to:', redirectUrl);
-        window.location.href = redirectUrl; // Force immediate redirect
-      }, 100);
+      // Use router.replace for smoother client-side navigation
+      console.log('🔄 Executing redirect to:', redirectUrl);
+      router.replace(redirectUrl);
       
     } catch (error: any) {
       setError(error.message);

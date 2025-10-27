@@ -22,8 +22,31 @@ import {
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { formatRelativeTime } from '@/lib/utils/date';
-import { localDB, CommunityPost, Comment } from '@/lib/services/localDB';
 import { useStore } from '@/lib/store';
+
+interface CommunityPost {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  author_id: string;
+  category: 'notice' | 'experience' | 'question' | 'tip';
+  likes: number;
+  liked_by: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface Comment {
+  id: string;
+  post_id: string;
+  content: string;
+  author: string;
+  author_id: string;
+  parent_comment_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,21 +86,30 @@ export default function PostDetailPage() {
   useEffect(() => {
     if (!postId) return;
 
-    const loadPost = () => {
+    const loadPost = async () => {
       try {
-        const postData = localDB.getPostById(postId);
-        if (!postData) {
-          router.push('/community');
-          return;
+        setLoading(true);
+
+        // Load post from API
+        const response = await fetch(`/api/community/posts/${postId}`);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            toast.error('게시글을 찾을 수 없습니다.');
+            router.push('/community');
+            return;
+          }
+          throw new Error('Failed to load post');
         }
 
+        const postData = await response.json();
         setPost(postData);
-        
-        // Load comments
-        const postComments = localDB.getCommentsByPostId(postId);
-        setComments(postComments);
+
+        // TODO: Load comments from API (not yet implemented)
+        setComments([]);
       } catch (error) {
         console.error('Error loading post:', error);
+        toast.error('게시글을 불러오는데 실패했습니다.');
       } finally {
         setLoading(false);
       }
@@ -86,29 +118,43 @@ export default function PostDetailPage() {
     loadPost();
   }, [postId, router]);
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!post) return;
-    
-    const updatedPost = localDB.togglePostLike(post.id, currentUser.id);
-    if (updatedPost) {
-      setPost(updatedPost);
+
+    try {
+      // Optimistic update
+      setPost(prev => {
+        if (!prev) return prev;
+        const hasLiked = prev.liked_by.includes(currentUser.id);
+        return {
+          ...prev,
+          likes: hasLiked ? prev.likes - 1 : prev.likes + 1,
+          liked_by: hasLiked
+            ? prev.liked_by.filter(id => id !== currentUser.id)
+            : [...prev.liked_by, currentUser.id]
+        };
+      });
+
+      // TODO: Make API call to update like
+      console.log('Toggle like for post:', post.id);
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast.error('좋아요 처리 중 오류가 발생했습니다.');
     }
   };
 
   const handleCommentLike = (commentId: string) => {
-    const updatedComment = localDB.toggleCommentLike(commentId, currentUser.id);
-    if (updatedComment) {
-      setComments(prev => 
-        prev.map(comment => 
-          comment.id === commentId ? updatedComment : comment
-        )
-      );
-    }
+    // TODO: Implement comment like API
+    toast.info('댓글 기능은 아직 구현 중입니다.');
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // TODO: Implement comment creation API
+    toast.info('댓글 기능은 아직 구현 중입니다.');
+    return;
+
     if (!newComment.trim() || !post) {
       alert('댓글 내용을 입력해주세요.');
       return;
@@ -117,19 +163,8 @@ export default function PostDetailPage() {
     setSubmittingComment(true);
 
     try {
-      const commentData = {
-        postId: post.id,
-        content: newComment.trim(),
-        author: currentUser.name,
-        authorId: currentUser.id
-      };
-
-      const savedComment = localDB.createComment(commentData);
-      
-      // Update comments list
-      setComments(prev => [...prev, savedComment]);
+      // API call would go here
       setNewComment('');
-      
     } catch (error) {
       console.error('Error creating comment:', error);
       alert('댓글 작성 중 오류가 발생했습니다.');
@@ -139,26 +174,22 @@ export default function PostDetailPage() {
   };
 
   const handleDeleteComment = (commentId: string) => {
-    if (window.confirm('댓글을 삭제하시겠습니까?')) {
-      const success = localDB.deleteComment(commentId);
-      if (success) {
-        setComments(prev => prev.filter(comment => comment.id !== commentId));
-        toast.success('댓글이 삭제되었습니다.');
-      } else {
-        toast.error('댓글 삭제에 실패했습니다.');
-      }
-    }
+    // TODO: Implement comment deletion API
+    toast.info('댓글 기능은 아직 구현 중입니다.');
   };
 
   const handleDeletePost = async () => {
     try {
-      const success = localDB.deletePost(postId);
-      if (success) {
-        toast.success('게시글이 삭제되었습니다.');
-        router.push('/community');
-      } else {
-        toast.error('게시글 삭제에 실패했습니다.');
+      const response = await fetch(`/api/community/posts/${postId}?authorId=${currentUser.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete post');
       }
+
+      toast.success('게시글이 삭제되었습니다.');
+      router.push('/community');
     } catch (error) {
       console.error('Error deleting post:', error);
       toast.error('게시글 삭제 중 오류가 발생했습니다.');

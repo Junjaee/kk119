@@ -11,16 +11,23 @@ import {
   Award
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const { user } = useStore();
   const router = useRouter();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const handleNavigation = (path: string) => {
-    router.push(path);
+    startTransition(() => {
+      try {
+        router.push(path);
+      } catch (error) {
+        console.error('Navigation error:', error);
+      }
+    });
   };
 
   // Redirect users to their respective role-specific pages
@@ -72,15 +79,17 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleNavigation('/login')}
-                className="px-3 py-2 text-sm border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer font-medium"
+                disabled={isPending}
+                className="px-3 py-2 text-sm border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                로그인
+                {isPending ? '로딩 중...' : '로그인'}
               </button>
               <button
                 onClick={() => handleNavigation('/signup')}
-                className="px-3 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors cursor-pointer font-medium"
+                disabled={isPending}
+                className="px-3 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                회원가입
+                {isPending ? '로딩 중...' : '회원가입'}
               </button>
             </div>
           </div>
@@ -105,17 +114,19 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => handleNavigation('/login')}
-                className="px-6 py-3 text-lg font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer inline-flex items-center justify-center gap-2"
+                disabled={isPending}
+                className="px-6 py-3 text-lg font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                로그인
-                <ArrowRight className="h-5 w-5" />
+                {isPending ? '로딩 중...' : '로그인'}
+                {!isPending && <ArrowRight className="h-5 w-5" />}
               </button>
               <button
                 onClick={() => handleNavigation('/signup')}
-                className="px-6 py-3 text-lg font-medium border-2 border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors cursor-pointer inline-flex items-center justify-center gap-2"
+                disabled={isPending}
+                className="px-6 py-3 text-lg font-medium border-2 border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                회원가입 시작하기
-                <ArrowRight className="h-5 w-5" />
+                {isPending ? '로딩 중...' : '회원가입 시작하기'}
+                {!isPending && <ArrowRight className="h-5 w-5" />}
               </button>
             </div>
           </div>
@@ -264,17 +275,19 @@ export default function HomePage() {
                   <li>
                     <button
                       onClick={() => handleNavigation('/login')}
-                      className="hover:text-white transition-colors cursor-pointer"
+                      disabled={isPending}
+                      className="hover:text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      로그인
+                      {isPending ? '로딩 중...' : '로그인'}
                     </button>
                   </li>
                   <li>
                     <button
                       onClick={() => handleNavigation('/signup')}
-                      className="hover:text-white transition-colors cursor-pointer"
+                      disabled={isPending}
+                      className="hover:text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      회원가입
+                      {isPending ? '로딩 중...' : '회원가입'}
                     </button>
                   </li>
                 </ul>

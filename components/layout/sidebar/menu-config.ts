@@ -53,16 +53,13 @@ export const MENU_CONFIG: Record<UserRole, MenuItem[]> = {
       href: '/reports',
       label: '내 신고 내역',
       icon: Shield,
-      description: '신고 처리 현황',
-      badge: '3건'
+      description: '신고 처리 현황'
     },
     {
       href: '/community',
       label: '커뮤니티',
       icon: Users,
-      description: '교사들과 소통하기',
-      badge: 'HOT',
-      badgeColor: BADGE_COLORS.TRUST_MODERN
+      description: '교사들과 소통하기'
     },
     {
       href: '/resources',

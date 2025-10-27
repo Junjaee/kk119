@@ -14,7 +14,6 @@ import {
   Calendar,
   User,
   MessageCircle,
-  ThumbsUp,
   Trash2,
   Edit3,
   MoreVertical
@@ -240,7 +239,7 @@ export default function PostDetailPage() {
   }
 
   const categoryInfo = getCategoryInfo(post.category);
-  const isLiked = post.likedBy.includes(currentUser.id);
+  const isLiked = post.liked_by.includes(currentUser.id);
 
   return (
     <DashboardLayout>
@@ -255,7 +254,7 @@ export default function PostDetailPage() {
           </Link>
 
           {/* Post Actions - Only show for author */}
-          {post && currentUser.id === post.authorId && (
+          {post && currentUser.id === post.author_id && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -301,7 +300,7 @@ export default function PostDetailPage() {
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{formatRelativeTime(post.createdAt)}</span>
+                  <span>{formatRelativeTime(post.created_at)}</span>
                 </div>
               </div>
 
@@ -386,10 +385,10 @@ export default function PostDetailPage() {
                       <div className="flex items-center gap-2 text-sm">
                         <span className="font-medium">{comment.author}</span>
                         <span className="text-muted-foreground">
-                          {formatRelativeTime(comment.createdAt)}
+                          {formatRelativeTime(comment.created_at)}
                         </span>
                       </div>
-                      {comment.authorId === currentUser.id && (
+                      {comment.author_id === currentUser.id && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -407,21 +406,7 @@ export default function PostDetailPage() {
                     </p>
 
                     {/* Comment Actions */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCommentLike(comment.id)}
-                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                          comment.likedBy.includes(currentUser.id)
-                            ? 'bg-red-50 text-red-600'
-                            : 'hover:bg-gray-100'
-                        }`}
-                      >
-                        <ThumbsUp className={`h-3 w-3 ${
-                          comment.likedBy.includes(currentUser.id) ? 'fill-current' : ''
-                        }`} />
-                        <span>{comment.likes}</span>
-                      </button>
-                    </div>
+                    {/* TODO: Implement comment likes functionality */}
                   </div>
                 ))
               )}

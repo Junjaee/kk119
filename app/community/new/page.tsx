@@ -145,35 +145,44 @@ export default function NewPostPage() {
     setIsSubmitting(true);
 
     try {
-      // Import necessary dependencies
-      const { localDB } = await import('@/lib/services/localDB');
-      const { useStore } = await import('@/lib/store');
-
       // Get user info - for now using placeholder
       const user = { id: 'teacher_001', name: '익명 교사' };
 
-      // Map category to localDB compatible format
-      const categoryMapping: Record<string, 'general' | 'experience' | 'advice' | 'legal' | 'support'> = {
-        'notice': 'general',
+      // Map category to database format (notice, experience, question, tip)
+      const categoryMapping: Record<string, 'notice' | 'experience' | 'question' | 'tip'> = {
+        'notice': 'notice',
         'teaching': 'experience',
         'activity': 'experience',
         'management': 'experience',
-        'question': 'advice',
-        'info': 'general',
+        'question': 'question',
+        'info': 'tip',
         'experience': 'experience',
-        'daily': 'general'
+        'daily': 'tip'
       };
 
-      const mappedCategory = categoryMapping[category] || 'general';
+      const mappedCategory = categoryMapping[category] || 'tip';
 
-      // Create post using localDB
-      const newPost = localDB.createPost({
-        title: title.trim(),
-        content,
-        category: mappedCategory,
-        author: options.is_anonymous ? '익명' : (user?.name || '익명'),
-        authorId: user?.id || 'anonymous_user'
+      // Create post via API
+      const response = await fetch('/api/community/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          content,
+          category: mappedCategory,
+          author: options.is_anonymous ? '익명' : (user?.name || '익명'),
+          authorId: user?.id || 'anonymous_user'
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create post');
+      }
+
+      const newPost = await response.json();
 
       // Clear draft after successful submission
       localStorage.removeItem("community_draft");

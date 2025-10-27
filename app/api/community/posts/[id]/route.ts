@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { communityDb } from "@/lib/db/database";
 
 // GET - 특정 글 조회
 export async function GET(
@@ -7,49 +7,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createClient();
-    
-    // 조회수 증가
-    await supabase.rpc("increment_view_count", { post_id: params.id });
+    // communityDb를 사용하여 글 조회
+    const post = await communityDb.findById(params.id);
 
-    // 글 조회
-    const { data, error } = await supabase
-      .from("community_posts")
-      .select(`
-        *,
-        profiles:author_id (
-          id,
-          username,
-          avatar_url
-        ),
-        community_attachments (
-          id,
-          file_url,
-          file_name,
-          file_size,
-          file_type
-        ),
-        community_comments (
-          id,
-          content,
-          created_at,
-          author_id,
-          profiles:author_id (
-            id,
-            username,
-            avatar_url
-          )
-        ),
-        community_likes (
-          user_id
-        )
-      `)
-      .eq("id", params.id)
-      .single();
+    if (!post) {
+      return NextResponse.json(
+        { error: "Post not found" },
+        { status: 404 }
+      );
+    }
 
-    if (error) throw error;
-
-    return NextResponse.json(data);
+    return NextResponse.json(post);
   } catch (error) {
     console.error("Error fetching post:", error);
     return NextResponse.json(
@@ -65,39 +33,35 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createClient();
-    
-    // 현재 사용자 확인
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    const { searchParams } = new URL(request.url);
+    const authorId = searchParams.get("authorId");
+
+    if (!authorId) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Missing author ID" },
         { status: 401 }
       );
     }
 
     // 작성자 확인
-    const { data: post } = await supabase
-      .from("community_posts")
-      .select("author_id")
-      .eq("id", params.id)
-      .single();
+    const post = await communityDb.findById(params.id);
 
-    if (!post || post.author_id !== user.id) {
+    if (!post) {
+      return NextResponse.json(
+        { error: "Post not found" },
+        { status: 404 }
+      );
+    }
+
+    if (post.author_id !== authorId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    // 글 삭제 (연관 데이터는 CASCADE로 자동 삭제)
-    const { error } = await supabase
-      .from("community_posts")
-      .delete()
-      .eq("id", params.id);
-
-    if (error) throw error;
+    // communityDb를 사용하여 글 삭제
+    await communityDb.delete(params.id, authorId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

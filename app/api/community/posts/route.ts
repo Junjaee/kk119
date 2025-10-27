@@ -1,46 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { communityDb } from "@/lib/db/database";
 
 // GET - 커뮤니티 글 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
-    
+
     const category = searchParams.get("category");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
-    const offset = (page - 1) * limit;
+    const search = searchParams.get("search");
 
-    let query = supabase
-      .from("community_posts")
-      .select(`
-        *,
-        profiles:author_id (
-          id,
-          username,
-          avatar_url
-        ),
-        community_comments (count),
-        community_likes (count)
-      `, { count: 'exact' })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    // communityDb를 사용하여 글 목록 조회
+    const filters: any = {};
 
-    if (category) {
-      query = query.eq("category", category);
+    if (category && category !== "all") {
+      filters.category = category;
     }
 
-    const { data, error, count } = await query;
+    if (search) {
+      filters.search = search;
+    }
 
-    if (error) throw error;
+    const allPosts = await communityDb.findAll(filters);
+
+    // 페이지네이션 적용
+    const offset = (page - 1) * limit;
+    const paginatedPosts = allPosts.slice(offset, offset + limit);
 
     return NextResponse.json({
-      posts: data,
-      totalCount: count,
+      posts: paginatedPosts,
+      totalCount: allPosts.length,
       page,
       limit,
-      totalPages: Math.ceil((count || 0) / limit)
+      totalPages: Math.ceil(allPosts.length / limit)
     });
   } catch (error) {
     console.error("Error fetching posts:", error);
@@ -54,78 +47,38 @@ export async function GET(request: NextRequest) {
 // POST - 새 글 작성
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
     const body = await request.json();
-    
-    // 현재 사용자 확인
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
 
     const {
       title,
       content,
       category,
-      tags,
-      allow_comment = true,
-      is_notice = false,
-      disallow_best = false,
-      disallow_bestcomment = false,
-      disallow_copy = false,
-      disable_notification = false,
-      attachments = []
+      author,
+      authorId,
     } = body;
 
-    // 글 생성
-    const { data: post, error: postError } = await supabase
-      .from("community_posts")
-      .insert({
-        title,
-        content,
-        category,
-        tags,
-        author_id: user.id,
-        allow_comment,
-        is_notice,
-        disallow_best,
-        disallow_bestcomment,
-        disallow_copy,
-        disable_notification,
-        view_count: 0,
-        like_count: 0,
-        comment_count: 0,
-        status: 'published'
-      })
-      .select()
-      .single();
-
-    if (postError) throw postError;
-
-    // 첨부파일 처리
-    if (attachments.length > 0) {
-      const attachmentData = attachments.map((file: any) => ({
-        post_id: post.id,
-        file_url: file.url,
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type
-      }));
-
-      const { error: attachmentError } = await supabase
-        .from("community_attachments")
-        .insert(attachmentData);
-
-      if (attachmentError) {
-        console.error("Attachment error:", attachmentError);
-      }
+    // 필수 필드 검증
+    if (!title || !content || !category || !author || !authorId) {
+      return NextResponse.json(
+        { error: "Missing required fields: title, content, category, author, authorId" },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(post, { status: 201 });
+    // UUID 생성
+    const id = `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // communityDb를 사용하여 글 작성
+    const newPost = await communityDb.create({
+      id,
+      title,
+      content,
+      author,
+      author_id: authorId,
+      category,
+    });
+
+    return NextResponse.json(newPost, { status: 201 });
   } catch (error) {
     console.error("Error creating post:", error);
     return NextResponse.json(
@@ -138,48 +91,48 @@ export async function POST(request: NextRequest) {
 // PUT - 글 수정
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createClient();
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, title, content, category, authorId } = body;
 
-    // 현재 사용자 확인
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    // 필수 필드 검증
+    if (!id) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Missing post ID" },
+        { status: 400 }
+      );
+    }
+
+    if (!authorId) {
+      return NextResponse.json(
+        { error: "Missing author ID" },
         { status: 401 }
       );
     }
 
     // 작성자 확인
-    const { data: existingPost } = await supabase
-      .from("community_posts")
-      .select("author_id")
-      .eq("id", id)
-      .single();
+    const existingPost = await communityDb.findById(id);
+    if (!existingPost) {
+      return NextResponse.json(
+        { error: "Post not found" },
+        { status: 404 }
+      );
+    }
 
-    if (!existingPost || existingPost.author_id !== user.id) {
+    if (existingPost.author_id !== authorId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    // 글 업데이트
-    const { data, error } = await supabase
-      .from("community_posts")
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", id)
-      .select()
-      .single();
+    // communityDb를 사용하여 글 수정
+    const updatedPost = await communityDb.update(id, {
+      title,
+      content,
+      category,
+    });
 
-    if (error) throw error;
-
-    return NextResponse.json(data);
+    return NextResponse.json(updatedPost);
   } catch (error) {
     console.error("Error updating post:", error);
     return NextResponse.json(

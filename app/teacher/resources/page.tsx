@@ -55,10 +55,35 @@ function formatFileSize(bytes: number): string {
 }
 
 function getFileIcon(fileType: string) {
-  if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
-  if (fileType.includes('word') || fileType.includes('hwp')) return <FileText className="h-4 w-4 text-blue-500" />;
-  if (fileType.includes('presentation')) return <FileText className="h-4 w-4 text-orange-500" />;
-  if (fileType.includes('spreadsheet')) return <FileText className="h-4 w-4 text-green-500" />;
+  // PDF files
+  if (fileType.includes('pdf')) {
+    return <FileText className="h-4 w-4 text-red-500" />;
+  }
+  // HWP (한글) files - specific handling for Korean document format
+  if (fileType.includes('hwp') || fileType.includes('x-hwp')) {
+    return <FileText className="h-4 w-4 text-blue-600" />;
+  }
+  // Word documents
+  if (fileType.includes('word') || fileType.includes('msword') || fileType.includes('wordprocessingml')) {
+    return <FileText className="h-4 w-4 text-blue-500" />;
+  }
+  // PowerPoint presentations
+  if (fileType.includes('presentation') || fileType.includes('powerpoint')) {
+    return <FileText className="h-4 w-4 text-orange-500" />;
+  }
+  // Excel spreadsheets
+  if (fileType.includes('spreadsheet') || fileType.includes('excel')) {
+    return <FileText className="h-4 w-4 text-green-500" />;
+  }
+  // Images
+  if (fileType.includes('image')) {
+    return <File className="h-4 w-4 text-purple-500" />;
+  }
+  // Text files
+  if (fileType.includes('text')) {
+    return <FileText className="h-4 w-4 text-gray-600" />;
+  }
+  // Default
   return <File className="h-4 w-4 text-gray-500" />;
 }
 
@@ -66,6 +91,7 @@ export default function ResourcesPage() {
   const { user } = useStore();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -94,25 +120,49 @@ export default function ResourcesPage() {
     fetchResources();
   }, [selectedCategory, searchTerm]);
 
-  const handleDownload = async (resourceId: number) => {
+  const handleDownload = async (resourceId: number, fileName: string) => {
     try {
-      const response = await fetch(`/api/resources/${resourceId}/download`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = ''; // Filename will be set by Content-Disposition header
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+      setDownloadingId(resourceId);
 
-        // Refresh resources to update download count
-        fetchResources();
+      const response = await fetch(`/api/resources/${resourceId}/download`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '다운로드에 실패했습니다.');
       }
-    } catch (error) {
+
+      // Get filename from Content-Disposition header or use provided fileName
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let downloadFileName = fileName;
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          downloadFileName = matches[1].replace(/['"]/g, '');
+        }
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = downloadFileName;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      // Show success feedback
+      alert('다운로드가 시작되었습니다.');
+
+      // Refresh resources to update download count
+      fetchResources();
+    } catch (error: any) {
       console.error('Download failed:', error);
+      alert(error.message || '다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -283,10 +333,20 @@ export default function ResourcesPage() {
                       <Button
                         size="sm"
                         className="btn-trust-modern"
-                        onClick={() => handleDownload(resource.id)}
+                        onClick={() => handleDownload(resource.id, resource.file_name)}
+                        disabled={downloadingId === resource.id}
                       >
-                        <Download className="h-4 w-4 mr-1" />
-                        다운로드
+                        {downloadingId === resource.id ? (
+                          <>
+                            <div className="h-4 w-4 mr-1 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            다운로드 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-1" />
+                            다운로드
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>

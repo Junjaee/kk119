@@ -1780,10 +1780,10 @@
               2
             ],
             "details": "lib/db/supabase-database.ts의 resourceDb에 delete 메소드를 추가하여 리소스 삭제 시 Storage에서도 파일을 삭제하도록 구현합니다. 또한 트랜잭션 처리를 통해 데이터베이스 레코드와 Storage 파일의 일관성을 보장합니다. app/api/resources/[id]/route.ts에 DELETE 엔드포인트를 생성하여 삭제 기능을 제공합니다.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "파일 삭제 시 DB 레코드와 Storage 파일 모두 삭제 확인, 트랜잭션 롤백 시나리오 테스트, 권한 없는 사용자의 삭제 시도 차단 확인",
             "parentId": "undefined",
-            "updatedAt": "2025-10-28T01:04:43.981Z"
+            "updatedAt": "2025-10-28T01:05:52.292Z"
           },
           {
             "id": 4,
@@ -1793,9 +1793,10 @@
               1
             ],
             "details": "현재 handleDownload 함수가 단순히 fetch만 하고 있는데, 이를 개선하여 다운로드 진행 상태를 표시하고 에러 발생 시 사용자에게 명확한 피드백을 제공합니다. 또한 HWP 파일 등 한국 특화 파일 형식에 대한 아이콘 매핑을 추가하고, 다운로드 중 버튼 비활성화 등 UX를 개선합니다.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "다양한 파일 형식 다운로드 테스트, 로딩 상태 UI 확인, 에러 발생 시 사용자 피드백 확인, 파일 타입별 아이콘 정확성 검증",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T01:05:56.631Z"
           },
           {
             "id": 5,
@@ -1813,12 +1814,12 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-10-28T01:04:43.981Z"
+        "updatedAt": "2025-10-28T01:05:56.631Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-28T01:04:43.984Z",
+      "lastModified": "2025-10-28T01:05:56.634Z",
       "taskCount": 25,
       "completedCount": 24,
       "tags": [

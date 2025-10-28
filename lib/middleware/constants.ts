@@ -20,16 +20,14 @@ export const AUTH_CONSTANTS = {
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   teacher: 1,
   lawyer: 2,
-  admin: 3,
-  super_admin: 4
+  admin: 3
 } as const;
 
 // Default redirect paths for each role
 export const DEFAULT_ROLE_REDIRECTS: Record<UserRole, string> = {
   teacher: '/reports',
   lawyer: '/lawyer',
-  admin: '/associadmin',
-  super_admin: '/admin'
+  admin: '/admin'
 } as const;
 
 // Public paths that don't require authentication
@@ -52,15 +50,12 @@ export const PUBLIC_PATHS = [
 
 // Role-based path configurations
 export const ROLE_PATHS: Record<UserRole, readonly string[]> = {
-  super_admin: [
-    '/super-admin',
-    '/admin/associations',
-    '/admin/users/manage'
-  ],
   admin: [
     '/admin',
     '/admin/members',
-    '/admin/reports'
+    '/admin/reports',
+    '/admin/associations',
+    '/admin/users/manage'
   ],
   lawyer: [],
   teacher: [
@@ -86,6 +81,5 @@ export const SPECIAL_PATHS = {
   LOGIN: '/login',
   SIGNUP: '/signup',
   ADMIN: '/admin',
-  ADMIN_DASHBOARD: '/associadmin',
   LAWYER: '/lawyer'
 } as const;

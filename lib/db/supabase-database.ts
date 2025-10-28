@@ -602,9 +602,35 @@ export const resourceDb = {
   },
 
   /**
-   * Delete resource
+   * Delete resource (with Storage file cleanup)
    */
   delete: async (id: number, userId: number) => {
+    // First, get the resource to find its file_path
+    const { data: resource, error: fetchError } = await supabase
+      .from('resources')
+      .select('file_path')
+      .eq('id', id)
+      .eq('uploaded_by', userId)
+      .single();
+
+    if (fetchError || !resource) {
+      console.error('Error fetching resource for deletion:', fetchError);
+      return { changes: 0 };
+    }
+
+    // Delete from Storage first
+    if (resource.file_path) {
+      const { error: storageError } = await supabase.storage
+        .from('resources')
+        .remove([resource.file_path]);
+
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+        // Continue with DB deletion even if storage deletion fails
+      }
+    }
+
+    // Delete from database
     const { error } = await supabase
       .from('resources')
       .delete()
@@ -612,7 +638,7 @@ export const resourceDb = {
       .eq('uploaded_by', userId);
 
     if (error) {
-      console.error('Error deleting resource:', error);
+      console.error('Error deleting resource from DB:', error);
       return { changes: 0 };
     }
 

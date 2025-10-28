@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { supabaseAdmin } from '@/lib/db/supabase';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'kyokwon119-secret-key-2024-change-this-in-production';
-const dbPath = path.join(process.cwd(), 'data', 'kyokwon119.db');
 
 export async function GET(request: Request) {
   try {
@@ -24,39 +22,33 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Get user from database
-    const db = new Database(dbPath);
+    // Get user from Supabase
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('id, email, name, role, phone, grade, position, is_admin, is_approved, created_at')
+      .eq('id', decoded.userId)
+      .single();
 
-    try {
-      const user = db.prepare(`
-        SELECT id, email, name, role, phone, association_name, grade, position, is_admin, is_approved, created_at
-        FROM users
-        WHERE id = ?
-      `).get(decoded.userId) as any;
-
-      if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
-
-      // Return user data
-      return NextResponse.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          phone: user.phone,
-          associationName: user.association_name,
-          grade: user.grade,
-          position: user.position,
-          isAdmin: Boolean(user.is_admin),
-          isApproved: Boolean(user.is_approved),
-          createdAt: user.created_at
-        }
-      });
-    } finally {
-      db.close();
+    if (error || !user) {
+      console.error('[AUTH/ME] User not found:', error);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    // Return user data
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        grade: user.grade,
+        position: user.position,
+        isAdmin: Boolean(user.is_admin),
+        isApproved: Boolean(user.is_approved),
+        createdAt: user.created_at
+      }
+    });
   } catch (error: any) {
     console.error('[AUTH/ME] Error:', error);
 

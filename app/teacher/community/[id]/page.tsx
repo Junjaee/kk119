@@ -95,7 +95,7 @@ export default function PostDetailPage() {
         if (!response.ok) {
           if (response.status === 404) {
             toast.error('게시글을 찾을 수 없습니다.');
-            router.push('/community');
+            router.push('/teacher/community');
             return;
           }
           throw new Error('Failed to load post');
@@ -188,7 +188,7 @@ export default function PostDetailPage() {
       }
 
       toast.success('게시글이 삭제되었습니다.');
-      router.push('/community');
+      router.push('/teacher/community');
     } catch (error) {
       console.error('Error deleting post:', error);
       toast.error('게시글 삭제 중 오류가 발생했습니다.');
@@ -227,7 +227,7 @@ export default function PostDetailPage() {
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold mb-2">게시글을 찾을 수 없습니다</h3>
           <p className="text-muted-foreground mb-4">삭제되었거나 존재하지 않는 게시글입니다.</p>
-          <Link href="/community">
+          <Link href="/teacher/community">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />
               커뮤니티로 돌아가기
@@ -246,7 +246,7 @@ export default function PostDetailPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Link href="/community">
+          <Link href="/teacher/community">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               커뮤니티로 돌아가기

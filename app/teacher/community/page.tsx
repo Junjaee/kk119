@@ -177,7 +177,7 @@ export default function CommunityPage() {
               초등교사 선생님들과 교육 현장의 경험을 공유하세요
             </p>
           </div>
-          <Link href="/community/new">
+          <Link href="/teacher/community/new">
             <Button size="lg" className="gap-2">
               <Plus className="h-5 w-5" />
               글쓰기
@@ -296,7 +296,7 @@ export default function CommunityPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 첫 번째 게시글을 작성해보세요!
               </p>
-              <Link href="/community/new">
+              <Link href="/teacher/community/new">
                 <Button>글쓰기</Button>
               </Link>
             </CardContent>

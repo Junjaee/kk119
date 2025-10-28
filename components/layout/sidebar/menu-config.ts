@@ -38,31 +38,31 @@ export const BADGE_COLORS = {
 export const MENU_CONFIG: Record<UserRole, MenuItem[]> = {
   teacher: [
     {
-      href: '/',
+      href: '/teacher',
       label: '홈',
       icon: Home,
       description: '대시보드 개요'
     },
     {
-      href: '/reports/new',
+      href: '/teacher/reports/new',
       label: '신고 접수',
       icon: FileText,
       description: '교권 침해 신고하기'
     },
     {
-      href: '/reports',
+      href: '/teacher/reports',
       label: '내 신고 내역',
       icon: Shield,
       description: '신고 처리 현황'
     },
     {
-      href: '/community',
+      href: '/teacher/community',
       label: '커뮤니티',
       icon: Users,
       description: '교사들과 소통하기'
     },
     {
-      href: '/resources',
+      href: '/teacher/resources',
       label: '교권 자료실',
       icon: BookOpen,
       description: '유용한 자료와 가이드'
@@ -186,8 +186,8 @@ export function getMenuItemsForRole(role: UserRole): MenuItem[] {
  * Following Single Responsibility Principle
  */
 export function isMenuItemActive(currentPath: string, menuHref: string): boolean {
-  // Exact match for root and reports paths to prevent false positives
-  if (menuHref === '/' || menuHref === '/reports') {
+  // Exact match for root, teacher home, and reports paths to prevent false positives
+  if (menuHref === '/' || menuHref === '/teacher' || menuHref === '/reports' || menuHref === '/teacher/reports') {
     return currentPath === menuHref;
   }
 

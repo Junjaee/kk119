@@ -164,7 +164,7 @@ export default function ReportDetailPage() {
 
         setShowDeleteModal(false);
         toast.success('신고가 성공적으로 삭제되었습니다');
-        router.push('/reports');
+        router.push('/teacher/reports');
       } else {
         throw new Error('삭제 실패');
       }
@@ -204,7 +204,7 @@ export default function ReportDetailPage() {
           <p className="text-muted-foreground mb-6">
             요청하신 신고 내역이 존재하지 않거나 삭제되었을 수 있습니다.
           </p>
-          <Button onClick={() => router.push('/reports')}>
+          <Button onClick={() => router.push('/teacher/reports')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             신고 내역으로 돌아가기
           </Button>
@@ -302,7 +302,7 @@ export default function ReportDetailPage() {
               <div className="flex items-start space-x-6">
                 <Button
                   variant="outline"
-                  onClick={() => router.push('/reports')}
+                  onClick={() => router.push('/teacher/reports')}
                   className="flex items-center hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800 shadow-sm"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />

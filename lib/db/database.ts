@@ -8,12 +8,16 @@
 // Check which database backend to use
 const USE_SUPABASE = process.env.NEXT_PUBLIC_USE_SUPABASE === 'true';
 
-console.log(USE_SUPABASE ?'🚀 Using Supabase PostgreSQL database' : '📁 Using SQLite database (better-sqlite3)');
+console.log(USE_SUPABASE ? '🚀 Using Supabase PostgreSQL database' : '📁 Using SQLite database (better-sqlite3)');
 
-// Import the correct implementation
-const dbModule = USE_SUPABASE
-  ? await import('./supabase-database')
-  : await import('./database-sqlite');
+// Import the correct implementation synchronously
+let dbModule: any;
+
+if (USE_SUPABASE) {
+  dbModule = require('./supabase-database');
+} else {
+  dbModule = require('./database-sqlite');
+}
 
 // Re-export all named exports
 export const initDatabase = dbModule.initDatabase;

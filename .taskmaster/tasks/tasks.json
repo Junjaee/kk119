@@ -1581,7 +1581,7 @@
         "id": "33",
         "title": "커뮤니티와 교권자료실 글쓰기 실제 DB 저장 구현",
         "description": "현재 localDB(localStorage)로만 저장되는 커뮤니티와 교권자료실 글쓰기 기능을 Supabase PostgreSQL에 직접 저장하도록 수정하여 영구 데이터 저장 및 다중 사용자 접근을 가능하게 합니다.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "32"
         ],
@@ -1631,10 +1631,10 @@
               2
             ],
             "details": "app/api/resources/upload/route.ts를 수정하여 SQLite 대신 Supabase를 사용하도록 변경합니다. lib/db/supabase-database.ts에 resourcesDb 함수를 추가하고, Supabase Storage에 'resources' 버킷을 생성하여 교육 자료 파일을 저장합니다. 파일 메타데이터는 resources 테이블에 저장하고, 다운로드 시 signed URL을 생성하여 보안을 강화합니다.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "파일 업로드 후 Supabase 테이블 및 Storage 확인, 다운로드 링크 동작 테스트, 권한 없는 사용자 접근 차단 확인",
             "parentId": "undefined",
-            "updatedAt": "2025-10-27T07:44:03.466Z"
+            "updatedAt": "2025-10-27T07:47:02.636Z"
           },
           {
             "id": 5,
@@ -1644,19 +1644,103 @@
               2
             ],
             "details": "app/community/page.tsx의 useEffect에서 localDB 대신 /api/community/posts GET 요청을 사용합니다. app/community/[id]/page.tsx도 마찬가지로 API 호출로 변경합니다. 실시간 업데이트를 위해 Supabase Realtime 구독을 선택적으로 구현하고, 댓글과 좋아요 기능도 Supabase community_comments, community_likes 테이블과 연동합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "글 목록 페이지에서 Supabase 데이터 표시 확인, 상세 페이지 정상 로딩, 댓글/좋아요 기능 동작 테스트, 실시간 업데이트 검증",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-10-27T07:50:14.612Z"
           }
         ],
-        "updatedAt": "2025-10-27T07:44:03.466Z"
+        "updatedAt": "2025-10-27T07:50:14.612Z"
+      },
+      {
+        "id": "34",
+        "title": "교사 전용 게시판 경로 재구성 및 라우팅 마이그레이션",
+        "description": "현재 루트 레벨에 있는 /reports, /community, /resources 등의 교사 전용 페이지들을 /teacher 하위 경로로 재구성하고, 관련된 모든 라우팅, 링크, 리디렉션을 수정합니다.",
+        "details": "Next.js App Router 구조 분석 및 경로 재구성:\n\n1. **현재 구조 분석**\n   - app/reports/: 신고 관리 페이지\n   - app/community/: 커뮤니티 게시판\n   - app/resources/: 교권자료실\n   - app/consult/: 상담 관리\n   - 각 경로의 page.tsx, layout.tsx, API routes 확인\n\n2. **새로운 디렉토리 구조 생성**\n   - app/teacher/reports/로 이동 (기존 app/reports/)\n   - app/teacher/community/로 이동 (기존 app/community/)\n   - app/teacher/resources/로 이동 (기존 app/resources/)\n   - app/teacher/consult/로 이동 (기존 app/consult/)\n   - 각 폴더의 모든 하위 파일과 디렉토리 포함\n\n3. **라우팅 및 링크 업데이트**\n   - components/Header.tsx의 네비게이션 링크 수정\n   - components/Sidebar.tsx의 메뉴 링크 업데이트\n   - app/teacher/page.tsx 대시보드의 카드 링크 수정:\n     * /reports → /teacher/reports\n     * /community → /teacher/community\n     * /resources → /teacher/resources\n   - router.push(), router.replace() 호출 부분 전체 검색 및 수정\n   - Link 컴포넌트의 href 속성 업데이트\n\n4. **API 라우트 경로 수정**\n   - app/api/reports/: 그대로 유지 (API는 /api 하위 유지)\n   - app/api/community/: 그대로 유지\n   - app/api/resources/: 그대로 유지\n   - 프론트엔드에서 API 호출 경로는 변경 불필요\n\n5. **리디렉션 설정**\n   - next.config.js에 redirects 설정 추가:\n     ```javascript\n     async redirects() {\n       return [\n         { source: '/reports/:path*', destination: '/teacher/reports/:path*', permanent: true },\n         { source: '/community/:path*', destination: '/teacher/community/:path*', permanent: true },\n         { source: '/resources/:path*', destination: '/teacher/resources/:path*', permanent: true },\n         { source: '/consult/:path*', destination: '/teacher/consult/:path*', permanent: true },\n       ]\n     }\n     ```\n\n6. **상대 경로 import 수정**\n   - 이동된 파일들의 import 경로 업데이트\n   - '@/lib', '@/components' 등 절대 경로는 그대로 유지\n   - '../' 상대 경로들은 새 위치에 맞게 조정\n\n7. **권한 체크 미들웨어 업데이트**\n   - middleware.ts에서 /teacher/* 경로 보호 확인\n   - 교사 로그인 필수 경로로 설정\n   - 비로그인 사용자는 /login으로 리디렉션\n\n8. **브레드크럼 및 페이지 타이틀 수정**\n   - 각 페이지의 metadata와 타이틀 업데이트\n   - 브레드크럼 컴포넌트가 있다면 경로 수정",
+        "testStrategy": "1. **경로 이동 검증**\n   - /teacher/reports, /teacher/community, /teacher/resources 접근 가능 확인\n   - 각 페이지의 모든 기능 정상 작동 테스트\n\n2. **리디렉션 테스트**\n   - 기존 /reports URL 접근 시 /teacher/reports로 301 리디렉션 확인\n   - /community, /resources 등도 동일하게 테스트\n   - 하위 경로들도 올바르게 리디렉션되는지 확인\n\n3. **네비게이션 테스트**\n   - Header, Sidebar의 모든 링크 클릭 테스트\n   - 교사 대시보드의 카드 링크 동작 확인\n   - 브라우저 뒤로가기/앞으로가기 정상 작동\n\n4. **API 호출 테스트**\n   - 글쓰기, 수정, 삭제 등 CRUD 기능 테스트\n   - 파일 업로드/다운로드 기능 확인\n   - Supabase 연동 기능 정상 작동 확인\n\n5. **권한 테스트**\n   - 비로그인 상태에서 /teacher/* 접근 시 로그인 페이지로 리디렉션\n   - 교사 계정으로 로그인 후 모든 페이지 접근 가능\n   - 학생 계정으로는 접근 불가 확인\n\n6. **SEO 및 성능 테스트**\n   - 301 리디렉션이 SEO에 미치는 영향 최소화 확인\n   - 페이지 로딩 속도 변화 없음 확인\n   - 콘솔 에러 없음 확인",
+        "status": "in-progress",
+        "dependencies": [
+          "32",
+          "33"
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "교사 전용 페이지 디렉토리 재구조화 및 파일 이동",
+            "description": "현재 루트 레벨에 있는 /reports, /community, /resources 디렉토리를 /teacher 하위로 이동하여 교사 전용 경로 구조를 확립합니다.",
+            "dependencies": [],
+            "details": "app/reports/, app/community/, app/resources/ 디렉토리의 모든 파일과 하위 디렉토리를 app/teacher/ 하위로 이동합니다. 이동 과정에서 page.tsx, layout.tsx, [id]/page.tsx 등 모든 관련 파일이 포함되도록 하며, app/consult은 현재 존재하지 않으므로 제외합니다. 각 디렉토리의 구조를 유지하면서 새로운 경로인 app/teacher/reports/, app/teacher/community/, app/teacher/resources/로 재구성합니다.\n<info added on 2025-10-28T00:19:57.137Z>\nI'll analyze the codebase to understand the current structure and what was moved to provide an accurate update for the subtask.완료: 교사 전용 페이지들(/reports, /community, /resources)이 성공적으로 /teacher/* 디렉토리 구조로 이동되었습니다. 이동 완료된 파일 구조: app/teacher/reports/ (목록/상세/신규 페이지), app/teacher/community/ (목록/상세/수정/신규 페이지), app/teacher/resources/ (목록/업로드 페이지). 기존 루트 레벨 디렉토리들(app/reports/, app/community/, app/resources/)은 모두 삭제되었으며, git status에서 deleted 상태로 확인됩니다. 다음 단계: 네비게이션 컴포넌트와 라우팅 설정 업데이트가 필요합니다.\n</info added on 2025-10-28T00:19:57.137Z>",
+            "status": "pending",
+            "testStrategy": "파일 이동 후 새로운 경로인 /teacher/reports, /teacher/community, /teacher/resources에서 각 페이지가 정상적으로 렌더링되는지 확인하고, 기존 경로가 404를 반환하는지 검증합니다.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "네비게이션 컴포넌트의 링크 경로 업데이트",
+            "description": "Header와 Sidebar 컴포넌트의 네비게이션 링크를 새로운 /teacher 하위 경로로 업데이트합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "components/layout/sidebar/menu-config.ts의 teacher 역할 메뉴 항목들의 href 속성을 수정합니다: '/reports' → '/teacher/reports', '/community' → '/teacher/community', '/resources' → '/teacher/resources', '/reports/new' → '/teacher/reports/new'. 교사 대시보드(app/teacher/page.tsx)의 카드 링크들도 동일하게 업데이트하여 341줄 '/reports', 536줄 '/community', 582줄 '/resources', 515줄 '/reports/new' 등을 새로운 경로로 변경합니다.",
+            "status": "done",
+            "testStrategy": "업데이트된 네비게이션 링크를 클릭하여 올바른 /teacher 하위 페이지로 이동하는지 확인하고, 브라우저 개발자 도구에서 404 오류가 발생하지 않는지 검증합니다.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T00:20:14.972Z"
+          },
+          {
+            "id": 3,
+            "title": "페이지 내부 라우팅 및 router.push 호출 수정",
+            "description": "이동된 페이지 파일들 내부의 router.push() 호출과 Link 컴포넌트의 href를 새로운 경로로 업데이트합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "app/teacher/reports/[id]/page.tsx, app/teacher/community/[id]/page.tsx 등 이동된 파일들을 검토하여 내부의 router.push('/reports'), router.push('/community'), router.push('/resources') 호출을 '/teacher/reports', '/teacher/community', '/teacher/resources'로 수정합니다. Link 컴포넌트의 href 속성도 마찬가지로 업데이트하며, 상대 경로나 동적 라우팅이 사용된 부분도 새로운 구조에 맞게 조정합니다.",
+            "status": "done",
+            "testStrategy": "페이지 내에서 발생하는 프로그래매틱 네비게이션(router.push)과 Link 클릭이 올바른 /teacher 하위 경로로 이동하는지 테스트합니다.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T00:20:17.538Z"
+          },
+          {
+            "id": 4,
+            "title": "리디렉션 규칙 설정 및 기존 URL 호환성 유지",
+            "description": "next.config.js에 영구 리디렉션 규칙을 추가하여 기존 URL 접근 시 새로운 /teacher 경로로 자동 리디렉션되도록 설정합니다.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "next.config.js의 redirects() 함수에 새로운 리디렉션 규칙을 추가합니다: { source: '/reports/:path*', destination: '/teacher/reports/:path*', permanent: true }, { source: '/community/:path*', destination: '/teacher/community/:path*', permanent: true }, { source: '/resources/:path*', destination: '/teacher/resources/:path*', permanent: true }. 이를 통해 기존 URL로 접근하는 사용자들이 자동으로 새로운 경로로 이동하도록 하여 북마크나 외부 링크의 호환성을 유지합니다.",
+            "status": "done",
+            "testStrategy": "기존 경로인 /reports, /community, /resources로 직접 접근 시 301 리디렉션이 발생하여 /teacher 하위 경로로 이동하는지 확인하고, 브라우저 개발자 도구의 네트워크 탭에서 리디렉션 상태 코드를 검증합니다.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T00:20:20.193Z"
+          },
+          {
+            "id": 5,
+            "title": "미들웨어 권한 체크 및 교사 전용 경로 보호 설정",
+            "description": "middleware.ts를 업데이트하여 /teacher 하위 경로를 교사 권한이 필요한 보호된 경로로 설정하고 접근 제어를 구현합니다.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "middleware.ts 파일을 수정하여 /teacher로 시작하는 모든 경로를 보호된 경로로 설정합니다. 인증되지 않은 사용자가 /teacher/* 경로에 접근 시 /login으로 리디렉션되도록 하고, 인증된 사용자 중에서도 role이 'teacher'가 아닌 경우 적절한 대시보드로 리디렉션되도록 권한 체크 로직을 추가합니다. 기존의 publicPaths 배열을 업데이트하여 새로운 경로 구조를 반영합니다.",
+            "status": "done",
+            "testStrategy": "로그인하지 않은 상태에서 /teacher 하위 경로 접근 시 로그인 페이지로 리디렉션되는지 확인하고, teacher 이외의 역할로 로그인한 사용자가 접근 시 적절한 권한 오류나 리디렉션이 발생하는지 검증합니다.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T00:20:22.603Z"
+          }
+        ],
+        "updatedAt": "2025-10-28T00:20:22.603Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-27T07:44:03.468Z",
-      "taskCount": 23,
-      "completedCount": 22,
+      "lastModified": "2025-10-28T00:20:22.606Z",
+      "taskCount": 24,
+      "completedCount": 23,
       "tags": [
         "super-admin-system"
       ]

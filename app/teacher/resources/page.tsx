@@ -130,7 +130,7 @@ export default function ResourcesPage() {
               교사들이 공유하는 유용한 교육 자료를 찾아보세요
             </p>
           </div>
-          <Link href="/resources/upload">
+          <Link href="/teacher/resources/upload">
             <Button className="btn-primary-modern">
               <Plus className="h-4 w-4 mr-2" />
               자료 업로드
@@ -318,7 +318,7 @@ export default function ResourcesPage() {
                   필터 초기화
                 </Button>
               ) : (
-                <Link href="/resources/upload">
+                <Link href="/teacher/resources/upload">
                   <Button className="btn-primary-modern">
                     <Plus className="h-4 w-4 mr-2" />
                     자료 업로드

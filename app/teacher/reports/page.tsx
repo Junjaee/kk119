@@ -209,7 +209,7 @@ export default function ReportsPage() {
               총 {reports.length}건의 신고가 있습니다
             </p>
           </div>
-          <Link href="/reports/new">
+          <Link href="/teacher/reports/new">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               새 신고 작성
@@ -336,7 +336,7 @@ export default function ReportsPage() {
                     : '교권 침해를 당하셨다면 신고를 작성해주세요.'}
                 </p>
                 {!searchTerm && filterStatus === 'all' && filterType === 'all' && (
-                  <Link href="/reports/new">
+                  <Link href="/teacher/reports/new">
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
                       첫 신고 작성하기

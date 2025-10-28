@@ -338,7 +338,7 @@ export default function TeacherPage() {
                 <Shield className="h-6 w-6 text-primary-600" />
                 <CardTitle className="text-xl">내 신고 내역</CardTitle>
               </div>
-              <Link href="/reports">
+              <Link href="/teacher/reports">
                 <Button variant="ghost" size="sm" className="text-xs">
                   전체보기 <ArrowRight className="ml-1 h-3 w-3" />
                 </Button>
@@ -512,7 +512,7 @@ export default function TeacherPage() {
                 <p className="text-muted-foreground mb-6">
                   교권 침해 상황이 발생하면 언제든지 신고해주세요
                 </p>
-                <Link href="/reports/new">
+                <Link href="/teacher/reports/new">
                   <Button className="btn-urgent-modern">
                     <Plus className="h-4 w-4 mr-2" />
                     신고 접수하기
@@ -533,7 +533,7 @@ export default function TeacherPage() {
                   <Sparkles className="h-5 w-5 text-trust-600" />
                   <CardTitle>커뮤니티</CardTitle>
                 </div>
-                <Link href="/community">
+                <Link href="/teacher/community">
                   <Button variant="ghost" size="sm" className="text-xs">
                     전체보기 <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
@@ -543,7 +543,7 @@ export default function TeacherPage() {
             <CardContent>
               <div className="space-y-3">
                 {popularPosts.slice(0, 3).map((post) => (
-                  <Link key={post.id} href={`/community/${post.id}`}>
+                  <Link key={post.id} href={`/teacher/community/${post.id}`}>
                     <div className="p-3 rounded-xl bg-trust-50/50 dark:bg-trust-950/20 border border-trust-200/50 dark:border-trust-800/50 hover:bg-trust-100/50 dark:hover:bg-trust-900/30 transition-colors cursor-pointer">
                       <div className="flex items-start justify-between mb-2">
                         <p className="font-medium text-sm flex-1 leading-relaxed line-clamp-2">{post.title}</p>
@@ -579,7 +579,7 @@ export default function TeacherPage() {
                   <BookOpen className="h-5 w-5 text-secondary-600" />
                   <CardTitle>교권 자료실</CardTitle>
                 </div>
-                <Link href="/resources">
+                <Link href="/teacher/resources">
                   <Button variant="ghost" size="sm" className="text-xs">
                     전체보기 <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
@@ -614,7 +614,7 @@ export default function TeacherPage() {
                     created_at: '2025-08-15T09:15:00Z'
                   }
                 ].slice(0, 3).map((resource) => (
-                  <Link key={resource.id} href={`/resources`}>
+                  <Link key={resource.id} href={`/teacher/resources`}>
                     <div className="p-3 rounded-xl bg-secondary-50/50 dark:bg-secondary-950/20 border border-secondary-200/50 dark:border-secondary-800/50 hover:bg-secondary-100/50 dark:hover:bg-secondary-900/30 transition-colors cursor-pointer">
                       <div className="flex items-start justify-between mb-2">
                         <p className="text-sm font-medium flex-1 line-clamp-2">{resource.title}</p>

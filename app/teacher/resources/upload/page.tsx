@@ -162,7 +162,7 @@ export default function ResourceUploadPage() {
 
       // Success
       setTimeout(() => {
-        router.push('/resources');
+        router.push('/teacher/resources');
       }, 1000);
 
     } catch (error: any) {
@@ -187,7 +187,7 @@ export default function ResourceUploadPage() {
       <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Link href="/resources">
+          <Link href="/teacher/resources">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-1" />
               자료실로 돌아가기
@@ -357,7 +357,7 @@ export default function ResourceUploadPage() {
 
               {/* Submit Button */}
               <div className="flex gap-3 pt-4">
-                <Link href="/resources">
+                <Link href="/teacher/resources">
                   <Button type="button" variant="outline" disabled={isUploading}>
                     취소
                   </Button>

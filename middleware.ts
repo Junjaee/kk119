@@ -23,7 +23,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for authentication
+  // Teacher-only routes (Task 34) - require authentication
+  if (pathname.startsWith('/teacher')) {
+    if (!token) {
+      // Redirect to login if not authenticated
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // Check for authentication for other protected routes
   if (!token) {
     // Redirect to login if not authenticated
     const loginUrl = new URL('/login', request.url);

@@ -56,7 +56,7 @@ export default function EditCommunityPostPage() {
         const foundPost = localDB.getPostById(postId);
         if (!foundPost) {
           toast.error('게시글을 찾을 수 없습니다.');
-          router.push('/community');
+          router.push('/teacher/community');
           return;
         }
 
@@ -76,7 +76,7 @@ export default function EditCommunityPostPage() {
       } catch (error) {
         console.error('Error loading post:', error);
         toast.error('게시글을 불러오는 중 오류가 발생했습니다.');
-        router.push('/community');
+        router.push('/teacher/community');
       } finally {
         setLoading(false);
       }
@@ -174,7 +174,7 @@ export default function EditCommunityPostPage() {
           <CardContent>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">게시글을 찾을 수 없습니다</h3>
             <p className="text-gray-600 mb-4">요청하신 게시글이 존재하지 않거나 삭제되었습니다.</p>
-            <Button onClick={() => router.push('/community')} variant="outline">
+            <Button onClick={() => router.push('/teacher/community')} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               커뮤니티로 돌아가기
             </Button>

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const user = userDb.findByEmail(email) as any;
+    const user = await userDb.findByEmail(email) as any;
     console.log('🔍 Login Debug - User from DB:', {
       id: user?.id,
       email: user?.email,
@@ -45,11 +45,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Update last login
-    userDb.updateLastLogin(user.id);
+    await userDb.updateLastLogin(user.id);
 
     // Generate session token
     const sessionToken = auth.generateSessionToken();
-    sessionDb.create(user.id, sessionToken);
+    await sessionDb.create(user.id, sessionToken);
 
     // Generate JWT token pair using enhanced auth
     const tokenPair = await enhancedAuth.generateTokenPair({

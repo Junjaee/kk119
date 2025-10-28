@@ -119,10 +119,26 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
+      // 교사 전용 페이지 리다이렉트 (Task 34)
+      {
+        source: '/reports/:path*',
+        destination: '/teacher/reports/:path*',
+        permanent: true,
+      },
+      {
+        source: '/community/:path*',
+        destination: '/teacher/community/:path*',
+        permanent: true,
+      },
+      {
+        source: '/resources/:path*',
+        destination: '/teacher/resources/:path*',
+        permanent: true,
+      },
       // 구버전 URL 호환성
       {
         source: '/old-reports',
-        destination: '/reports',
+        destination: '/teacher/reports',
         permanent: true,
       },
     ];

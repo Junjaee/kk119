@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = userDb.findByEmail(email);
+    const existingUser = await userDb.findByEmail(email);
     if (existingUser) {
       return NextResponse.json(
         { error: '이미 등록된 이메일입니다.' },
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     // Generate session token
     const sessionToken = auth.generateSessionToken();
-    sessionDb.create(Number(user.id), sessionToken);
+    await sessionDb.create(Number(user.id), sessionToken);
 
     // Generate JWT token
     const jwtToken = auth.generateToken({

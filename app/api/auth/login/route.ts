@@ -101,15 +101,16 @@ export async function POST(request: NextRequest) {
     );
 
     // HYBRID AUTH: Set cookie for browser navigation while APIs use Authorization headers
+    // Cookie maxAge matches JWT access token expiry (30 minutes)
     response.cookies.set('auth-token', jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 1800, // 30 minutes (matches JWT access token)
       path: '/'
     });
 
-    console.log('🍪 [LOGIN] Cookie set for browser navigation, APIs still use Authorization headers');
+    console.log('🍪 [LOGIN] Cookie set for middleware (30min), APIs use Authorization headers');
 
     return response;
 

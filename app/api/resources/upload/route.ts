@@ -29,7 +29,11 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
 
+    console.log('🔍 [UPLOAD] Authorization header:', authHeader ? 'Present' : 'Missing');
+    console.log('🔍 [UPLOAD] Token extracted:', token ? `${token.substring(0, 20)}...` : 'None');
+
     if (!token) {
+      console.error('❌ [UPLOAD] No token found');
       return NextResponse.json(
         { error: '인증이 필요합니다.' },
         { status: 401 }
@@ -38,7 +42,10 @@ export async function POST(request: NextRequest) {
 
     // Verify JWT token
     const decoded = await enhancedAuth.verifyAccessToken(token);
+    console.log('🔍 [UPLOAD] Token decoded:', decoded ? `User ID: ${decoded.userId}` : 'Failed');
+
     if (!decoded) {
+      console.error('❌ [UPLOAD] Token verification failed');
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다.' },
         { status: 401 }
@@ -46,6 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = decoded.userId;
+    console.log('✅ [UPLOAD] Authentication successful for user:', userId);
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

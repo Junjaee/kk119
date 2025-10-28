@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resourceDb, sessionDb } from '@/lib/db/database';
+import { resourceDb } from '@/lib/db/database';
+import { enhancedAuth } from '@/lib/auth/enhanced-auth';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
@@ -22,29 +23,29 @@ const allowedFileTypes = [
 
 const maxFileSize = 50 * 1024 * 1024; // 50MB
 
-async function getAuthenticatedUser(request: NextRequest) {
-  const cookies = request.headers.get('cookie');
-  if (!cookies) return null;
-
-  const tokenMatch = cookies.match(/auth-token=([^;]+)/);
-  if (!tokenMatch) return null;
-
-  const sessionToken = tokenMatch[1];
-  const session = sessionDb.findByToken(sessionToken);
-
-  return session || null;
-}
-
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
+    // Get JWT token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
       return NextResponse.json(
-        { error: '로그인이 필요합니다.' },
+        { error: '인증이 필요합니다.' },
         { status: 401 }
       );
     }
+
+    // Verify JWT token
+    const decoded = await enhancedAuth.verifyAccessToken(token);
+    if (!decoded) {
+      return NextResponse.json(
+        { error: '유효하지 않은 토큰입니다.' },
+        { status: 401 }
+      );
+    }
+
+    const userId = decoded.userId;
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       filePath: storagePath, // Store the storage path instead of local path
       fileSize: file.size,
       fileType: file.type,
-      uploadedBy: user.id
+      uploadedBy: userId
     });
 
     return NextResponse.json(

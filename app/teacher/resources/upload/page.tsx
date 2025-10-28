@@ -125,6 +125,13 @@ export default function ResourceUploadPage() {
       return;
     }
 
+    // Get JWT token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setErrors({ general: '인증 토큰을 찾을 수 없습니다. 다시 로그인해주세요.' });
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -149,6 +156,9 @@ export default function ResourceUploadPage() {
 
       const response = await fetch('/api/resources/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: uploadFormData
       });
 

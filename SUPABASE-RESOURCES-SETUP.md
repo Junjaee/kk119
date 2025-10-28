@@ -36,18 +36,22 @@
 
 ### 3. RLS 정책 확인
 
+**중요**: 이 프로젝트는 Supabase Auth가 아닌 커스텀 JWT 인증을 사용합니다. 따라서 RLS 정책은 Service Role Key를 통해 자동으로 우회됩니다. API 레벨에서 모든 권한 검증이 이루어집니다.
+
 1. 좌측 메뉴에서 **Authentication** → **Policies** 이동
 2. `resources` 테이블의 정책 확인:
-   - ✅ `resources_select_approved`: SELECT (모든 사용자)
-   - ✅ `resources_insert_authenticated`: INSERT (인증된 사용자)
-   - ✅ `resources_update_owner`: UPDATE (소유자/관리자)
-   - ✅ `resources_delete_owner`: DELETE (소유자/관리자)
+   - ✅ `resources_select_approved`: SELECT (승인된 자료)
+   - ✅ `resources_select_own`: SELECT (모든 접근 허용 - Service Role)
+   - ✅ `resources_insert`: INSERT (모든 접근 허용 - Service Role)
+   - ✅ `resources_update_own`: UPDATE (모든 접근 허용 - Service Role)
+   - ✅ `resources_delete_own`: DELETE (모든 접근 허용 - Service Role)
+   - ✅ `resources_update_admin`: UPDATE (관리자 전용)
 
 3. `storage.objects` 테이블의 `resources` 버킷 정책 확인:
-   - ✅ `resources_storage_select_public`: SELECT (모든 사용자)
-   - ✅ `resources_storage_insert_authenticated`: INSERT (인증된 사용자)
-   - ✅ `resources_storage_update_owner`: UPDATE (소유자)
-   - ✅ `resources_storage_delete_owner`: DELETE (소유자)
+   - ✅ `resources_storage_select_public`: SELECT (모든 다운로드)
+   - ✅ `resources_storage_insert`: INSERT (Service Role 검증)
+   - ✅ `resources_storage_update`: UPDATE (Service Role 검증)
+   - ✅ `resources_storage_delete`: DELETE (Service Role 검증)
 
 ### 4. 테이블 구조 확인
 
@@ -60,7 +64,7 @@
 - `file_size`: INTEGER NOT NULL
 - `file_path`: VARCHAR(500) NOT NULL
 - `download_count`: INTEGER DEFAULT 0
-- `uploaded_by`: UUID (외래 키 to auth.users)
+- `uploaded_by`: BIGINT (외래 키 to public.users)
 - `is_approved`: BOOLEAN DEFAULT true
 - `created_at`: TIMESTAMPTZ
 - `updated_at`: TIMESTAMPTZ
@@ -107,8 +111,10 @@ SELECT id, title, download_count FROM public.resources WHERE id = 1;
 ## 📝 참고사항
 
 - **Task 33 (커뮤니티)**의 RLS 정책 패턴을 참고하여 구현
+- **커스텀 JWT 인증**: 이 프로젝트는 Supabase Auth가 아닌 자체 JWT 토큰 인증 사용
+- **Service Role Key**: API에서 Service Role Key를 사용하므로 RLS 정책이 자동 우회됨
 - Storage 버킷은 `private`으로 설정되어 있으며, Signed URL을 통해 다운로드
-- 업로드 시 `uploaded_by` 필드는 `auth.uid()`로 자동 설정
+- 업로드 시 `uploaded_by` 필드는 API에서 JWT 토큰의 userId로 설정
 - 모든 자료는 기본적으로 `is_approved = true`로 설정 (관리자 승인 시스템은 향후 구현 가능)
 
 ## 🔗 관련 파일

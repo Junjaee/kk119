@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.resources (
   file_size INTEGER NOT NULL,
   file_path VARCHAR(500) NOT NULL,
   download_count INTEGER DEFAULT 0,
-  uploaded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  uploaded_by BIGINT REFERENCES public.users(id) ON DELETE SET NULL,
   is_approved BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -74,7 +74,11 @@ CREATE POLICY "resources_insert_authenticated"
 ON public.resources
 FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() IS NOT NULL);
+WITH CHECK (
+  uploaded_by IN (
+    SELECT id FROM public.users WHERE auth_id = auth.uid()
+  )
+);
 
 -- 9. UPDATE 정책: 업로더 본인 또는 관리자만 수정 가능
 DROP POLICY IF EXISTS "resources_update_owner" ON public.resources;
@@ -83,20 +87,24 @@ ON public.resources
 FOR UPDATE
 TO authenticated
 USING (
-  auth.uid() = uploaded_by
+  uploaded_by IN (
+    SELECT id FROM public.users WHERE auth_id = auth.uid()
+  )
   OR
   EXISTS (
     SELECT 1 FROM public.users
-    WHERE id = auth.uid()
+    WHERE auth_id = auth.uid()
     AND role IN ('admin', 'super_admin')
   )
 )
 WITH CHECK (
-  auth.uid() = uploaded_by
+  uploaded_by IN (
+    SELECT id FROM public.users WHERE auth_id = auth.uid()
+  )
   OR
   EXISTS (
     SELECT 1 FROM public.users
-    WHERE id = auth.uid()
+    WHERE auth_id = auth.uid()
     AND role IN ('admin', 'super_admin')
   )
 );
@@ -108,11 +116,13 @@ ON public.resources
 FOR DELETE
 TO authenticated
 USING (
-  auth.uid() = uploaded_by
+  uploaded_by IN (
+    SELECT id FROM public.users WHERE auth_id = auth.uid()
+  )
   OR
   EXISTS (
     SELECT 1 FROM public.users
-    WHERE id = auth.uid()
+    WHERE auth_id = auth.uid()
     AND role IN ('admin', 'super_admin')
   )
 );

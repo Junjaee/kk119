@@ -216,7 +216,7 @@ export const isAuthorizedFromPayload = (payload: JWTPayload, context: Authorizat
   // Check specific association access
   if (context.associationId) {
     // Super admins can access any association
-    if (payload.role === 'super_admin') {
+    if (payload.role === 'admin') {
       return true;
     }
     // Others must be in the same association
@@ -240,14 +240,14 @@ export const isAuthorizedFromPayload = (payload: JWTPayload, context: Authorizat
  */
 export const isSuperAdmin = async (token: string): Promise<boolean> => {
   const userRole = await getUserRole(token);
-  return userRole === 'super_admin';
+  return userRole === 'admin';
 };
 
 /**
  * Check if user is super admin (from payload)
  */
 export const isSuperAdminFromPayload = (payload: JWTPayload): boolean => {
-  return payload.role === 'super_admin';
+  return payload.role === 'admin';
 };
 
 /**

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       } else if (session.user.role === 'lawyer') {
         // 변호사 본인의 워크로드
         lawyerIds = [session.user.id];
-      } else if (session.user.role === 'admin' || session.user.role === 'super_admin') {
+      } else if (session.user.role === 'admin' || session.user.role === 'admin') {
         // 관리자는 모든 변호사 워크로드 조회 가능
         const workloads = await workloadService.getAllWorkloads();
         const stats = await workloadService.getWorkloadStats();

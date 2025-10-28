@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatRelativeTime } from '@/lib/utils/date';
 
 interface Resource {
@@ -88,12 +89,21 @@ function getFileIcon(fileType: string) {
 }
 
 export default function ResourcesPage() {
+  const router = useRouter();
   const { user } = useStore();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Task 38: Role-based access control - block lawyers from accessing resources
+  useEffect(() => {
+    if (user && user.role === 'lawyer') {
+      console.log('🚫 [RESOURCES] Lawyer role detected - redirecting to /lawyer');
+      router.replace('/lawyer');
+    }
+  }, [user, router]);
 
   // Fetch resources from API
   const fetchResources = async () => {

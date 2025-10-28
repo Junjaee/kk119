@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { consultReplyDb } from '@/lib/db/consult-db';
-import { verifyToken } from '@/lib/auth/auth-utils';
+import { auth } from '@/lib/auth/auth-utils';
 
 // POST - 추가 질문/답변 등록
 export async function POST(request: NextRequest) {
@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
     let isLawyer = false; // 실제로는 사용자 권한을 확인해야 함
 
     try {
-      const decoded = verifyToken(token);
+      const decoded = await auth.verifyToken(token);
+      if (!decoded) throw new Error('Invalid token');
       userId = decoded.userId;
       // TODO: 실제 구현 시 사용자 권한 확인 필요
       // isLawyer = decoded.role === 'lawyer';

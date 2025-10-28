@@ -31,6 +31,40 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('from', pathname);
       return NextResponse.redirect(loginUrl);
     }
+
+    // Task 38: Resources route - restrict to teachers and admins only (block lawyers)
+    if (pathname.startsWith('/teacher/resources')) {
+      try {
+        // Decode JWT to check user role
+        const payload = JSON.parse(atob(token.value.split('.')[1]));
+        const userRole = payload.role;
+
+        // Block lawyer access to resources
+        if (userRole === 'lawyer') {
+          // Redirect lawyers back to their dashboard
+          return NextResponse.redirect(new URL('/lawyer', request.url));
+        }
+        // Allow teacher, admin
+      } catch (error) {
+        console.error('Failed to decode token:', error);
+        // If token is invalid, redirect to login
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('from', pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  // Lawyer-only routes (Task 37) - require authentication
+  if (pathname.startsWith('/lawyer')) {
+    if (!token) {
+      // Redirect to login if not authenticated
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
     return NextResponse.next();
   }
 

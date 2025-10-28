@@ -92,5 +92,5 @@ export function hasRole(user: AuthUser, allowedRoles: UserRole[]): boolean {
  * @CODE:AUTH-VERIFY-001-IS-ADMIN
  */
 export function isAdmin(user: AuthUser): boolean {
-  return user.role === 'admin' || user.role === 'super_admin';
+  return user.role === 'admin' || user.role === 'admin';
 }

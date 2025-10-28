@@ -33,7 +33,7 @@ export const mockUsers: User[] = [
     id: 'super-admin-1',
     email: 'super@kyokwon119.com',
     nickname: '슈퍼관리자',
-    role: 'super_admin',
+    role: 'admin',
     school_verified: false,
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z'
@@ -46,7 +46,7 @@ export function getCurrentUser(): User {
 }
 
 // Switch user for testing
-export function switchUser(role: 'teacher' | 'lawyer' | 'admin' | 'super_admin'): User {
+export function switchUser(role: 'teacher' | 'lawyer' | 'admin' | 'admin'): User {
   const user = mockUsers.find(u => u.role === role);
   return user || mockUsers[0];
 }

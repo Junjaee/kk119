@@ -140,7 +140,7 @@ export function initDatabase() {
     // Update super admin accounts
     const updateSuperAdminStmt = db.prepare(`
       UPDATE users
-      SET role = 'super_admin'
+      SET role = 'admin'
       WHERE email = 'super@kk119.com' OR email LIKE '%super%'
     `);
     const superAdminResult = updateSuperAdminStmt.run();
@@ -149,7 +149,7 @@ export function initDatabase() {
     const updateAdminStmt = db.prepare(`
       UPDATE users
       SET role = 'admin'
-      WHERE (email LIKE '%admin%' OR email = 'association@kk119.com') AND role != 'super_admin'
+      WHERE (email LIKE '%admin%' OR email = 'association@kk119.com') AND role != 'admin'
     `);
     const adminResult = updateAdminStmt.run();
 
@@ -157,7 +157,7 @@ export function initDatabase() {
     const updateLawyerStmt = db.prepare(`
       UPDATE users
       SET role = 'lawyer'
-      WHERE email LIKE '%lawyer%' AND role != 'super_admin' AND role != 'admin'
+      WHERE email LIKE '%lawyer%' AND role != 'admin' AND role != 'admin'
     `);
     const lawyerResult = updateLawyerStmt.run();
 

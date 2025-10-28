@@ -34,7 +34,7 @@ async function checkAdminPermission(req: NextRequest) {
     }
 
     // 관리자 또는 슈퍼어드민 권한 확인
-    if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+    if (profile.role !== 'admin' && profile.role !== 'admin') {
       return { authorized: false, error: '관리자 권한이 필요합니다.' };
     }
 

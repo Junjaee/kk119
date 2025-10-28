@@ -13,7 +13,7 @@ async function checkSuperAdminPermission(req: NextRequest) {
     }
 
     const decodedToken = await auth.verifyToken(token);
-    if (!decodedToken || decodedToken.role !== 'super_admin') {
+    if (!decodedToken || decodedToken.role !== 'admin') {
       return { authorized: false, error: '슈퍼어드민 권한이 필요합니다.' };
     }
 

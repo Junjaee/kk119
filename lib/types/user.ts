@@ -1,6 +1,6 @@
 // 4-tier 사용자 시스템 타입 정의
 
-export type UserRole = 'super_admin' | 'admin' | 'lawyer' | 'teacher';
+export type UserRole = 'admin' | 'admin' | 'lawyer' | 'teacher';
 
 export interface UserProfile {
   id: string;
@@ -83,7 +83,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     { resource: 'community_posts', action: 'manage', scope: 'association' },
     { resource: 'consultation_posts', action: 'read', scope: 'association' },
     { resource: 'users', action: 'read', scope: 'association' },
-    { resource: 'users', action: 'update', scope: 'association', conditions: { exclude_roles: ['super_admin'] } },
+    { resource: 'users', action: 'update', scope: 'association', conditions: { exclude_roles: ['admin'] } },
     { resource: 'analytics', action: 'read', scope: 'association' },
   ],
   lawyer: [

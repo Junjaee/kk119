@@ -632,7 +632,7 @@ export class ConsultService {
    * 모든 상담 목록 (관리자용)
    */
   async getAllConsultations(userRole: string): Promise<any[]> {
-    if (userRole !== 'admin' && userRole !== 'super_admin') {
+    if (userRole !== 'admin' && userRole !== 'admin') {
       throw new Error('Access denied');
     }
 

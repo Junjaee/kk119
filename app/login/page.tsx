@@ -80,7 +80,8 @@ export default function LoginPage() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
+        credentials: 'include' // Enable cookie storage for middleware auth
       });
 
       const data = await response.json();

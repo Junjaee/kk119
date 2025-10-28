@@ -107,7 +107,7 @@ export class AuthStateManager {
   async restoreFromStorage(): Promise<void> {
     try {
       // Check for tokens in localStorage
-      const roles: UserRole[] = ['teacher', 'lawyer', 'admin', 'super_admin'];
+      const roles: UserRole[] = ['teacher', 'lawyer', 'admin', 'admin'];
 
       for (const role of roles) {
         const tokenKey = AUTH_STORAGE_KEYS[role].token;
@@ -158,7 +158,7 @@ export class AuthStateManager {
 
     window.addEventListener('storage', async (event) => {
       // Check if the changed key is a token key
-      const roles: UserRole[] = ['teacher', 'lawyer', 'admin', 'super_admin'];
+      const roles: UserRole[] = ['teacher', 'lawyer', 'admin', 'admin'];
 
       for (const role of roles) {
         const tokenKey = AUTH_STORAGE_KEYS[role].token;

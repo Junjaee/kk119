@@ -1,5 +1,5 @@
 // User Types
-export type UserRole = 'super_admin' | 'admin' | 'lawyer' | 'teacher';
+export type UserRole = 'admin' | 'lawyer' | 'teacher';
 
 export interface User {
   id: string | number;
@@ -151,15 +151,11 @@ export interface Statistics {
 
 // Type Guard Functions
 export function isValidUserRole(role: string): role is UserRole {
-  return ['super_admin', 'admin', 'lawyer', 'teacher'].includes(role);
-}
-
-export function isSuperAdmin(user: User): boolean {
-  return user.role === 'super_admin';
+  return ['admin', 'lawyer', 'teacher'].includes(role);
 }
 
 export function isAdmin(user: User): boolean {
-  return user.role === 'admin' || user.role === 'super_admin';
+  return user.role === 'admin';
 }
 
 export function isLawyer(user: User): boolean {
@@ -177,7 +173,6 @@ export function hasRole(user: User, roles: UserRole[]): boolean {
 // Role hierarchy helper
 export function getUserRoleHierarchy(role: UserRole): number {
   const hierarchy = {
-    'super_admin': 4,
     'admin': 3,
     'lawyer': 2,
     'teacher': 1

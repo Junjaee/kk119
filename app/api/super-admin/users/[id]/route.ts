@@ -81,7 +81,7 @@ async function updateUser(request: NextRequest, authResult: any, { params }: { p
     }
 
     // Prevent super admin from changing their own role
-    if (userId === authResult.user?.id && role && role !== 'super_admin') {
+    if (userId === authResult.user?.id && role && role !== 'admin') {
       db.close();
       return NextResponse.json(
         { error: 'Cannot change your own role' },

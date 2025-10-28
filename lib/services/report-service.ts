@@ -295,7 +295,7 @@ export class ReportService {
    * @CODE:REPORT-SERVICE-001-IS-ADMIN
    */
   private isAdminRole(role: UserRole): boolean {
-    return role === 'admin' || role === 'super_admin';
+    return role === 'admin' || role === 'admin';
   }
 
   /**

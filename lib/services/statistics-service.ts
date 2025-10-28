@@ -89,7 +89,7 @@ export class StatisticsService {
 
     // 권한 확인
     const user = this.db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as any;
-    const isAdmin = user && (user.role === 'admin' || user.role === 'super_admin');
+    const isAdmin = user && (user.role === 'admin' || user.role === 'admin');
 
     let query = 'SELECT * FROM reports WHERE created_at BETWEEN ? AND ?';
     const params: any[] = [dateRange.start.toISOString(), dateRange.end.toISOString()];
@@ -147,7 +147,7 @@ export class StatisticsService {
 
     // 권한 확인
     const user = this.db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as any;
-    const isAdmin = user && (user.role === 'admin' || user.role === 'super_admin');
+    const isAdmin = user && (user.role === 'admin' || user.role === 'admin');
 
     let query = 'SELECT * FROM consultations WHERE created_at BETWEEN ? AND ?';
     const params: any[] = [dateRange.start.toISOString(), dateRange.end.toISOString()];
@@ -194,7 +194,7 @@ export class StatisticsService {
   async getSystemStatistics(userId: number): Promise<SystemStatistics> {
     // 관리자만 접근
     const user = this.db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as any;
-    if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+    if (!user || (user.role !== 'admin' && user.role !== 'admin')) {
       throw new Error('Access denied');
     }
 
@@ -214,7 +214,7 @@ export class StatisticsService {
         admin: users.filter(u => u.role === 'admin').length,
         teacher: users.filter(u => u.role === 'teacher').length,
         lawyer: users.filter(u => u.role === 'lawyer').length,
-        super_admin: users.filter(u => u.role === 'super_admin').length,
+        super_admin: users.filter(u => u.role === 'admin').length,
       },
       performance: {
         averageResponseTimeMs: 250,
@@ -239,7 +239,7 @@ export class StatisticsService {
    */
   async getKPIDashboard(userId: number): Promise<KPIDashboard> {
     const user = this.db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as any;
-    if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+    if (!user || (user.role !== 'admin' && user.role !== 'admin')) {
       throw new Error('Access denied');
     }
 

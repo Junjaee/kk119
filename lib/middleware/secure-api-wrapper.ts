@@ -333,7 +333,7 @@ export const securityConfigs = {
   admin: {
     securityLevel: 'high' as SecurityLevel,
     requiresAuth: true,
-    allowedRoles: ['admin', 'super_admin'],
+    allowedRoles: ['admin', 'admin'],
     rateLimitConfig: 'api' as const
   },
 
@@ -341,7 +341,7 @@ export const securityConfigs = {
   superAdmin: {
     securityLevel: 'critical' as SecurityLevel,
     requiresAuth: true,
-    allowedRoles: ['super_admin'],
+    allowedRoles: ['admin'],
     rateLimitConfig: 'sensitive' as const,
     requiresFreshToken: true
   },

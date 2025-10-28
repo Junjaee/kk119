@@ -396,7 +396,7 @@ export async function GET(
     // 접근 권한 확인 (신고자, 배정된 변호사, 관리자만)
     const hasAccess =
       user.role === 'admin' ||
-      user.role === 'super_admin' ||
+      user.role === 'admin' ||
       report.reporter_id === user.id ||
       (report.assigned_lawyer_id === user.id && user.role === 'lawyer');
 

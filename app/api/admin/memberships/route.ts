@@ -15,7 +15,7 @@ async function getMemberships(request: NextRequest, authResult: any) {
     const offset = (page - 1) * limit;
 
     const adminId = authResult.user?.id;
-    const isSuperAdmin = authResult.user?.role === 'super_admin';
+    const isSuperAdmin = authResult.user?.role === 'admin';
 
     const db = new Database(dbPath);
 

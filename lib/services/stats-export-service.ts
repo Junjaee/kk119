@@ -64,7 +64,7 @@ export class StatsExportService {
   ): Promise<any[]> {
     // 권한 확인
     const user = this.db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as any;
-    const isAdmin = user && (user.role === 'admin' || user.role === 'super_admin');
+    const isAdmin = user && (user.role === 'admin' || user.role === 'admin');
 
     if (type === 'reports') {
       let query = `

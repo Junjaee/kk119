@@ -95,7 +95,7 @@ export class FileService {
       }
 
       // Admin and super_admin can access all files
-      if (userRole === 'admin' || userRole === 'super_admin') {
+      if (userRole === 'admin' || userRole === 'admin') {
         return true;
       }
 
@@ -178,7 +178,7 @@ export class FileService {
       }
 
       // Admin and super_admin can delete (except completed report files, checked above)
-      if (userRole === 'admin' || userRole === 'super_admin') {
+      if (userRole === 'admin' || userRole === 'admin') {
         return true;
       }
 

@@ -1,7 +1,7 @@
 // @CODE:AUTH-001-STORAGE | Chain: SPEC-AUTH-001 -> CODE-AUTH-001-STORAGE
 // Role-based storage keys for token isolation
 
-export type UserRole = 'teacher' | 'lawyer' | 'admin' | 'super_admin';
+export type UserRole = 'teacher' | 'lawyer' | 'admin' | 'admin';
 
 export const AUTH_STORAGE_KEYS = {
   teacher: {

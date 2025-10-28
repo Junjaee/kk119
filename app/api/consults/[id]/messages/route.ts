@@ -34,7 +34,7 @@ export async function GET(
       // 접근 권한 확인
       const hasAccess =
         session.user.role === 'admin' ||
-        session.user.role === 'super_admin' ||
+        session.user.role === 'admin' ||
         (session.user.role === 'teacher' && consultation.teacherId === session.user.id) ||
         (session.user.role === 'lawyer' && consultation.lawyerId === session.user.id);
 
@@ -109,7 +109,7 @@ export async function POST(
         (session.user.role === 'teacher' && consultation.teacherId === session.user.id) ||
         (session.user.role === 'lawyer' && consultation.lawyerId === session.user.id) ||
         session.user.role === 'admin' ||
-        session.user.role === 'super_admin';
+        session.user.role === 'admin';
 
       if (!canSend) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

@@ -78,7 +78,7 @@ async function updateMembership(request: NextRequest, authResult: any, { params 
 
     if (!adminAssociation) {
       // Check if user is super admin
-      const isSuperAdmin = authResult.user?.role === 'super_admin';
+      const isSuperAdmin = authResult.user?.role === 'admin';
       if (!isSuperAdmin) {
         db.close();
         return NextResponse.json(

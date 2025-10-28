@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     const jwtToken = tokenPair.accessToken;
 
     // Ensure admin users have corresponding admins table records
-    if (user.role === 'admin' || user.role === 'super_admin') {
+    if (user.role === 'admin' || user.role === 'admin') {
       try {
         ensureAdminRecord(user.id, user.association_id || null);
       } catch (adminSyncError) {

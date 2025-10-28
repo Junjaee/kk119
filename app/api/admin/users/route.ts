@@ -29,7 +29,7 @@ async function checkAdminPermission(req: NextRequest) {
     }
 
     const decodedToken = await auth.verifyToken(token);
-    if (!decodedToken || (decodedToken.role !== 'super_admin' && decodedToken.role !== 'admin')) {
+    if (!decodedToken || (decodedToken.role !== 'admin' && decodedToken.role !== 'admin')) {
       return { authorized: false, error: '관리자 권한이 필요합니다.' };
     }
 

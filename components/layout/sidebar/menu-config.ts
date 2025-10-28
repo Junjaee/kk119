@@ -83,54 +83,13 @@ export const MENU_CONFIG: Record<UserRole, MenuItem[]> = {
       description: '법률 상담 관리',
       badge: '대기중',
       badgeColor: BADGE_COLORS.WARNING_MODERN
-    },
-    {
-      href: '/resources',
-      label: '법률 자료실',
-      icon: BookOpen,
-      description: '법률 자료와 판례'
     }
   ],
 
   admin: [
     {
       href: '/admin',
-      label: '협회관리자 대시보드',
-      icon: Home,
-      description: '협회 전체 현황'
-    },
-    {
-      href: '/admin/reports',
-      label: '신고 관리',
-      icon: FileText,
-      description: '협회 신고 관리',
-      badge: '대기중',
-      badgeColor: BADGE_COLORS.WARNING_MODERN
-    },
-    {
-      href: '/admin/user-management',
-      label: '회원 관리',
-      icon: Users,
-      description: '협회 회원 관리'
-    },
-    {
-      href: '/admin/associations',
-      label: '협회 관리',
-      icon: Shield,
-      description: '협회 정보 관리'
-    },
-    {
-      href: '/admin/stats',
-      label: '협회 통계',
-      icon: BarChart3,
-      description: '협회별 통계 분석'
-    }
-  ],
-
-  super_admin: [
-    {
-      href: '/admin',
-      label: '슈퍼관리자 대시보드',
+      label: '관리자 대시보드',
       icon: Home,
       description: '전체 시스템 현황'
     },
@@ -168,7 +127,8 @@ export const MENU_CONFIG: Record<UserRole, MenuItem[]> = {
       icon: Settings,
       description: '시스템 환경 설정'
     }
-  ]
+  ],
+
 };
 
 /**

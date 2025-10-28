@@ -31,7 +31,7 @@ export class AuthGuard {
    */
   async canAccess(role: UserRole, endpoint: string): Promise<boolean> {
     // Super admin can access everything
-    if (role === 'super_admin') {
+    if (role === 'admin') {
       return true;
     }
 
@@ -42,17 +42,17 @@ export class AuthGuard {
 
     // Lawyer endpoints
     if (endpoint.startsWith('/api/lawyer/')) {
-      return role === 'lawyer' || role === 'super_admin';
+      return role === 'lawyer' || role === 'admin';
     }
 
     // Admin endpoints
     if (endpoint.startsWith('/api/admin/')) {
-      return role === 'admin' || role === 'super_admin';
+      return role === 'admin' || role === 'admin';
     }
 
     // Super admin only endpoints
     if (endpoint.startsWith('/api/super-admin/')) {
-      return role === 'super_admin';
+      return role === 'admin';
     }
 
     // Public endpoints
@@ -126,7 +126,7 @@ export class AuthGuard {
       case 1: return 'teacher';
       case 2: return 'lawyer';
       case 3: return 'admin';
-      case 4: return 'super_admin';
+      case 4: return 'admin';
       default: return null;
     }
   }
@@ -194,7 +194,7 @@ export class AuthGuard {
    */
   async getRateLimit(role: UserRole): Promise<number> {
     switch (role) {
-      case 'super_admin':
+      case 'admin':
         return 1000; // 1000 requests per minute
       case 'admin':
         return 500;

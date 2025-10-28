@@ -30,7 +30,7 @@ export async function PATCH(
     const { user } = authResult;
 
     // Only admins can change report status
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
+    if (user.role !== 'admin' && user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Only administrators can change report status' },
         { status: 403 }

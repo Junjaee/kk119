@@ -134,7 +134,7 @@ export function extractRoleFromToken(token: string): UserRole | null {
     const payload = JSON.parse(atob(parts[1]));
 
     const role = payload.role;
-    const validRoles: UserRole[] = ['teacher', 'lawyer', 'admin', 'super_admin'];
+    const validRoles: UserRole[] = ['teacher', 'lawyer', 'admin', 'admin'];
 
     if (validRoles.includes(role)) {
       return role as UserRole;

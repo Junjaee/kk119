@@ -56,7 +56,7 @@ export async function GET(
     // Check access permissions
     const canAccess =
       user.role === 'admin' ||
-      user.role === 'super_admin' ||
+      user.role === 'admin' ||
       report.teacher_id === user.id ||
       (user.role === 'lawyer' && report.lawyer_id === user.id);
 

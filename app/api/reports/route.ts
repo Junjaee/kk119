@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     // Get reports based on role
     let reports;
-    if (user.role === 'admin' || user.role === 'super_admin') {
+    if (user.role === 'admin' || user.role === 'admin') {
       reports = await reportService.getAllReports(user.role);
     } else {
       reports = await reportService.getReportsByUser(user.id, user.role);

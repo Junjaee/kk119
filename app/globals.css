@@ -48,26 +48,26 @@
     --gray-900: 17 24 39;          /* #111827 */
     --gray-950: 3 7 18;            /* #030712 */
     
-    /* Light Mode */
+    /* Light Mode - Orange Primary Theme */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 28 80% 52%;  /* Orange #F59E0B (primary-500) */
+    --primary-foreground: 0 0% 100%;  /* White text on orange */
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 28 95% 95%;  /* Light orange accent */
+    --accent-foreground: 28 80% 40%;  /* Dark orange text */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --ring: 28 80% 52%;  /* Orange ring */
     --radius: 0.5rem;
     
     /* 그라데이션 변수 */
@@ -83,26 +83,26 @@
   }
   
   .dark {
-    /* Dark Mode */
+    /* Dark Mode - Orange Primary Theme */
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    --primary: 28 95% 62%;  /* Lighter orange for dark mode #FBB024 (primary-400) */
+    --primary-foreground: 0 0% 9%;  /* Dark text on orange */
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 28 60% 20%;  /* Dark orange accent */
+    --accent-foreground: 28 95% 75%;  /* Light orange text */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --ring: 28 95% 62%;  /* Orange ring */
     
     /* 다크모드 그라데이션 */
     --gradient-primary: linear-gradient(135deg, rgb(251 191 36) 0%, rgb(245 158 11) 100%);
@@ -267,39 +267,63 @@
   
   .btn-primary-modern {
     @apply btn-modern bg-primary text-primary-foreground shadow-lg hover:shadow-xl px-6 py-3;
-    background: var(--gradient-primary);
+    background-color: hsl(var(--primary));
   }
-  
+
   .btn-primary-modern:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 25px rgb(var(--primary) / 0.3);
+    background-color: hsl(28 85% 45%); /* Darker orange on hover */
   }
-  
+
   .btn-protection-modern {
     @apply btn-modern text-white shadow-lg hover:shadow-xl px-6 py-3;
-    background: var(--gradient-protection);
+    background-color: hsl(var(--protection));
   }
-  
+
   .btn-protection-modern:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 25px rgb(var(--protection-500) / 0.3);
+    background-color: hsl(215 100% 45%); /* Darker blue on hover */
   }
-  
+
   .btn-urgent-modern {
     @apply btn-modern text-white shadow-lg hover:shadow-xl px-6 py-3;
-    background-color: #ef4444; /* urgent-500 */
+    background-color: hsl(var(--urgent));
   }
 
   .btn-urgent-modern:hover {
-    background-color: #dc2626; /* urgent-600 */
+    transform: translateY(-1px);
+    background-color: hsl(0 90% 45%); /* Darker red on hover */
   }
-  
+
+  .btn-trust-modern {
+    @apply btn-modern text-white shadow-lg hover:shadow-xl px-6 py-3;
+    background-color: hsl(var(--trust));
+  }
+
+  .btn-trust-modern:hover {
+    transform: translateY(-1px);
+    background-color: hsl(145 75% 35%); /* Darker green on hover */
+  }
+
   .btn-ghost-modern {
-    @apply btn-modern bg-transparent hover:bg-accent/50 px-6 py-3;
+    @apply btn-modern bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 px-6 py-3;
   }
-  
+
   .btn-outline-modern {
-    @apply btn-modern border-2 border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-3;
+    @apply btn-modern border-2 bg-transparent text-primary hover:text-white px-6 py-3;
+    border-color: hsl(var(--primary));
+  }
+
+  .btn-outline-modern:hover {
+    background-color: hsl(var(--primary));
+  }
+
+  .btn-secondary-modern {
+    @apply btn-modern bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 shadow-md hover:shadow-lg px-6 py-3;
+  }
+
+  .btn-secondary-modern:hover {
+    transform: translateY(-1px);
   }
   
   /* 개선된 입력 필드 */

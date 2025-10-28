@@ -146,7 +146,7 @@ export function Header() {
                       {user?.name || user?.nickname || '사용자'}
                     </p>
                     <div className={`text-xs text-muted-foreground`}>
-                      {user?.school || '교사'}
+                      {getRoleLabel(user?.role || 'teacher')}
                     </div>
                   </div>
                   <ChevronDown className="h-4 w-4" />

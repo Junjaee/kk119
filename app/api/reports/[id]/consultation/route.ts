@@ -55,7 +55,7 @@ async function checkReportAccess(reportId: string, userId: string, userRole: str
     let hasAccess = false;
     let accessReason = '';
 
-    if (userRole === 'admin' || userRole === 'super_admin') {
+    if (userRole === 'admin' || userRole === 'admin') {
       hasAccess = true;
       accessReason = 'admin';
     } else if (report.reporter_id === userId) {
@@ -232,7 +232,7 @@ export async function GET(
     let filteredConsultation = consultation;
     let filteredDiscussions = discussions;
 
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
+    if (user.role !== 'admin' && user.role !== 'admin') {
       // 일반 사용자(신고자/변호사)는 내부 노트 등 민감한 정보 제외
       if (filteredConsultation) {
         if (user.role !== 'lawyer' || filteredConsultation.lawyer_id !== user.id) {
@@ -247,7 +247,7 @@ export async function GET(
         !discussion.is_internal_note ||
         discussion.author_id === user.id ||
         user.role === 'admin' ||
-        user.role === 'super_admin'
+        user.role === 'admin'
       );
     }
 

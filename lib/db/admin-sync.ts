@@ -111,7 +111,7 @@ export function getAllAdminUsers(): Array<{
         a.created_at as admin_created_at
       FROM users u
       LEFT JOIN admins a ON u.id = a.user_id
-      WHERE u.role IN ('admin', 'super_admin')
+      WHERE u.role IN ('admin', 'admin')
       ORDER BY u.id
     `).all();
 

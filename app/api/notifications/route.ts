@@ -23,7 +23,7 @@ async function checkAdminPermission(req: NextRequest) {
       return { authorized: false, error: '사용자 정보를 찾을 수 없습니다.' };
     }
 
-    if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+    if (profile.role !== 'admin' && profile.role !== 'admin') {
       return { authorized: false, error: '관리자 권한이 필요합니다.' };
     }
 

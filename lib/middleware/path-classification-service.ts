@@ -74,7 +74,7 @@ export class PathClassificationService {
    */
   private getRequiredRole(pathname: string): UserRole | undefined {
     // Check in order of hierarchy (most restrictive first)
-    const roleOrder: UserRole[] = ['super_admin', 'admin', 'lawyer', 'teacher'];
+    const roleOrder: UserRole[] = ['admin', 'admin', 'lawyer', 'teacher'];
 
     for (const role of roleOrder) {
       const rolePaths = ROLE_PATHS[role];
@@ -121,13 +121,13 @@ export class PathClassificationService {
    */
   private hasRoleAccess(userRole: UserRole, requiredRole: UserRole): boolean {
     // Super admin can access everything
-    if (userRole === 'super_admin') {
+    if (userRole === 'admin') {
       return true;
     }
 
     // Exact role match for super_admin paths
-    if (requiredRole === 'super_admin') {
-      return userRole === 'super_admin';
+    if (requiredRole === 'admin') {
+      return userRole === 'admin';
     }
 
     // Use hierarchy for other roles

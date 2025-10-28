@@ -47,7 +47,7 @@ export async function PUT(
       let hasPermission = false;
 
       // 관리자는 모든 상태 변경 가능
-      if (session.user.role === 'admin' || session.user.role === 'super_admin') {
+      if (session.user.role === 'admin' || session.user.role === 'admin') {
         hasPermission = true;
       }
       // 교사는 본인 상담의 pending → cancelled만 가능

@@ -103,7 +103,7 @@ export function usePermissions(
 
   // 역할별 편의 속성
   const roleChecks = useMemo(() => ({
-    isSuperAdmin: userRole === 'super_admin',
+    isSuperAdmin: userRole === 'admin',
     isAdmin: userRole === 'admin',
     isLawyer: userRole === 'lawyer',
     isTeacher: userRole === 'teacher',

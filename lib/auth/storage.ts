@@ -64,7 +64,7 @@ export function clearAllTokens(): void {
 
   try {
     // Remove all role-specific keys
-    const roles: UserRole[] = ['teacher', 'lawyer', 'admin', 'super_admin'];
+    const roles: UserRole[] = ['teacher', 'lawyer', 'admin', 'admin'];
 
     roles.forEach(role => {
       const keys = AUTH_STORAGE_KEYS[role];

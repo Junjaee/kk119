@@ -139,7 +139,7 @@ export function withAuth<T extends any[]>(
 export function withSuperAdminAuth<T extends any[]>(
   handler: (request: NextRequest, authResult: AuthResult, ...args: T) => Promise<Response> | Response
 ) {
-  return withAuth(handler, { requiredRoles: ['super_admin'] });
+  return withAuth(handler, { requiredRoles: ['admin'] });
 }
 
 /**
@@ -199,7 +199,7 @@ export function checkAssociationAccess(
   if (!authResult.success || !authResult.user) return false;
 
   // Super admins can access any association
-  if (authResult.user.role === 'super_admin') return true;
+  if (authResult.user.role === 'admin') return true;
 
   // Others must be in the same association
   return authResult.user.association_id === targetAssociationId;
@@ -215,7 +215,7 @@ export function checkUserAccess(
   if (!authResult.success || !authResult.user) return false;
 
   // Super admins can access any user
-  if (authResult.user.role === 'super_admin') return true;
+  if (authResult.user.role === 'admin') return true;
 
   // Users can access their own data
   if (authResult.user.id === targetUserId) return true;

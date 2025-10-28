@@ -408,7 +408,7 @@ export default function LawyerDashboard() {
                   <Card key={consult.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="pt-10 px-8 pb-8">
                       <div className="flex items-start justify-between gap-6">
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 min-w-0 space-y-4">
                           <div>
                             <h3 className="text-lg font-semibold mb-3">{consult.title}</h3>
                             <div className="flex items-center gap-4">
@@ -476,7 +476,7 @@ export default function LawyerDashboard() {
                   <Card key={consult.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="pt-10 px-8 pb-8">
                       <div className="flex items-start justify-between gap-6">
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 min-w-0 space-y-4">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold">{consult.title}</h3>
                             {getStatusBadge(consult.status || 'pending')}
@@ -565,7 +565,7 @@ export default function LawyerDashboard() {
                   <Card key={consult.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="pt-10 px-8 pb-8">
                       <div className="flex items-start justify-between gap-6">
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 min-w-0 space-y-4">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold">{consult.title}</h3>
                             {getStatusBadge(consult.status || 'pending')}
@@ -652,7 +652,7 @@ export default function LawyerDashboard() {
                   <Card key={consult.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="pt-10 px-8 pb-8">
                       <div className="flex items-start justify-between gap-6">
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 min-w-0 space-y-4">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold">{consult.title}</h3>
                             {getStatusBadge(consult.status || 'pending')}

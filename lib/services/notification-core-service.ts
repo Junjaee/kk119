@@ -313,7 +313,7 @@ export class NotificationService {
       SELECT role FROM users WHERE id = ?
     `).get(adminId) as any;
 
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'super_admin')) {
+    if (!admin || (admin.role !== 'admin' && admin.role !== 'admin')) {
       throw new Error('Admin access required');
     }
 
@@ -353,7 +353,7 @@ export class NotificationService {
       SELECT role FROM users WHERE id = ?
     `).get(adminId) as any;
 
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'super_admin')) {
+    if (!admin || (admin.role !== 'admin' && admin.role !== 'admin')) {
       throw new Error('Admin access required');
     }
 

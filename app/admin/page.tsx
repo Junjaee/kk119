@@ -124,15 +124,12 @@ export default function AdminDashboard() {
   const { user } = useStore();
   const router = useRouter();
 
-  // Redirect non-super admins to their respective pages (only after user is loaded)
+  // Only allow admin role to access this page
   useEffect(() => {
     // Wait until user is fully loaded before redirecting
-    if (user && user.role && user.role !== 'super_admin') {
+    if (user && user.role && user.role !== 'admin') {
       console.log('🔍 [ADMIN] Redirecting user with role:', user.role);
       switch (user.role) {
-        case 'admin':
-          router.push('/associadmin');
-          break;
         case 'teacher':
           router.push('/teacher');
           break;
@@ -143,8 +140,8 @@ export default function AdminDashboard() {
           router.push('/');
           break;
       }
-    } else if (user && user.role === 'super_admin') {
-      console.log('🔍 [ADMIN] User is super admin, staying on page');
+    } else if (user && user.role === 'admin') {
+      console.log('🔍 [ADMIN] User is admin, staying on page');
     }
   }, [user, router]);
 

@@ -196,12 +196,12 @@ const nextConfig = {
       },
     };
 
-    // 중복 모듈 제거
-    config.plugins.push(
-      new webpack.optimize.LimitChunkCountPlugin({
-        maxChunks: 8,
-      })
-    );
+    // 중복 모듈 제거 (maxChunks 제거 - ChunkLoadError 방지)
+    // config.plugins.push(
+    //   new webpack.optimize.LimitChunkCountPlugin({
+    //     maxChunks: 8,
+    //   })
+    // );
 
     // Tree shaking 최적화 (webpack 호환성 문제로 임시 비활성화)
     // config.optimization.usedExports = true;

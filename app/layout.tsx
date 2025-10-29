@@ -1,6 +1,18 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from './providers';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FB923C' },
+    { media: '(prefers-color-scheme: dark)', color: '#1F2937' }
+  ],
+};
 
 export const metadata: Metadata = {
   title: {
@@ -110,17 +122,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FB923C' },
-    { media: '(prefers-color-scheme: dark)', color: '#1F2937' }
-  ],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
@@ -128,7 +129,6 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-title': '교권119',
     'msapplication-TileColor': '#FB923C',
     'msapplication-config': '/browserconfig.xml',
-    'theme-color': '#FB923C',
   },
 };
 

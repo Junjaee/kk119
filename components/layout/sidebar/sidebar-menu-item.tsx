@@ -26,10 +26,10 @@ export function SidebarMenuItem({ item, currentPath, onItemClick }: SidebarMenuI
       <Link
         href={item.href}
         className={cn(
-          'group flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 relative overflow-hidden',
+          'group flex items-center justify-between px-4 py-3 rounded-md transition-colors duration-150 relative overflow-hidden focus-visible-ring',
           isActive
-            ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg'
-            : 'hover:bg-accent/50 text-foreground'
+            ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm'
+            : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-foreground'
         )}
         onClick={onItemClick}
         onMouseEnter={() => setIsHovered(true)}
@@ -90,18 +90,17 @@ function MenuItemIcon({
 }) {
   return (
     <div className={cn(
-      'p-2 rounded-lg transition-all duration-200',
+      'p-2 rounded-sm transition-colors duration-150',
       isActive
-        ? 'bg-white/30'
-        : 'bg-accent/30 group-hover:bg-accent/50'
+        ? 'bg-white/20'
+        : 'bg-neutral-100 dark:bg-neutral-800 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700'
     )}>
       <Icon
         className={cn(
-          'h-4 w-4 transition-all duration-200',
-          isActive ? 'text-white' : '',
-          isUrgent && !isActive && 'urgent-pulse'
+          'h-4 w-4 transition-colors duration-150',
+          isActive ? 'text-white' : 'text-muted-foreground',
+          isUrgent && !isActive && 'animate-pulse'
         )}
-        style={isActive ? { color: '#737373' } : {}}
       />
     </div>
   );
@@ -120,18 +119,17 @@ function MenuItemText({
 }) {
   return (
     <div>
-      <p
-        className="font-medium"
-        style={isActive ? { color: '#737373' } : {}}
-      >
+      <p className={cn(
+        'text-small font-medium',
+        isActive ? 'text-white' : 'text-foreground'
+      )}>
         {item.label}
       </p>
       <p
         className={cn(
-          'text-xs transition-colors font-medium',
-          isActive ? 'text-white' : 'text-muted-foreground'
+          'text-caption transition-colors font-medium',
+          isActive ? 'text-white/85' : 'text-muted-foreground'
         )}
-        style={isActive ? { color: '#737373', opacity: 1 } : {}}
       >
         {item.description}
       </p>
@@ -183,12 +181,12 @@ function MenuItemBadge({
 }) {
   return (
     <span className={cn(
-      'px-2 py-1 text-xs font-semibold rounded-full',
+      'px-2 py-0.5 text-caption font-semibold rounded-full',
       badgeColor
         ? `badge-${badgeColor}`
         : isActive
           ? 'bg-white/20 text-white'
-          : 'bg-primary/10 text-primary'
+          : 'bg-primary-50 text-primary-700 border border-primary-200 dark:bg-primary-900/40 dark:text-primary-200'
     )}>
       {badge}
     </span>

@@ -33,6 +33,7 @@ export function Header() {
   }, []);
 
   const getRoleBadgeVariant = (role: string) => {
+    // @MX:NOTE: [AUTO] SPEC-AUTH-005에 따라 super_admin role 제거됨. admin/lawyer/teacher 3종.
     switch (role) {
       case 'admin': return 'urgent-modern';
       case 'lawyer': return 'protection-modern';
@@ -61,17 +62,17 @@ export function Header() {
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Logo Section */}
+        {/* Logo Section — 토큰 기반 gradient (primary-500 → primary-600) */}
         {isHydrated && (
-          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl shadow-lg" style={{background: 'linear-gradient(to bottom right, rgb(255, 114, 16), rgb(230, 100, 10))'}}>
-              <Shield className="h-6 w-6 text-white" />
+          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity focus-visible-ring rounded-md">
+            <div className="flex items-center justify-center w-10 h-10 rounded-md shadow-sm bg-gradient-to-br from-primary-500 to-primary-600">
+              <Shield className="h-6 w-6 text-white" aria-hidden="true" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-clip-text text-transparent" style={{background: 'linear-gradient(to right, rgb(255, 114, 16), rgb(230, 100, 10))', WebkitBackgroundClip: 'text'}}>
+              <h1 className="text-h3 font-bold gradient-text">
                 교권119
               </h1>
-              <p className="text-xs text-muted-foreground -mt-1">
+              <p className="text-caption text-muted-foreground -mt-0.5">
                 교사의 권리를 지킵니다
               </p>
             </div>
@@ -89,9 +90,10 @@ export function Header() {
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative hover:bg-accent/50 rounded-xl"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-5 w-5" aria-hidden="true" />
+                <span className="sr-only">알림 {unreadCount}개</span>
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold animate-pulse">
+                  <div className="absolute -top-1 -right-1 h-5 w-5 bg-error-500 text-white text-caption rounded-full flex items-center justify-center font-semibold animate-pulse" aria-hidden="true">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </div>
                 )}
@@ -184,7 +186,7 @@ export function Header() {
                   <div className="p-2 border-t">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-left text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg"
+                      className="w-full justify-start text-left text-error-600 hover:text-error-700 hover:bg-error-50 dark:hover:bg-error-950/20 rounded-md"
                       onClick={async () => {
                         try {
                           // CRITICAL FIX: 서버에 토큰과 함께 세션 정리 요청

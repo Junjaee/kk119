@@ -9,8 +9,8 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FB923C' },
-    { media: '(prefers-color-scheme: dark)', color: '#1F2937' }
+    { media: '(prefers-color-scheme: light)', color: '#FF7210' },
+    { media: '(prefers-color-scheme: dark)', color: '#1C1917' }
   ],
 };
 
@@ -127,7 +127,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
     'apple-mobile-web-app-title': '교권119',
-    'msapplication-TileColor': '#FB923C',
+    'msapplication-TileColor': '#FF7210',
     'msapplication-config': '/browserconfig.xml',
   },
 };
@@ -140,13 +140,24 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
+        {/*
+          SPEC-UI-001: Pretendard(한글) + Inter(영문) 폰트 로딩
+          - Pretendard Variable: jsdelivr CDN (기존 유지, 네트워크 기반 브라우저 캐시)
+          - next/font/google 사용 불가 환경 대비 CDN 폴백 유지
+          - 폴백 스택: Pretendard → Inter → system-ui → Apple SD Gothic Neo → Malgun Gothic
+        */}
+        <link
+          rel="stylesheet"
+          as="style"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
         <link
           rel="stylesheet"
           as="style"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
         />
       </head>
-      <body className="antialiased">
+      <body className="antialiased font-sans">
         <Providers>
           {children}
         </Providers>

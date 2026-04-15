@@ -85,7 +85,7 @@ function SidebarOverlay({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-40 lg:hidden animate-fade-in"
+      className="fixed inset-0 bg-neutral-900/50 dark:bg-neutral-950/70 backdrop-blur-sm z-modal lg:hidden animate-fade-in"
       onClick={onClose}
     />
   );
@@ -105,7 +105,7 @@ function SidebarContainer({
   return (
     <aside
       className={cn(
-        'fixed lg:static inset-y-0 left-0 z-50 w-72 glass-morphism border-r border-border/40 transform transition-all duration-300 lg:transform-none',
+        'fixed lg:static inset-y-0 left-0 z-modal w-72 bg-card border-r border-border shadow-sm lg:shadow-none transform transition-transform duration-200 lg:transform-none',
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}
     >
@@ -125,9 +125,10 @@ function SidebarCloseButton({ onClose }: { onClose: () => void }) {
     <div className="lg:hidden flex justify-end p-4">
       <button
         onClick={onClose}
-        className="p-2 rounded-xl hover:bg-accent/50 transition-colors"
+        aria-label="사이드바 닫기"
+        className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus-visible-ring"
       >
-        <X className="h-5 w-5" />
+        <X className="h-5 w-5" aria-hidden="true" />
       </button>
     </div>
   );

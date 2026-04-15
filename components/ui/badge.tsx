@@ -1,8 +1,26 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils/cn';
 
+// @MX:NOTE: [AUTO] Badge variant 시스템 — 토큰 기반 + SPEC-UI-001 status variants 추가 (pending/in-progress/completed/urgent).
+
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'error' | 'primary' | 'protection' | 'urgent' | 'trust';
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'outline'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'info'
+    // Legacy alias
+    | 'protection'
+    | 'urgent'
+    | 'trust'
+    // SPEC-UI-001 status variants (S4)
+    | 'pending'
+    | 'in-progress'
+    | 'completed';
   size?: 'sm' | 'default' | 'lg';
   dot?: boolean;
   pulse?: boolean;
@@ -11,30 +29,68 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
   ({ className, variant = 'default', size = 'default', dot = false, pulse = false, children, ...props }, ref) => {
     const variantStyles = {
-      default: 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20',
-      primary: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
-      secondary: 'bg-secondary text-secondary-foreground border border-border/40 hover:bg-secondary/80',
-      outline: 'border-2 border-input bg-transparent hover:bg-accent',
-      success: 'bg-trust-50 text-trust-700 border border-trust-200 dark:bg-trust-950/50 dark:text-trust-400 hover:bg-trust-100 dark:hover:bg-trust-900/50',
-      warning: 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/50',
-      error: 'bg-urgent-50 text-urgent-700 border border-urgent-200 dark:bg-urgent-950/50 dark:text-urgent-400 hover:bg-urgent-100 dark:hover:bg-urgent-900/50',
-      protection: 'bg-protection-50 text-protection-700 border border-protection-200 dark:bg-protection-950/50 dark:text-protection-400 hover:bg-protection-100 dark:hover:bg-protection-900/50',
-      urgent: 'bg-red-500 text-white shadow-md hover:bg-red-600',
-      trust: 'bg-trust-50 text-trust-700 border border-trust-200 dark:bg-trust-950/50 dark:text-trust-400 hover:bg-trust-100 dark:hover:bg-trust-900/50',
+      default:
+        'bg-primary-50 text-primary-700 border border-primary-200 dark:bg-primary-900/40 dark:text-primary-200 dark:border-primary-800',
+      primary:
+        'bg-primary-500 text-white border border-transparent',
+      secondary:
+        'bg-neutral-100 text-neutral-700 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700',
+      outline:
+        'border border-border bg-transparent text-foreground',
+      // Semantic
+      success:
+        'bg-success-50 text-success-700 border border-success-200 dark:bg-success-950/50 dark:text-success-300 dark:border-success-800',
+      warning:
+        'bg-warning-50 text-warning-800 border border-warning-200 dark:bg-warning-950/50 dark:text-warning-300 dark:border-warning-800',
+      error:
+        'bg-error-50 text-error-700 border border-error-200 dark:bg-error-950/50 dark:text-error-300 dark:border-error-800',
+      info:
+        'bg-info-50 text-info-700 border border-info-200 dark:bg-info-950/50 dark:text-info-300 dark:border-info-800',
+      // Legacy alias
+      protection:
+        'bg-info-50 text-info-700 border border-info-200 dark:bg-info-950/50 dark:text-info-300 dark:border-info-800',
+      urgent:
+        'bg-error-50 text-error-700 border border-error-200 dark:bg-error-950/50 dark:text-error-300 dark:border-error-800',
+      trust:
+        'bg-success-50 text-success-700 border border-success-200 dark:bg-success-950/50 dark:text-success-300 dark:border-success-800',
+      // Status variants (SPEC-UI-001 S4)
+      pending:
+        'bg-warning-50 text-warning-800 border border-warning-200 dark:bg-warning-950/50 dark:text-warning-300 dark:border-warning-800',
+      'in-progress':
+        'bg-info-50 text-info-700 border border-info-200 dark:bg-info-950/50 dark:text-info-300 dark:border-info-800',
+      completed:
+        'bg-success-50 text-success-700 border border-success-200 dark:bg-success-950/50 dark:text-success-300 dark:border-success-800',
     };
-    
+
     const sizeStyles = {
-      sm: 'px-2 py-0.5 text-xs h-5',
-      default: 'px-3 py-1 text-xs h-6',
-      lg: 'px-4 py-1.5 text-sm h-8',
+      sm: 'px-2 py-0.5 text-caption h-5',
+      default: 'px-2.5 py-0.5 text-caption h-6',
+      lg: 'px-3 py-1 text-small h-7',
     };
-    
+
+    const dotColorMap: Record<string, string> = {
+      default: 'bg-primary-500',
+      primary: 'bg-white',
+      secondary: 'bg-neutral-500',
+      outline: 'bg-neutral-500',
+      success: 'bg-success-500',
+      warning: 'bg-warning-500',
+      error: 'bg-error-500',
+      info: 'bg-info-500',
+      protection: 'bg-info-500',
+      urgent: 'bg-error-500',
+      trust: 'bg-success-500',
+      pending: 'bg-warning-500',
+      'in-progress': 'bg-info-500',
+      completed: 'bg-success-500',
+    };
+
     return (
       <div
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center gap-1 rounded-full font-semibold transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-offset-1',
+          'inline-flex items-center justify-center gap-1.5 rounded-full font-medium transition-colors duration-150',
+          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
           variantStyles[variant],
           sizeStyles[size],
           pulse && 'animate-pulse',
@@ -43,17 +99,13 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         {...props}
       >
         {dot && (
-          <div 
+          <span
             className={cn(
               'w-1.5 h-1.5 rounded-full',
-              variant === 'urgent' && 'bg-white animate-pulse',
-              variant === 'success' && 'bg-trust-500',
-              variant === 'warning' && 'bg-yellow-500',
-              variant === 'error' && 'bg-red-500',
-              variant === 'protection' && 'bg-protection-500',
-              variant === 'primary' && 'bg-primary',
-              variant === 'default' && 'bg-primary'
+              dotColorMap[variant] ?? 'bg-primary-500',
+              pulse && variant === 'urgent' && 'animate-pulse'
             )}
+            aria-hidden="true"
           />
         )}
         {children}
@@ -63,7 +115,7 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
 );
 Badge.displayName = 'Badge';
 
-// Additional Badge variations
+// StatusBadge — 리포트/상담 상태 표시 (한글 라벨 고정)
 const StatusBadge = React.forwardRef<
   HTMLDivElement,
   BadgeProps & {
@@ -71,13 +123,13 @@ const StatusBadge = React.forwardRef<
   }
 >(({ status, className, ...props }, ref) => {
   const statusConfig = {
-    received: { variant: 'secondary' as const, label: '접수완료', dot: true },
-    reviewing: { variant: 'warning' as const, label: '검토중', dot: true },
-    consulting: { variant: 'protection' as const, label: '상담진행', dot: true },
-    completed: { variant: 'success' as const, label: '해결완료', dot: true },
-    pending: { variant: 'warning' as const, label: '대기중', dot: true },
-    approved: { variant: 'success' as const, label: '승인됨', dot: true },
-    rejected: { variant: 'error' as const, label: '거부됨', dot: true },
+    received:   { variant: 'secondary' as const,    label: '접수완료', dot: true },
+    reviewing:  { variant: 'warning' as const,      label: '검토중',   dot: true },
+    consulting: { variant: 'info' as const,         label: '상담진행', dot: true },
+    completed:  { variant: 'success' as const,      label: '해결완료', dot: true },
+    pending:    { variant: 'warning' as const,      label: '대기중',   dot: true },
+    approved:   { variant: 'success' as const,      label: '승인됨',   dot: true },
+    rejected:   { variant: 'error' as const,        label: '거부됨',   dot: true },
   };
 
   const config = statusConfig[status];
@@ -96,6 +148,7 @@ const StatusBadge = React.forwardRef<
 });
 StatusBadge.displayName = 'StatusBadge';
 
+// PriorityBadge — 우선순위 표시
 const PriorityBadge = React.forwardRef<
   HTMLDivElement,
   BadgeProps & {
@@ -103,10 +156,10 @@ const PriorityBadge = React.forwardRef<
   }
 >(({ priority, className, ...props }, ref) => {
   const priorityConfig = {
-    low: { variant: 'secondary' as const, label: '낮음', pulse: false },
-    medium: { variant: 'warning' as const, label: '보통', pulse: false },
-    high: { variant: 'error' as const, label: '높음', pulse: false },
-    urgent: { variant: 'urgent' as const, label: '긴급', pulse: true },
+    low:    { variant: 'secondary' as const, label: '낮음', pulse: false },
+    medium: { variant: 'warning' as const,   label: '보통', pulse: false },
+    high:   { variant: 'error' as const,     label: '높음', pulse: false },
+    urgent: { variant: 'urgent' as const,    label: '긴급', pulse: true },
   };
 
   const config = priorityConfig[priority];

@@ -1,8 +1,26 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils/cn';
 
+// @MX:ANCHOR: Button은 전 도메인에서 사용되는 기본 UI 컴포넌트 (fan_in 매우 높음).
+// @MX:REASON: API(variant/size/asChild/loading) 변경 시 teacher/lawyer/admin 전 페이지 regression 발생.
+
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'primary' | 'protection' | 'urgent' | 'trust' | 'success' | 'error' | 'warning' | 'info';
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'outline'
+    | 'ghost'
+    | 'destructive'
+    | 'link'
+    // Legacy variants (호환 유지, semantic으로 매핑)
+    | 'protection'   // → info
+    | 'urgent'       // → error
+    | 'trust'        // → success
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'info';
   size?: 'default' | 'sm' | 'lg' | 'icon' | 'xs';
   asChild?: boolean;
   loading?: boolean;
@@ -12,33 +30,52 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'default', asChild = false, loading = false, children, disabled, ...props }, ref) => {
     const Comp = asChild ? 'span' : 'button';
 
+    // 토큰 기반 variant — 하드코딩 hex/gray/blue 제거
     const variantStyles = {
-      default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md',
-      primary: 'bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:brightness-90 transform hover:-translate-y-0.5',
-      secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 shadow-md hover:shadow-lg',
-      outline: 'border-2 border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground shadow-sm hover:shadow-md',
-      ghost: 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-accent-foreground rounded-lg',
-      destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow-md',
-      protection: 'bg-protection-600 hover:bg-protection-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5',
-      urgent: 'bg-urgent-600 hover:bg-urgent-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5',
-      trust: 'bg-trust-600 hover:bg-trust-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5',
-      success: 'bg-green-600 text-white shadow-lg hover:bg-green-700 hover:shadow-xl',
-      error: 'bg-red-600 text-white shadow-lg hover:bg-red-700 hover:shadow-xl',
-      warning: 'bg-yellow-600 text-white shadow-lg hover:bg-yellow-700 hover:shadow-xl',
-      info: 'bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl',
+      default:
+        'bg-primary text-primary-foreground shadow-sm hover:bg-primary-600 hover:shadow-md',
+      primary:
+        'bg-primary-500 text-white shadow-sm hover:bg-primary-600 active:bg-primary-700 hover:shadow-md',
+      secondary:
+        'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 shadow-xs hover:shadow-sm',
+      outline:
+        'border border-primary-500 bg-transparent text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 shadow-xs',
+      ghost:
+        'bg-transparent text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800',
+      destructive:
+        'bg-error-600 text-error-foreground hover:bg-error-700 shadow-sm hover:shadow-md',
+      link:
+        'bg-transparent text-primary-600 hover:text-primary-700 underline-offset-4 hover:underline shadow-none',
+      // Semantic (신규 권장)
+      success:
+        'bg-success-600 text-success-foreground hover:bg-success-700 shadow-sm hover:shadow-md',
+      error:
+        'bg-error-600 text-error-foreground hover:bg-error-700 shadow-sm hover:shadow-md',
+      warning:
+        'bg-warning-500 text-warning-foreground hover:bg-warning-600 shadow-sm hover:shadow-md',
+      info:
+        'bg-info-600 text-info-foreground hover:bg-info-700 shadow-sm hover:shadow-md',
+      // Legacy alias (동일 매핑)
+      protection:
+        'bg-info-600 text-info-foreground hover:bg-info-700 shadow-sm hover:shadow-md',
+      urgent:
+        'bg-error-600 text-error-foreground hover:bg-error-700 shadow-sm hover:shadow-md',
+      trust:
+        'bg-success-600 text-success-foreground hover:bg-success-700 shadow-sm hover:shadow-md',
     };
 
     const sizeStyles = {
-      xs: 'h-7 px-2 py-1 text-xs rounded-md',
-      sm: 'h-8 px-3 py-1.5 text-xs rounded-lg',
-      default: 'h-10 px-6 py-2 text-sm rounded-xl',
-      lg: 'h-12 px-8 py-3 text-base rounded-xl',
-      icon: 'h-10 w-10 rounded-xl',
+      xs: 'h-7 px-2.5 text-caption rounded-sm',
+      sm: 'h-9 px-3 text-small rounded-md',
+      default: 'h-10 px-4 text-small rounded-md',
+      lg: 'h-11 px-6 text-body rounded-md',
+      icon: 'h-10 w-10 rounded-md',
     };
 
     const baseStyles = cn(
-      'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-      'hover:scale-[1.02] active:scale-[0.98]',
+      'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-150',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+      'disabled:pointer-events-none disabled:opacity-50',
       variantStyles[variant],
       sizeStyles[size],
       loading && 'pointer-events-none',
@@ -49,7 +86,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       return (
         <span className={baseStyles}>
           {React.cloneElement(children as React.ReactElement, {
-            className: cn((children as React.ReactElement).props?.className, 'w-full h-full flex items-center justify-center')
+            className: cn(
+              (children as React.ReactElement).props?.className,
+              'w-full h-full flex items-center justify-center'
+            ),
           })}
         </span>
       );

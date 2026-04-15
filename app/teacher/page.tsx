@@ -170,8 +170,8 @@ export default function TeacherPage() {
     if (user && user.role && user.role !== 'teacher') {
       console.log('🔍 [TEACHER] Redirecting user with role:', user.role);
       switch (user.role) {
-        case 'super_admin':
-          router.push('/super-admin');
+        case 'admin':
+          router.push('/admin');
           break;
         case 'lawyer':
           router.push('/lawyer');

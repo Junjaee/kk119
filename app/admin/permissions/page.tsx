@@ -12,7 +12,7 @@ export default function PermissionsPage() {
   return (
     <AuthGuard>
       <RoleGuard
-        roles={['super_admin', 'admin']}
+        roles={['admin']}
         fallback={
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">접근 권한이 없습니다</h1>

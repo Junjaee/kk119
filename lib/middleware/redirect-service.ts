@@ -15,8 +15,7 @@ export class RedirectService {
    */
   public determineRootRedirect(userRole: UserRole): RedirectDecision {
     const redirectMap: Record<UserRole, string> = {
-      super_admin: SPECIAL_PATHS.ADMIN,
-      admin: SPECIAL_PATHS.ADMIN_DASHBOARD,
+      admin: SPECIAL_PATHS.ADMIN,
       lawyer: SPECIAL_PATHS.LAWYER,
       teacher: SPECIAL_PATHS.ROOT // Teachers stay on root
     };
@@ -35,16 +34,7 @@ export class RedirectService {
    * Following Single Responsibility Principle
    */
   public determineAdminRedirect(userRole: UserRole): RedirectDecision {
-    // Only regular admins get redirected to dashboard
-    // Super admins stay at /admin
-    if (userRole === 'admin') {
-      return {
-        shouldRedirect: true,
-        targetUrl: SPECIAL_PATHS.ADMIN_DASHBOARD,
-        reason: 'Admin users should use dashboard'
-      };
-    }
-
+    // Admin users stay at /admin root
     return {
       shouldRedirect: false,
       reason: `${userRole} can access admin root`

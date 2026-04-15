@@ -50,20 +50,11 @@ export const ACCESS_CONTROL = {
     canCancel: false,
   },
   admin: {
-    canCreate: false,
-    canViewOwn: false,
-    canViewAll: true,
-    canViewPending: true,
-    canSelect: false,
-    canEvaluate: false,
-    canCancel: false,
-  },
-  super_admin: {
     canCreate: true,
     canViewOwn: false,
     canViewAll: true,
     canViewPending: true,
-    canSelect: false, // Super admin doesn't select, lawyers do
+    canSelect: false, // Admin doesn't select, lawyers do
     canEvaluate: true,
     canCancel: true,
   },

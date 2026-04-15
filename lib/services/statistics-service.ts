@@ -214,7 +214,6 @@ export class StatisticsService {
         admin: users.filter(u => u.role === 'admin').length,
         teacher: users.filter(u => u.role === 'teacher').length,
         lawyer: users.filter(u => u.role === 'lawyer').length,
-        super_admin: users.filter(u => u.role === 'admin').length,
       },
       performance: {
         averageResponseTimeMs: 250,

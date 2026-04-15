@@ -75,8 +75,8 @@ export default function LawyerDashboard() {
     if (user && user.role && user.role !== 'lawyer') {
       console.log('🔍 [LAWYER] Redirecting user with role:', user.role);
       switch (user.role) {
-        case 'super_admin':
-          router.push('/super-admin');
+        case 'admin':
+          router.push('/admin');
           break;
         case 'teacher':
           router.push('/teacher');

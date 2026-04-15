@@ -9,8 +9,8 @@ import { ArrowLeft, BarChart3, Users, Shield, FileText, TrendingUp, Activity } f
 export default function SystemStatsPage() {
   const { user } = useStore();
 
-  // 슈퍼어드민 및 관리자 권한 확인
-  if (user?.role !== 'super_admin' && user?.role !== 'admin') {
+  // 관리자 권한 확인
+  if (user?.role !== 'admin') {
     return (
       <DashboardLayout>
         <div className="text-center py-12">

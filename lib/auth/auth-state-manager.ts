@@ -93,8 +93,7 @@ export class AuthStateManager {
     const menuMap: Record<UserRole, string[]> = {
       teacher: ['home', 'reports', 'consultation', 'profile'],
       lawyer: ['home', 'cases', 'consultation', 'profile'],
-      admin: ['home', 'user-management', 'reports', 'statistics', 'consultation', 'profile'],
-      super_admin: ['home', 'system-settings', 'user-management', 'reports', 'statistics', 'consultation', 'profile']
+      admin: ['home', 'system-settings', 'user-management', 'reports', 'statistics', 'consultation', 'profile']
     };
 
     return menuMap[role] || [];

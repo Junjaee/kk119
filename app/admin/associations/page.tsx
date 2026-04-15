@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 export default function AssociationsPage() {
   const { user } = useStore();
 
-  // 슈퍼어드민 및 협회관리자 권한 확인
-  if (user?.role !== 'super_admin' && user?.role !== 'admin') {
+  // 관리자 권한 확인
+  if (user?.role !== 'admin') {
     return (
       <DashboardLayout>
         <div className="text-center py-12">

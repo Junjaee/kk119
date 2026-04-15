@@ -41,7 +41,7 @@ interface TimelineActor {
   id: string;
   name: string;
   email: string;
-  role: 'reporter' | 'lawyer' | 'admin' | 'super_admin';
+  role: 'reporter' | 'lawyer' | 'admin';
 }
 
 interface TimelineEvent {
@@ -132,8 +132,7 @@ const eventTypeConfig: Record<TimelineEventType, {
 const roleConfig = {
   reporter: { label: '신고자', color: 'text-blue-600', bgColor: 'bg-blue-50' },
   lawyer: { label: '변호사', color: 'text-green-600', bgColor: 'bg-green-50' },
-  admin: { label: '관리자', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-  super_admin: { label: '최고관리자', color: 'text-red-600', bgColor: 'bg-red-50' }
+  admin: { label: '관리자', color: 'text-purple-600', bgColor: 'bg-purple-50' }
 };
 
 export function ConsultationTimeline({

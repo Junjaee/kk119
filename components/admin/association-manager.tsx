@@ -300,9 +300,9 @@ export function AssociationManager() {
   };
 
   // 권한 체크
-  const canManageAssociations = profile?.role === 'super_admin';
+  const canManageAssociations = profile?.role === 'admin';
   const canManageMembers = (associationId: string) => {
-    if (profile?.role === 'super_admin') return true;
+    if (profile?.role === 'admin') return true;
     return userMemberships.some(m =>
       m.association_id === associationId && m.is_admin && m.is_active
     );
@@ -631,7 +631,7 @@ export function AssociationManager() {
 
           <div className="space-y-6">
             {/* 일괄 관리 버튼 */}
-            {profile?.role === 'super_admin' && members.length > 0 && (
+            {profile?.role === 'admin' && members.length > 0 && (
               <div className="flex justify-between items-center">
                 <div className="flex gap-2">
                   <Button
@@ -732,7 +732,7 @@ export function AssociationManager() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {profile?.role === 'super_admin' && <TableHead className="w-12">선택</TableHead>}
+                    {profile?.role === 'admin' && <TableHead className="w-12">선택</TableHead>}
                     <TableHead>이름</TableHead>
                     <TableHead>이메일</TableHead>
                     <TableHead>역할</TableHead>
@@ -744,7 +744,7 @@ export function AssociationManager() {
                 <TableBody>
                   {members.map((member: any) => (
                     <TableRow key={member.id}>
-                      {profile?.role === 'super_admin' && (
+                      {profile?.role === 'admin' && (
                         <TableCell>
                           <input
                             type="checkbox"
@@ -779,7 +779,7 @@ export function AssociationManager() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {profile?.role === 'super_admin' && (
+                        {profile?.role === 'admin' && (
                           <Button
                             size="sm"
                             variant={member.is_admin ? 'default' : 'outline'}

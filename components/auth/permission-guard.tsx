@@ -207,7 +207,7 @@ export function AssociationGuard({
       m => (!associationId || m.association_id === associationId) && m.is_admin
     );
 
-    if (!isAssociationAdmin && user?.role !== 'super_admin') {
+    if (!isAssociationAdmin && user?.role !== 'admin') {
       return <>{fallback}</>;
     }
   }

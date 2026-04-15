@@ -160,8 +160,8 @@ export default function AdminDashboard() {
     );
   }
 
-  if (user.role !== 'super_admin') {
-    console.log('🔍 [ADMIN] User role is not super_admin:', user.role);
+  if (user.role !== 'admin') {
+    console.log('🔍 [ADMIN] User role is not admin:', user.role);
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">

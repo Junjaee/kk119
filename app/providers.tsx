@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useStore } from '@/lib/store';
 import { authSync } from '@/lib/auth/auth-sync';
+import { migrateLegacyStorage } from '@/lib/auth/storage-keys';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +21,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const { theme, initialize } = useStore();
 
   useEffect(() => {
+    // @CODE:AUTH-005-STORAGE-MIGRATE | SPEC-AUTH-005
+    // super_admin → admin 스토리지 키 1회성 이관 (멱등)
+    migrateLegacyStorage();
+
     // Initialize store only - auth refresh is handled by store.initialize() and AuthProvider
     console.log('🚀 [PROVIDERS] Initializing store (auth refresh handled separately)');
     initialize();

@@ -72,7 +72,7 @@ export class FileService {
    * @description
    * Access granted to:
    * - File owner (uploader)
-   * - Admin and super_admin (all files)
+   * - Admin (all files)
    * - Lawyer (if assigned to related report)
    *
    * @example
@@ -94,8 +94,8 @@ export class FileService {
         return true;
       }
 
-      // Admin and super_admin can access all files
-      if (userRole === 'admin' || userRole === 'admin') {
+      // Admin can access all files
+      if (userRole === 'admin') {
         return true;
       }
 
@@ -144,7 +144,7 @@ export class FileService {
    * Delete restrictions (SPEC-FILE-001):
    * - Cannot delete files from completed reports (evidence preservation)
    * - Owners can delete their own files (except completed report files)
-   * - Admin and super_admin can delete (except completed report files)
+   * - Admin can delete (except completed report files)
    * - Lawyers cannot delete files
    *
    * @example
@@ -177,8 +177,8 @@ export class FileService {
         return true;
       }
 
-      // Admin and super_admin can delete (except completed report files, checked above)
-      if (userRole === 'admin' || userRole === 'admin') {
+      // Admin can delete (except completed report files, checked above)
+      if (userRole === 'admin') {
         return true;
       }
 

@@ -197,9 +197,9 @@ export default function LoginPage() {
 
       // 각 역할별 독립 페이지로 리다이렉트 (변호사 패턴 완전 적용)
       switch (data.user.role) {
-        case 'super_admin':
-          redirectUrl = '/super-admin';  // 슈퍼관리자 전용 페이지
-          console.log('🔍 Redirect: super_admin -> /super-admin');
+        case 'admin':
+          redirectUrl = '/admin';  // 관리자 전용 페이지
+          console.log('🔍 Redirect: admin -> /admin');
           break;
         case 'lawyer':
           redirectUrl = '/lawyer';  // 변호사 전용 페이지 (기존 유지)

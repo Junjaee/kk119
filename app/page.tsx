@@ -59,8 +59,8 @@ export default function HomePage() {
 
       let targetPath = '/';
       switch (user.role) {
-        case 'super_admin':
-          targetPath = '/super-admin';
+        case 'admin':
+          targetPath = '/admin';
           break;
         case 'lawyer':
           targetPath = '/lawyer';
@@ -146,8 +146,8 @@ export default function HomePage() {
 
       let redirectUrl;
       switch (data.user.role) {
-        case 'super_admin':
-          redirectUrl = '/super-admin';
+        case 'admin':
+          redirectUrl = '/admin';
           break;
         case 'lawyer':
           redirectUrl = '/lawyer';

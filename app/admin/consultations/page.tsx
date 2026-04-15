@@ -112,7 +112,7 @@ export default function ConsultationMonitoringPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // 권한 확인
-  if (profile?.role !== 'admin' && profile?.role !== 'super_admin') {
+  if (profile?.role !== 'admin') {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">

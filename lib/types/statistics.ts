@@ -99,7 +99,6 @@ export interface UserRoleDistribution {
   admin: number;
   teacher: number;
   lawyer: number;
-  super_admin: number;
 }
 
 export interface PerformanceMetrics {

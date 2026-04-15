@@ -70,14 +70,14 @@ export default function SystemSettingsPage() {
     fromName: '교권119'
   });
 
-  // 슈퍼어드민 권한 확인
-  if (user?.role !== 'super_admin') {
+  // 관리자 권한 확인
+  if (user?.role !== 'admin') {
     return (
       <DashboardLayout>
         <div className="text-center py-12">
           <h1 className="text-2xl font-bold mb-4">접근 권한이 없습니다</h1>
           <p className="text-muted-foreground">
-            이 페이지는 슈퍼어드민만 접근할 수 있습니다.
+            이 페이지는 관리자만 접근할 수 있습니다.
           </p>
         </div>
       </DashboardLayout>

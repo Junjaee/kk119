@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
   return (
     <AuthGuard>
       <RoleGuard
-        roles={['super_admin', 'admin']}
+        roles={['admin']}
         fallback={
           <DashboardLayout>
             <div className="text-center py-16">
@@ -283,7 +283,7 @@ export default function AdminDashboardPage() {
               </p>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>현재 권한: <Badge variant="outline">{user?.role || 'teacher'}</Badge></p>
-                <p>필요 권한: <Badge variant="default">admin</Badge> 또는 <Badge variant="default">super_admin</Badge></p>
+                <p>필요 권한: <Badge variant="default">admin</Badge></p>
               </div>
               <div className="mt-6 space-x-2">
                 <Link href="/">

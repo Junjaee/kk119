@@ -24,7 +24,6 @@ export const initDatabase = dbModule.initDatabase;
 export const userDb = dbModule.userDb;
 export const sessionDb = dbModule.sessionDb;
 export const tokenDb = dbModule.tokenDb;
-export const resourceDb = dbModule.resourceDb;
 
 // Community exports (Supabase only for now)
 export const communityDb = dbModule.communityDb;

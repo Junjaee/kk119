@@ -438,233 +438,6 @@ export const tokenDb = {
   }
 };
 
-/**
- * Resource operations - Supabase implementation
- */
-export const resourceDb = {
-  /**
-   * Create new resource
-   */
-  create: async (resourceData: {
-    title: string;
-    description?: string;
-    category: string;
-    fileName: string;
-    filePath: string;
-    fileSize: number;
-    fileType: string;
-    uploadedBy: number;
-  }) => {
-    const { data, error } = await supabase
-      .from('resources')
-      .insert({
-        title: resourceData.title,
-        description: resourceData.description || null,
-        category: resourceData.category,
-        file_name: resourceData.fileName,
-        file_path: resourceData.filePath,
-        file_size: resourceData.fileSize,
-        file_type: resourceData.fileType,
-        uploaded_by: resourceData.uploadedBy,
-        download_count: 0,
-        is_approved: true
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  },
-
-  /**
-   * Find all resources with filters
-   */
-  findAll: async (filters?: { category?: string; search?: string; limit?: number; offset?: number }) => {
-    let query = supabase
-      .from('resources')
-      .select(`
-        *,
-        users!inner(name)
-      `)
-      .eq('is_approved', true);
-
-    if (filters?.category) {
-      query = query.eq('category', filters.category);
-    }
-
-    if (filters?.search) {
-      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
-    }
-
-    query = query.order('created_at', { ascending: false });
-
-    if (filters?.limit) {
-      query = query.limit(filters.limit);
-    }
-
-    if (filters?.offset) {
-      query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error finding resources:', error);
-      return [];
-    }
-
-    // Flatten user data
-    return data.map((resource: any) => ({
-      ...resource,
-      uploader_name: resource.users?.name || 'Unknown'
-    }));
-  },
-
-  /**
-   * Find resource by ID
-   */
-  findById: async (id: number) => {
-    const { data, error } = await supabase
-      .from('resources')
-      .select(`
-        *,
-        users!inner(name)
-      `)
-      .eq('id', id)
-      .eq('is_approved', true)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error finding resource:', error);
-      return null;
-    }
-
-    if (data) {
-      return {
-        ...data,
-        uploader_name: data.users?.name || 'Unknown'
-      };
-    }
-
-    return null;
-  },
-
-  /**
-   * Increment download count
-   */
-  incrementDownloadCount: async (id: number) => {
-    const { error } = await supabase.rpc('increment_download_count', { resource_id: id });
-
-    if (error) {
-      // Fallback: manual increment
-      const { data: resource } = await supabase
-        .from('resources')
-        .select('download_count')
-        .eq('id', id)
-        .single();
-
-      if (resource) {
-        await supabase
-          .from('resources')
-          .update({ download_count: (resource.download_count || 0) + 1 })
-          .eq('id', id);
-      }
-    }
-
-    return { changes: 1 };
-  },
-
-  /**
-   * Find resources by user
-   */
-  findByUser: async (userId: number) => {
-    const { data, error } = await supabase
-      .from('resources')
-      .select(`
-        *,
-        users!inner(name)
-      `)
-      .eq('uploaded_by', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error finding user resources:', error);
-      return [];
-    }
-
-    return data.map((resource: any) => ({
-      ...resource,
-      uploader_name: resource.users?.name || 'Unknown'
-    }));
-  },
-
-  /**
-   * Delete resource (with Storage file cleanup)
-   */
-  delete: async (id: number, userId: number) => {
-    // First, get the resource to find its file_path
-    const { data: resource, error: fetchError } = await supabase
-      .from('resources')
-      .select('file_path')
-      .eq('id', id)
-      .eq('uploaded_by', userId)
-      .single();
-
-    if (fetchError || !resource) {
-      console.error('Error fetching resource for deletion:', fetchError);
-      return { changes: 0 };
-    }
-
-    // Delete from Storage first
-    if (resource.file_path) {
-      const { error: storageError } = await supabase.storage
-        .from('resources')
-        .remove([resource.file_path]);
-
-      if (storageError) {
-        console.error('Error deleting file from storage:', storageError);
-        // Continue with DB deletion even if storage deletion fails
-      }
-    }
-
-    // Delete from database
-    const { error } = await supabase
-      .from('resources')
-      .delete()
-      .eq('id', id)
-      .eq('uploaded_by', userId);
-
-    if (error) {
-      console.error('Error deleting resource from DB:', error);
-      return { changes: 0 };
-    }
-
-    return { changes: 1 };
-  },
-
-  /**
-   * Get all categories
-   */
-  getCategories: async () => {
-    const { data, error } = await supabase
-      .from('resources')
-      .select('category')
-      .eq('is_approved', true)
-      .order('category');
-
-    if (error) {
-      console.error('Error getting categories:', error);
-      return [];
-    }
-
-    // Get unique categories
-    const uniqueCategories = [...new Set(data.map((r: any) => r.category))];
-    return uniqueCategories.map(category => ({ category }));
-  }
-};
 
 /**
  * Community operations - Supabase implementation
@@ -978,6 +751,579 @@ export const communityCommentDb = {
     }
 
     return count || 0;
+  }
+};
+
+/**
+ * Lawyer operations - Supabase implementation
+ */
+export const lawyerDb = {
+  /**
+   * Create lawyer profile
+   */
+  create: async (data: {
+    user_id?: number;
+    name: string;
+    specialty: string;
+    license_number?: string;
+    bio?: string;
+    years_of_experience?: number;
+  }) => {
+    const { data: lawyer, error } = await supabase
+      .from('lawyers')
+      .insert({
+        user_id: data.user_id || null,
+        name: data.name,
+        specialty: data.specialty,
+        license_number: data.license_number || null,
+        bio: data.bio || null,
+        years_of_experience: data.years_of_experience || null,
+        is_verified: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating lawyer:', error);
+      throw error;
+    }
+
+    return lawyer;
+  },
+
+  /**
+   * Find all lawyers
+   */
+  findAll: async () => {
+    const { data, error } = await supabase
+      .from('lawyers')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error finding lawyers:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Find lawyer by ID
+   */
+  findById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('lawyers')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error finding lawyer:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  /**
+   * Find lawyer by user_id
+   */
+  findByUserId: async (userId: number) => {
+    const { data, error } = await supabase
+      .from('lawyers')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error finding lawyer by user_id:', error);
+      return null;
+    }
+
+    return data;
+  }
+};
+
+/**
+ * Consult operations - Supabase implementation
+ */
+export const consultDb = {
+  /**
+   * Create new consult
+   */
+  create: async (data: {
+    report_id?: number;
+    user_id: number;
+    title: string;
+    report_type: string;
+    incident_date: string;
+    report_content: string;
+    report_status?: string;
+  }) => {
+    const { data: consult, error } = await supabase
+      .from('consults')
+      .insert({
+        report_id: data.report_id || null,
+        user_id: data.user_id,
+        title: data.title,
+        report_type: data.report_type,
+        incident_date: data.incident_date,
+        report_content: data.report_content,
+        report_status: data.report_status || 'pending',
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating consult:', error);
+      throw error;
+    }
+
+    return consult;
+  },
+
+  /**
+   * Find all consults with lawyer info
+   */
+  findAll: async (userId?: number, status?: string) => {
+    let query = supabase
+      .from('consults')
+      .select(`
+        *,
+        lawyers(name, specialty)
+      `);
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error finding consults:', error);
+      return [];
+    }
+
+    // Get reply count for each consult
+    const consultsWithCounts = await Promise.all(
+      (data || []).map(async (consult: any) => {
+        const { count } = await supabase
+          .from('consult_replies')
+          .select('*', { count: 'exact', head: true })
+          .eq('consult_id', consult.id);
+
+        return {
+          ...consult,
+          lawyer_name: consult.lawyers?.name,
+          lawyer_specialty: consult.lawyers?.specialty,
+          reply_count: count || 0
+        };
+      })
+    );
+
+    return consultsWithCounts;
+  },
+
+  /**
+   * Find single consult by ID
+   */
+  findById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('consults')
+      .select(`
+        *,
+        lawyers(name, specialty, bio)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error finding consult:', error);
+      return null;
+    }
+
+    if (data) {
+      return {
+        ...data,
+        lawyer_name: data.lawyers?.name,
+        lawyer_specialty: data.lawyers?.specialty,
+        lawyer_bio: data.lawyers?.bio
+      };
+    }
+
+    return null;
+  },
+
+  /**
+   * Update consult
+   */
+  update: async (id: string, updateData: any) => {
+    const { error } = await supabase
+      .from('consults')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating consult:', error);
+      throw error;
+    }
+
+    return { changes: 1 };
+  },
+
+  /**
+   * Assign lawyer to consult
+   */
+  assignLawyer: async (consultId: string, lawyerId: string, consultContent: string) => {
+    const { error } = await supabase
+      .from('consults')
+      .update({
+        lawyer_id: lawyerId,
+        consult_content: consultContent,
+        status: 'answered',
+        answered_at: new Date().toISOString()
+      })
+      .eq('id', consultId);
+
+    if (error) {
+      console.error('Error assigning lawyer:', error);
+      throw error;
+    }
+
+    return { changes: 1 };
+  },
+
+  /**
+   * Get consult statistics
+   */
+  getStats: async (userId?: number) => {
+    let totalQuery = supabase
+      .from('consults')
+      .select('*', { count: 'exact', head: true });
+
+    let answeredQuery = supabase
+      .from('consults')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'answered');
+
+    let pendingQuery = supabase
+      .from('consults')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['pending', 'reviewing']);
+
+    if (userId) {
+      totalQuery = totalQuery.eq('user_id', userId);
+      answeredQuery = answeredQuery.eq('user_id', userId);
+      pendingQuery = pendingQuery.eq('user_id', userId);
+    }
+
+    const [totalResult, answeredResult, pendingResult] = await Promise.all([
+      totalQuery,
+      answeredQuery,
+      pendingQuery
+    ]);
+
+    return {
+      total: totalResult.count || 0,
+      answered: answeredResult.count || 0,
+      pending: pendingResult.count || 0
+    };
+  },
+
+  /**
+   * Assign lawyer only (admin function)
+   */
+  assignLawyerOnly: async (consultId: string, lawyerId: string) => {
+    const { error } = await supabase
+      .from('consults')
+      .update({
+        lawyer_id: lawyerId,
+        status: 'reviewing'
+      })
+      .eq('id', consultId);
+
+    if (error) {
+      console.error('Error assigning lawyer only:', error);
+      throw error;
+    }
+
+    return { changes: 1 };
+  },
+
+  /**
+   * Find unassigned consults
+   */
+  findUnassigned: async () => {
+    const { data, error } = await supabase
+      .from('consults')
+      .select('*')
+      .is('lawyer_id', null)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error finding unassigned consults:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Find consults by lawyer
+   */
+  findByLawyer: async (lawyerId: string) => {
+    const { data, error } = await supabase
+      .from('consults')
+      .select('*')
+      .eq('lawyer_id', lawyerId)
+      .order('created_at', { ascending: false});
+
+    if (error) {
+      console.error('Error finding consults by lawyer:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Find available consults for lawyers
+   */
+  findAvailable: async (type?: string, limit: number = 20, offset: number = 0) => {
+    let query = supabase
+      .from('consults')
+      .select('id, title, report_type, incident_date, report_content, created_at, status')
+      .is('lawyer_id', null);
+
+    if (type) {
+      query = query.eq('report_type', type);
+    }
+
+    query = query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error finding available consults:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Count available consults
+   */
+  countAvailable: async (type?: string) => {
+    let query = supabase
+      .from('consults')
+      .select('*', { count: 'exact', head: true })
+      .is('lawyer_id', null);
+
+    if (type) {
+      query = query.eq('report_type', type);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error('Error counting available consults:', error);
+      return 0;
+    }
+
+    return count || 0;
+  },
+
+  /**
+   * Claim consult (lawyer selects)
+   */
+  claimConsult: async (consultId: string, lawyerId: string) => {
+    // Check if already assigned
+    const { data: existing } = await supabase
+      .from('consults')
+      .select('lawyer_id')
+      .eq('id', consultId)
+      .single();
+
+    if (existing?.lawyer_id) {
+      throw new Error('Consult already assigned');
+    }
+
+    const { error } = await supabase
+      .from('consults')
+      .update({
+        lawyer_id: lawyerId,
+        claimed_at: new Date().toISOString(),
+        status: 'reviewing'
+      })
+      .eq('id', consultId)
+      .is('lawyer_id', null);
+
+    if (error) {
+      console.error('Error claiming consult:', error);
+      throw error;
+    }
+
+    return { changes: 1 };
+  }
+};
+
+/**
+ * Consult reply operations - Supabase implementation
+ */
+export const consultReplyDb = {
+  /**
+   * Create reply
+   */
+  create: async (consultId: string, userId: number, content: string, isLawyer: boolean = false) => {
+    const { data: reply, error } = await supabase
+      .from('consult_replies')
+      .insert({
+        consult_id: consultId,
+        user_id: userId,
+        content: content,
+        is_lawyer: isLawyer
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating reply:', error);
+      throw error;
+    }
+
+    // Update consult status based on who replied
+    if (isLawyer) {
+      await supabase
+        .from('consults')
+        .update({ status: 'answered' })
+        .eq('id', consultId);
+    } else {
+      const { data: consult } = await supabase
+        .from('consults')
+        .select('status')
+        .eq('id', consultId)
+        .single();
+
+      if (consult?.status === 'answered') {
+        await supabase
+          .from('consults')
+          .update({ status: 'follow_up' })
+          .eq('id', consultId);
+      }
+    }
+
+    return reply;
+  },
+
+  /**
+   * Find replies by consult ID
+   */
+  findByConsultId: async (consultId: string) => {
+    const { data, error } = await supabase
+      .from('consult_replies')
+      .select('*')
+      .eq('consult_id', consultId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error finding replies:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+};
+
+/**
+ * Consult attachment operations - Supabase implementation
+ */
+export const consultAttachmentDb = {
+  /**
+   * Find attachments by consult ID
+   */
+  findByConsultId: async (consultId: string) => {
+    const { data, error } = await supabase
+      .from('consult_attachments')
+      .select('*')
+      .eq('consult_id', consultId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error finding attachments:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Find single attachment by ID
+   */
+  findById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('consult_attachments')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error finding attachment:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  /**
+   * Create attachment
+   */
+  create: async (data: {
+    consult_id: string;
+    file_name: string;
+    file_path: string;
+    file_type: string;
+    file_size: number;
+  }) => {
+    const { data: attachment, error } = await supabase
+      .from('consult_attachments')
+      .insert(data)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating attachment:', error);
+      throw error;
+    }
+
+    return attachment;
+  },
+
+  /**
+   * Delete attachment
+   */
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('consult_attachments')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting attachment:', error);
+      throw error;
+    }
+
+    return { changes: 1 };
   }
 };
 

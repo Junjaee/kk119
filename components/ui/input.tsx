@@ -8,6 +8,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         type={type}
+        // 비밀번호 관리자(1Password/LastPass 등) 확장이 주입하는 style/data-* 속성으로 인한
+        // 하이드레이션 경고를 무시한다. 서버 렌더 HTML과 차이가 나는 경우는 사용자 개입뿐이므로 안전.
+        suppressHydrationWarning
         className={cn(
           // 토큰 기반: border, bg, ring 모두 시맨틱 변수 사용
           'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-small',

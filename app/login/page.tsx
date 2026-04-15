@@ -39,12 +39,9 @@ export default function LoginPage() {
     password: ''
   });
 
-  // Initialize login page - DO NOT clear auth state on mount
-  // Clearing auth state here will destroy any tokens that were just stored
+  // 마운트 시 저장된 이메일 복원. auth state는 여기서 건드리지 않는다
+  // (로그인 직후 저장된 토큰이 삭제될 수 있음)
   useEffect(() => {
-    console.log('🔄 [LOGIN-PAGE] Mounting...');
-
-    // Load any remembered email
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
       setFormData(prev => ({ ...prev, email: rememberedEmail }));
@@ -85,87 +82,29 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
-      console.log('🔍 Login API Response:', response.status, data);
 
       if (!response.ok) {
         throw new Error(data.error || '로그인에 실패했습니다.');
       }
 
-      console.log('🔍 Login Success - User Data:', data.user);
-      console.log('🔍 Login Success - User Role:', data.user.role);
-
-      // CRITICAL FIX: Immediately replace old token before any other operations
+      // 역할별 이중 저장소(dual storage)에 새 토큰 저장
       if (data.token) {
-        const oldToken = localStorage.getItem('token');
-        console.log('🔄 [LOGIN] IMMEDIATE token replacement for user:', data.user.email);
-        console.log('🔄 [LOGIN] Old token details:', {
-          preview: oldToken?.substring(0, 20) + '...',
-          suffix: oldToken ? '...' + oldToken.substring(oldToken.length - 10) : 'none',
-          length: oldToken?.length || 0
-        });
-
-        // CRITICAL DEBUG: Try to decode old token
-        if (oldToken) {
-          try {
-            const oldPayload = JSON.parse(atob(oldToken.split('.')[1]));
-            console.log('🔄 [LOGIN] OLD TOKEN DATA:', {
-              userId: oldPayload.userId,
-              email: oldPayload.email,
-              role: oldPayload.role
-            });
-          } catch (e) {
-            console.log('🔄 [LOGIN] Could not decode old token');
-          }
-        }
-
-        // CRITICAL FIX: Use dual storage mechanism for role-based token persistence
         const userRole = data.user.role as UserRole;
         storeToken(userRole, data.token);
-        console.log('🔄 [LOGIN] Token stored using dual storage for role:', userRole);
-
-        console.log('🔄 [LOGIN] New token details:', {
-          preview: data.token.substring(0, 20) + '...',
-          suffix: '...' + data.token.substring(data.token.length - 10),
-          length: data.token.length
-        });
-
-        // CRITICAL DEBUG: Try to decode new token
-        try {
-          const newPayload = JSON.parse(atob(data.token.split('.')[1]));
-          console.log('🔄 [LOGIN] NEW TOKEN DATA:', {
-            userId: newPayload.userId,
-            email: newPayload.email,
-            role: newPayload.role
-          });
-        } catch (e) {
-          console.log('🔄 [LOGIN] Could not decode new token');
-        }
-
-        // Verify token was actually stored
-        const storedToken = localStorage.getItem('token');
-        console.log('🔄 [LOGIN] VERIFICATION - Token stored correctly:', {
-          matches: storedToken === data.token,
-          preview: storedToken?.substring(0, 20) + '...'
-        });
       }
 
-      // CRITICAL FIX: Don't call clearAllAuthState during login - it removes the token we just stored!
-      // Instead, only clear the Zustand persistent storage to prevent stale user data
-      console.log('🧹 Clearing Zustand persistent storage (NOT clearing tokens)...');
+      // Zustand persistent storage만 정리 (토큰은 방금 저장했으므로 보존)
       localStorage.removeItem('kyokwon119-storage');
 
-      // Small delay to ensure cleanup completes
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Store email if remember me is checked
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', formData.email);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
 
-      // Update global state with new user data
-      const newUser = {
+      setUser({
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
@@ -173,55 +112,32 @@ export default function LoginPage() {
         position: data.user.position,
         role: data.user.role,
         isAdmin: data.user.isAdmin,
-        isVerified: data.user.isVerified
-      };
+        isVerified: data.user.isVerified,
+      });
 
-      console.log('👤 Setting new user in store:', newUser);
-      setUser(newUser);
-
-      // CRITICAL: DO NOT sync user state through authSync during login!
-      // authSync.syncUserState will check if user is null and clear auth state
-      // Instead, just call endLogin to stop the login protection
-      // The user is already set in the store above, so we're done
-
-      // CRITICAL: End login process to activate refresh protection
+      // authSync.syncUserState를 호출하면 null 체크로 인해 auth state가 초기화됨
+      // endLogin만 호출해서 refresh 보호만 활성화한다
       authSync.endLogin();
 
       toast.success(`환영합니다, ${data.user.name}님!`);
 
-      // Redirect based on user role (prioritize role-based redirects)
-      const fromUrl = searchParams.get('from');
-      let redirectUrl;
-
-      console.log('🔍 Determining redirect for role:', data.user.role);
-
-      // 각 역할별 독립 페이지로 리다이렉트 (변호사 패턴 완전 적용)
+      // 역할별 독립 페이지로 리다이렉트
+      let redirectUrl: string;
       switch (data.user.role) {
         case 'admin':
-          redirectUrl = '/admin';  // 관리자 전용 페이지
-          console.log('🔍 Redirect: admin -> /admin');
+          redirectUrl = '/admin';
           break;
         case 'lawyer':
-          redirectUrl = '/lawyer';  // 변호사 전용 페이지 (기존 유지)
-          console.log('🔍 Redirect: lawyer -> /lawyer');
+          redirectUrl = '/lawyer';
           break;
         case 'teacher':
-          redirectUrl = '/teacher';  // 교사 전용 페이지
-          console.log('🔍 Redirect: teacher -> /teacher');
+          redirectUrl = '/teacher';
           break;
         default:
-          // 기타 역할은 홈으로
           redirectUrl = '/';
-          console.log('🔍 Redirect: default -> /');
-          break;
       }
 
       sessionStorage.removeItem('redirectAfterLogin');
-
-      console.log('🔍 Final redirectUrl:', redirectUrl);
-
-      // Use router.replace for smoother client-side navigation
-      console.log('🔄 Executing redirect to:', redirectUrl);
       router.replace(redirectUrl);
       
     } catch (error: any) {
@@ -233,15 +149,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
-  // Load remembered email on mount
-  useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-      setFormData(prev => ({ ...prev, email: rememberedEmail }));
-      setRememberMe(true);
-    }
-  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-protection-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4">
